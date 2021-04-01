@@ -1,0 +1,6 @@
+# defailt configuration values for pandem data source module
+pandem:
+  sources:
+    driver:
+      port: 8080
+      log_endpoint: 'http://localhost:8080/logs'
