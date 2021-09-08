@@ -1,0 +1,7 @@
+[
+  {"label":"reporting_date", "type":"date", "description":"XYZ", "category":"global"},
+  {"label":"confirmed_cases", "type":"int", "description":"XYZ", "category":"cases"},
+  {"label":"suspected_cases", "type":"int", "description":"XYZ", "category":"cases"},
+  {"label":"total_cases", "type":"int", "description":"XYZ", "category":"cases"},
+  {"label":"pathogen", "type":"dico"} 
+]

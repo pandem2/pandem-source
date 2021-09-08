@@ -22,7 +22,7 @@ class WorkerConfig(Resource):
     return cls
 
   def get(self, worker):
-    """Endpoint for providing configurations setiings for workers
+  """Endpoint for providing configurations setiings for workers
     ---
     parameters:
       - name: worker
