@@ -1,7 +1,7 @@
 [
-  {"label":"reporting_date", "type":"date", "description":"XYZ", "category":"global"},
-  {"label":"confirmed_cases", "type":"int", "description":"XYZ", "category":"cases"},
-  {"label":"suspected_cases", "type":"int", "description":"XYZ", "category":"cases"},
-  {"label":"total_cases", "type":"int", "description":"XYZ", "category":"cases"},
-  {"label":"pathogen", "type":"dico"} 
+  {"label":"reporting_date", "type":"attribute", "dtype":"date", "description":"Date to associate to indicators and observations", "category":"common"},
+  {"label":"confirmed_cases", "type":"observation", "dtype":"int", "description":"Number of confirmed cases for the respective pathogen and reporting period", "category":"cases"},
+  {"label":"suspected_cases", "type":"observation", "dtype":"int", "description":"Number of suspected cases for the respective pathogen and reporting period", "category":"cases"},
+  {"label":"total_cases", "dtype":"observation", "description":"Number of total cases including confirmed and suspected for the respective pathogen and reporting period", "category":"cases"},
+  {"label":"pathogen", "type":"attribute", "type":"ref", "description":"Pathogen related to the reported figures"} 
 ]
