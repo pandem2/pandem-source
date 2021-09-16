@@ -1,101 +1,110 @@
 {
   "scope":{
-    "source_name":"COVID-19 Catalonia Muni-ES",
-    "source_description":"Casos diarios de COVID-19 en Catalonia por municipalida",
+    "source":"COVID-19 Catalonia Muni-ES",
+    "source_description":"Casos diarios de COVID-19 en Catalonia por municipalidad",
     "tags":["COVID-19-DIARIOS MUNI-ES", "COVID-19-TESSY"],
     "frequency":"daily",
     "reference_user":"Elisa Lonnoc",
     "reporting_email":"e.lonnoc@pandem2.eu",
-    "context":[
+    "globals":[
+      {"variable":"source"},
       {"variable":"pathogen", "value":"COVID-19"},
-      {"variable":"geo", "value":"ES51", "ref":"EU.NUTS2"},
-      {"variable":"reporting_date", "column":true},
-      {""}
+      {"variable":"population", "ref":"census.es.1997"}
+    ],
+    "update_scope":[
+      {"variable":"source"},
+      {"variable":"reporting_date"},
+      {"variable":"geo", "value":"ES51", "ref":"EU.NUTS2"}
     ]
-  }
-  ,"acquisition":{
-    "channel":"upload",
-    "format":"csv",
-    "decimal_sign":".",
-    "thousands_separator":"",
-    "date_format":"YYYY-MM-DD"
-  }
-  ,"cols":[
-    {"column_name":"Fecha de reporte", "variable":"reporting-date"},
-    {"column_name":"Total diarios", "variable":"confirmed-cases"},
-    {"column_name":"Casos F0-12", "variable":"confirmed-cases", 
+  },
+  "acquisition":{
+    "channel":{
+      "name":"manual-upload"
+    },
+    "format": {
+      "name":"csv",
+      "decimal_sign":".",
+      "thousands_separator":"",
+      "date_format":"YYYY-MM-DD",
+      "encoding":"UTF-8"
+    }
+  },
+  "columns":[
+    {"name":"Fecha de reporte", "variable":"reporting-date"},
+    {"name":"Casos diarios", "variable":"confirmed-cases"},
+    {"name":"Casos F0-12", "variable":"confirmed-cases", 
        "context":[
          {"variable":"age_group", "value":"0-12", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"F", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos F13-18", "variable":"confirmed-cases",
+    {"name":"Casos F13-18", "variable":"confirmed-cases",
        "context":[
          {"variable":"age_group", "value":"13-18", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"F", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos F19-30", "variable":"confirmed-cases",
+    {"name":"Casos F19-30", "variable":"confirmed-cases",
        "context":[
          {"variable":"age_group", "value":"19-30", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"F", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos F31-50", "variable":"confirmed-cases",
+    {"name":"Casos F31-50", "variable":"confirmed-cases",
        "context":[
          {"variable":"age_group", "value":"31-50", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"F", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos F51-70", "variable":"confirmed-cases",
+    {"name":"Casos F51-70", "variable":"confirmed-cases",
        "context":[
          {"variable":"age_group", "value":"51-70", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"F", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos F71+", "variable":"confirmed-cases",
+    {"name":"Casos F71+", "variable":"confirmed-cases",
        "context":[
          {"variable":"age_group", "value":"70+", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"M", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos M0-12", "variable":"confirmed-cases",
+    {"name":"Casos M0-12", "variable":"confirmed-cases",
        "context":[
          {"variable":"age_group", "value":"0-12", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"M", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos M13-18", "variable":"confirmed-cases",
+    {"name":"Casos M13-18", "variable":"confirmed-cases",
        "context":[
          {"variable":"age_group", "value":"13-18", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"M", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos M19-30", "variable":"confirmed-cases",
+    {"name":"Casos M19-30", "variable":"confirmed-cases",
        "context":[
          {"variable":"age_group", "value":"19-30", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"M", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos M31-50", "variable":"confirmed-cases",
+    {"name":"Casos M31-50", "variable":"confirmed-cases",
        "context":[
          {"variable":"age_group", "value":"31-50", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"M", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos M51-70", "variable":"confirmed-cases",
+    {"name":"Casos M51-70", "variable":"confirmed-cases",
        "context":[
          {"variable":"age_group", "value":"51-70", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"M", "ref":"gender"}
        ]
     },
-    {"column_name":"Casos M71+", "variable":"confirmed_cases",
+    {"name":"Casos M71+", "variable":"confirmed_cases",
        "context":[
          {"variable":"age_group", "value":"71+", "ref":"age-group-covid-eu.2021"},
          {"variable":"gender", "value":"M", "ref":"gender"}
        ]
     },
-    {"column_name":"Decesos", "variable":["deads-with", "deads-because-of"]},
-    {"column_name":"Municipalidad", "variable":"geo", "ref":"EU.LAU.2021", "translate":"Nombre"}
+    {"name":"Decesos", "variable":["deads-with", "deads-because-of"]},
+    {"name":"Codigo postal", "variable":"geo", "ref":"EU.LAU.2021", "match_column":"LAU.es.code"}
   ]
 }
