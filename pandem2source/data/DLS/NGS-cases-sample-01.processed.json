@@ -12,36 +12,20 @@
   },
   "tuples":[
     {
-      "obs":{"confirmed_cases":123},
-      "attrs":{"pathogen":"COVID-19", "reporting_date":"2021-09-01", "geo":"08019", "population":"census.es.1997"}
+      "obs":{"mutation":"H4567"},
+      "attrs":{"patient_id":"1234567", "sample_id":"1234567", "clade":"D.234", "gender":"M", ""}
     },
     {
-      "obs":{"deads_with":12},
-      "attrs":{"pathogen":"COVID-19", "reporting_date":"2021-09-01", "geo":"08019", "population":"census.es.1997"}
+      "obs":{"mutation":"H4567"},
+      "attrs":{"patient_id":"1234567", "sample_id":"1234567", "clade":"D.234", "gender":"M", ""}
     },
     {
-      "obs":{"deads_because":10},
-      "attrs":{"pathogen":"COVID-19", "reporting_date":"2021-09-01", "geo":"08019", "population":"census.es.1997"}
+      "obs":{"mutation":"H4567"},
+      "attrs":{"patient_id":"1234567", "sample_id":"1234567", "clade":"D.234", "gender":"M", ""}
     },
     {
-      "obs":{"confirmed_cases":3},
-      "attrs":{"pathogen":"COVID-19", "reporting_date":"2021-09-01", "geo":"08019", "gender":"F", "age_group":"AGC21.0-12", "population":"census.es.1997"}
-    },
-    {
-      "obs":{"confirmed_cases":3},
-      "attrs":{"pathogen":"COVID-19", "reporting_date":"2021-09-01", "geo":"08019", "gender":"F", "age_group":"AGC21.13-18", "population":"census.es.1997"}
-    },
-    {
-      "obs":{"confirmed_cases":3},
-      "attrs":{"pathogen":"COVID-19", "reporting_date":"2021-09-01", "geo":"08019", "gender":"F", "age_group":"AGC21.19-30", "population":"census.es.1997"}
-    },
-    {
-      "obs":{"confirmed_cases":3},
-      "attrs":{"pathogen":"COVID-19", "reporting_date":"2021-09-01", "geo":"08019", "gender":"F", "age_group":"AGC21.31-50", "population":"census.es.1997"}
-    },
-    {
-      "obs":{"confirmed_cases":"123"},
-      "attrs":{"pathogen":"COVID-19", "reporting_date":"2021-09-01", "geo":"08019","gender":"F", "age_group":"AGC21.31-50", "population":"census.es.1997"}
+      "obs":{"mutation":"H4567"},
+      "attrs":{"patient_id":"1234567", "sample_id":"1234567", "clade":"D.234", "gender":"M", ""}
     }
   ]
 }
