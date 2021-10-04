@@ -18,7 +18,7 @@ def read_variables_xls():
 
 def write_json_variables():
   df = read_variables_xls()
-  path = pkg_resources.resource_filename("pandem2source", "data/list-of-variables.json")
+  path = pkg_resources.resource_filename("pandem2source", "data/DLS/variables.json")
   result = df.to_json(orient = "records")
   parsed = json.loads(result)
   j = json.dumps(parsed, indent=2)
