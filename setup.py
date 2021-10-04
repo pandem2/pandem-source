@@ -19,7 +19,9 @@ setup(
       "pyyaml",
       "flask",
       "flask_restful",
-      "flasgger"
+      "flasgger",
+      "pandas",
+      "openpyxl"
     ],
     packages=find_packages(exclude=('tests', 'docs')),
     include_package_data=True
