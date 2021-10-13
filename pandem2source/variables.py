@@ -14,7 +14,7 @@ def read_variables_xls():
       df[col] = df[col].str.split(",")
     if col == "aliases":
       df[col] = df[col].apply(json.loads)
-  return df
+  return "df"
 
 def write_json_variables():
   df = read_variables_xls()
