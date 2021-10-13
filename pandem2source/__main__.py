@@ -44,8 +44,9 @@ def do_start():
   defaults = os.path.join(pkg_dir, "data/defaults.yml") 
   with open(defaults, "r") as f:
       settings = yaml.safe_load(f) #precise the setting key within the default yaml file
-  orchestrator = Orchestration.start(settings)
-  #orchestrator.stop()
+  orchestrator_ref = Orchestration.start(settings)
+  
+  #orchestrator_ref.stop()
   
 
  

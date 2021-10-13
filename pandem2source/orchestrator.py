@@ -13,23 +13,29 @@ class Orchestration(pykka.ThreadingActor):
    
     def on_start(self):
         
-        storage = storage.Storage.start('storage', self.actor_ref, self.settings) 
-        print('here in on_start orchestration \n')
-        self.current_actors['storage'] = {'ref': storage.actor_ref} #'sources': [], ???
+        storage_ref = storage.Storage.start('storage', self.actor_ref, self.settings)
         
+        self.current_actors['storage'] = {'ref': storage_ref} #'sources': [], ??? pour lacquisition
+        
+        print('here in on_start orchestration \n')
         
                                       
 
 
-    def get_heartbeat(self, actor_name, message):
+    def get_heartbeat(self, actor_name):
+        
+        print(f'actor_name is: {actor_name}')
         now = datetime.datetime.now()
         self.current_actors[actor_name]['heartbeat'] = now
         print(f'heartbeat from {actor_name} at: {now}')
+        
 
         
     
     def on_stop(self):
         self.current_actuators['storage']['ref'].stop()
+        print('here in on_stop orchestration \n')
+
 
 
     

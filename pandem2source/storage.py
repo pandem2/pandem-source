@@ -1,56 +1,62 @@
 import os, re
 import pykka
 import pandas as pd
-#import orchestrator
-import asyncio
+import orchestrator
+import threading
+import time
 
-
-#home_dir = os.environ.get('PANDEM_HOME')
 
 class Storage(pykka.ThreadingActor):
 
-    def __init__(self, name, orchestrator, settings):
+    def __init__(self, name, orchestrator_ref, settings): 
+
         super().__init__()
         self.name = name
-        self.orchestrator = orchestrator
+        self.orchestrator_ref = orchestrator_ref
         self.settings = settings
-        self.db_tables = {}
-        if os.path.exists(os.path.join(settings['home_dir'], 'database/jobs.pickle')):
-            self.db_tables['job'] = pd.read_pickle(os.path.join(self.settings['home_dir'], 'database/jobs.pickle'))
+     
+
+    def on_start(self):
+        
+        self.db_tables = dict()
+        if os.path.exists('/home/database/jobs.pickle'):
+            self.db_tables['job'] = pd.read_pickle('/home/database/jobs.pickle')
         else:
             self.db_tables['job'] = pd.DataFrame({'id': pd.Series(dtype='int'),
                                              'source': pd.Series(dtype='str'), 
                                              'source_files': pd.Series(dtype=object), #list of string
-                                             'file_sizes': pd.Series(dtypes=object),#list of integers
+                                             'file_sizes': pd.Series(dtype=object),#list of integers
                                              'progress': pd.Series(dtype='int'),
                                              'start_on': pd.Series(dtype=object), #parse to datetime
                                              'end_on': pd.Series(dtype=object), #parse to datetime
                                              'source': pd.Series(dtype='str'), 
                                              'status': pd.Series(dtype='str')})
-        if os.path.exists(os.path.join(settings['home_dir'], 'database/issues.pickle')):
-            self.db_tables['issue'] = pd.read_pickle(os.path.join(self.settings['home_dir'], 'database/issues.pickle'))
+        if os.path.exists('/home/database/issues.pickle'):
+            self.db_tables['issue'] = pd.read_pickle('/home/database/issues.pickle')
         else:
             self.db_tables['issue'] = pd.DataFrame({'id': pd.Series(dtype='int'),
                                              'step': pd.Series(dtype='str'), 
                                              'line': pd.Series(dtype='int'), 
-                                             'source': pd.Series(dtypes='str'),
+                                             'source': pd.Series(dtype='str'),
                                              'file': pd.Series(dtype='str'),
                                              'message': pd.Series(dtype='str'),
                                              'raised_on': pd.Series(dtype=object), #parse to datetime
                                              'job_id': pd.Series(dtype='int'), 
                                              'issue_type': pd.Series(dtype='str')})
-        print('here in __init__ storage \n')
-        
-    def on_start(self):
+                                             
+                      
         #send heartbeat to orchestrator that runs in background
-        asyncio.create_task(self.send_heartbeat())
+        def send_heartbeat():
+            while True:
+                time.sleep(3)
+                self.orchestrator_ref.proxy().get_heartbeat('storage')
+        threading.Thread(target=send_heartbeat).start()
         
-    async def send_heartbeat(self):
-        while True:
-            self.orchestrator.proxy().get_heartbeat('storage', "I'm here")
-            await asyncio.sleep(60)
+        
+        print('here in storage on-start')
 
     
+        
     def write_file(self, path, name, bytes, mode): 
         ''' mode: 
             wb+  create file if it doesn't exist and open it in overwrite mode.
