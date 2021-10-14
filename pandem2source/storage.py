@@ -12,7 +12,7 @@ class Storage(pykka.ThreadingActor):
 
         super().__init__()
         self.name = name
-        self.orchestrator_ref = orchestrator_ref
+        self.orchestrator_ref = orchestrator_ref.proxy()
         self.settings = settings
      
 
@@ -46,16 +46,16 @@ class Storage(pykka.ThreadingActor):
                                              
                       
         #send heartbeat to orchestrator that runs in background
-        def send_heartbeat():
-            while True:
-                time.sleep(3)
-                self.orchestrator_ref.proxy().get_heartbeat('storage')
-        threading.Thread(target=send_heartbeat).start()
+        
+        threading.Thread(target=self.send_heartbeat).start()
         
         
         print('here in storage on-start')
 
-    
+    def send_heartbeat(self):
+        while True:
+            time.sleep(3)
+            self.orchestrator_ref.get_heartbeat('storage')
         
     def write_file(self, path, name, bytes, mode): 
         ''' mode: 
