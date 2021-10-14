@@ -1,6 +1,7 @@
 scala/lib_managed
 *.swo
 *.swp
+.~*#
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

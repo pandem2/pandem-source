@@ -4,7 +4,7 @@ import argparse
 
 #from .config import config
 #from . import api
-from orchestrator import Orchestration
+from .orchestrator import Orchestration
 
 def main(a):
   #conf = config()
@@ -51,8 +51,6 @@ def do_start():
  
 
 if __name__ == "__main__":
-  do_start()
-
-  #main(sys.argv[1] if len(sys.argv)>1 else None)
+  main(sys.argv[1] if len(sys.argv)>1 else None)
 
 

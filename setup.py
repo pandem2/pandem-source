@@ -17,11 +17,9 @@ setup(
     license="EUPL-1.2",
     install_requires=[
       "pyyaml",
-      "flask",
-      "flask_restful",
-      "flasgger",
       "pandas",
-      "openpyxl"
+      "openpyxl",
+      "pykka"
     ],
     packages=find_packages(exclude=('tests', 'docs')),
     include_package_data=True

@@ -1,5 +1,5 @@
 import pykka
-import storage
+from . import storage
 import datetime
 
 class Orchestration(pykka.ThreadingActor):
