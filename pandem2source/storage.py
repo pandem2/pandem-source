@@ -1,7 +1,7 @@
 import os, re
 import pykka
 import pandas as pd
-import orchestrator
+from . import orchestrator
 import threading
 import time
 

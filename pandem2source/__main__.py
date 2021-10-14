@@ -4,7 +4,7 @@ import argparse
 
 #from .config import config
 #from . import api
-from orchestrator import Orchestration
+from .orchestrator import Orchestration
 
 def main(a):
   #conf = config()
@@ -37,8 +37,18 @@ def main(a):
     args.func(args, parser, conf)
   '''
 
+#calling handlers
+  func = None
+  try:
+    args = parser.parse_args()
+    func = args.func
+  except AttributeError:
+    parser.print_help()
+  if func != None:
+    args.func(args, parser)
+
 # handlers
-def do_start():
+def do_start(args, *other):
   #read settings from defaults.yaml
   pkg_dir, this_filename = os.path.split(__file__)
   defaults = os.path.join(pkg_dir, "data/defaults.yml") 
@@ -52,8 +62,6 @@ def do_start():
  
 
 if __name__ == "__main__":
-  do_start()
-
-  #main(sys.argv[1] if len(sys.argv)>1 else None)
+  main(sys.argv[1] if len(sys.argv)>1 else None)
 
 
