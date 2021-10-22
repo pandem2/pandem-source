@@ -1,0 +1,49 @@
+{
+    "scope":{
+      "source":"John Hopkins University COVID-Dataset",
+      "source_description":"Daily report for COVID-19 epidemiological metrics",
+      "tags":["COVID-19", "WORLD", "COUNTRY"],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+        
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"git",
+        "url": "git@github.com:CSSEGISandData/COVID-19.git",
+        "paths": ["COVID-19/csse_covid_19_data/csse_covid_19_daily_reports"]
+      },
+      "format": {
+        "name":"csv",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"MM/DD/YYYY HH:mm:ss",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"FIPS"},
+      {"name":"Admin2"},
+      {"name":"Province_State"},
+      {"name":"Country_Region"},
+      {"name":"Last Update"},
+      {"name":"Lat "},
+      {"name":"Long_"},
+      {"name":"Confirmed"},
+      {"name":"Deaths"},
+      {"name":"Recovered"},
+      {"name":"Active"},
+      {"name":"Incident_Rate"},
+      {"name":"Case_Fatality_Ratio"},
+      {"name":"Codigo postal"}
+    ]
+  }
