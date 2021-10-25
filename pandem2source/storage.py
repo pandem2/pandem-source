@@ -19,7 +19,7 @@ class Storage(pykka.ThreadingActor):
         
      
     def on_start(self):
-        #create empty dataframes in self.db_tables if pickles doesn't exist
+        #create empty dataframes in self.db_tables if pickle files doesn't exist
         self.db_tables = dict()
         if os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle')):
             self.db_tables['job'] = pd.read_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle'))
@@ -108,7 +108,7 @@ class Storage(pykka.ThreadingActor):
                     os.remove(os.path.join(self.settings['home_dir'], path, file))
                 return 'Ok'
             else:
-                return 'no files founded' #est-ce qu'on va traiter ce cas là?
+                return 'no files founded' 
         else:
             raise FileNotFoundError("folder {0} does not exist!".format(path))
         

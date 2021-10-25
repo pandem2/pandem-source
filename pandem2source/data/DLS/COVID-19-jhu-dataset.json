@@ -19,8 +19,9 @@
     "acquisition":{
       "channel":{
         "name":"git",
-        "url": "git@github.com:CSSEGISandData/COVID-19.git",
-        "paths": ["COVID-19/csse_covid_19_data/csse_covid_19_daily_reports"]
+        "url": "https://github.com/Epiconcept-Paris/COVID-19",
+        "paths": ["COVID-19/csse_covid_19_data/csse_covid_19_daily_reports"],
+        "branch":"master"
       },
       "format": {
         "name":"csv",
