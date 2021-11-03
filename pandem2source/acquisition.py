@@ -3,6 +3,7 @@ import subprocess
 import os
 import time
 import threading
+from . import pipeline
 
 
 class Acquisition(pykka.ThreadingActor):
@@ -19,12 +20,14 @@ class Acquisition(pykka.ThreadingActor):
        
     def on_start(self):
         self.current_sources = dict()
+        pipeline_ref = self.orchestrator_proxy.get_actor('pipeline').get()
+        print(f'pipeline ref within acquisition is:: {pipeline_ref}')
+        self.pipeline_proxy = pipeline_ref.proxy()
+        print(f'pipeline proxy within acquisition is: {self.pipeline_proxy}')
         threading.Thread(target=self.actor_loop).start()
-        print(f'here in {self.name} on-start')
 
 
     def add_datasource(self, dls):
-        
         if self.name.split('_')[-1] == 'git': 
             source_path = os.path.join(os.getenv('PANDEM_HOME'), 'files/git', dls['scope']['source'])
             if not os.path.exists(source_path):
@@ -36,12 +39,16 @@ class Acquisition(pykka.ThreadingActor):
                                cwd=source_path
                               ) 
                 #send cloned files in target subdirectories to the pipeline actor
+                files_to_pipeline = []
                 for subdir in dls['acquisition']['channel']['paths']:
-                    files_to_pipeline = self.storage_proxy.list_files(os.path.join('git',
-                                                                                   dls['scope']['source'],
-                                                                                   subdir)).get()
-                    
-                    print(f"cloned files from source {dls['scope']['source']} sent to the pipeline are: {files_to_pipeline}") 
+                    files_paths = self.storage_proxy.list_files(os.path.join('git',
+                                                                              dls['scope']['source'],
+                                                                              subdir)).get()
+                    files_to_pipeline.extend([file_path['path'] for file_path in files_paths ])
+                #print(f'files to pipeline after commit : {files_to_pipeline}')
+                job_id = self.pipeline_proxy.submit_files(dls, files_to_pipeline).get()
+                print(f'job id for the clonining is {job_id}')
+                #print(f"cloned files from source {dls['scope']['source']} sent to the pipeline are: {files_to_pipeline}") 
                 dist_branch =  dls['acquisition']['channel']['branch']
                 last_commit = subprocess.run(['git', 'rev-parse', 'origin/'+dist_branch],
                                               capture_output=True,
@@ -59,53 +66,52 @@ class Acquisition(pykka.ThreadingActor):
             else:
                 id_source = self.storage_proxy.read_db('source', lambda x: x['name']==dls['scope']['source']).get()['id'].values[0]
                 print(f'id source without cloning is:{id_source}')
-                self.current_sources[id_source] = dls
-                
-        
+                self.current_sources[id_source] = dls              
 
 
     def monitor_source(self): 
         if self.name.split('_')[-1] == 'git':
             for source_id, dls in self.current_sources.items():
-                print(f'dealing with source id: {source_id}')
-
+                #print(f'dealing with source id: {source_id}')
                 dist_branch = dls['acquisition']['channel']['branch']
                 repo_name = dls['acquisition']['channel']['paths'][0].split('/')[0]
                 last_saved_commit = self.storage_proxy.read_db('source', lambda x: x['id']==source_id).get()['git_last_commit'].values[0]
-                print(f'last saved commit is: {last_saved_commit}')
+                #print(f'last saved commit is: {last_saved_commit}')
                 subprocess.run(['git', 'pull',  'origin', dist_branch], 
                                cwd=os.path.join(os.getenv('PANDEM_HOME'), 'files/git', dls['scope']['source'], repo_name) 
                               )
-                
                 #get updated files
-                updated_files = dict()
+                files_to_pipeline = []
                 for subdir in dls['acquisition']['channel']['paths']:
                     subdir = os.path.join(*subdir.split('/')[1:])
-                    print(f'target subdirectory is: {subdir}')
-                    new_files = subprocess.run(['git', 'diff', '--name-only', last_saved_commit, 'HEAD', subdir], 
+                    #print(f'target subdirectory is: {subdir}')
+                    new_files_subdir = subprocess.run(['git', 'diff', '--name-only', last_saved_commit, 'HEAD', subdir], 
                                                 capture_output=True,
                                                 text=True,
                                                 cwd=os.path.join(os.getenv('PANDEM_HOME'),
                                                                 'files/git',
                                                                 dls['scope']['source'],
-                                                                repo_name)
+                                                                repo_name) 
                                                )
-                    if new_files.stdout != '':
-                        print(f'new files: {new_files.stdout}') 
-                        
-                        last_commit = subprocess.run(['git', 'rev-parse', 'origin/'+dist_branch], 
+                    if new_files_subdir.stdout != '':
+                        #print(f'new files: {new_files.stdout}')
+                        new_files = new_files_subdir.stdout.rstrip().split('\n')
+                        files_paths =  [os.path.join('git', dls['scope']['source'], repo_name, new_file) for new_file in new_files]
+                        files_to_pipeline.extend(files_paths)
+                #print(f'files to pipeline : {files_to_pipeline}')
+                if len(files_to_pipeline)>0:
+                    job_id = self.pipeline_proxy.submit_files(dls, files_to_pipeline).get()
+                    #print(f'job id for the last pull is {job_id}')
+                last_commit = subprocess.run(['git', 'rev-parse', 'origin/'+dist_branch], 
                                                     capture_output=True,
                                                     text=True,
                                                     cwd=os.path.join(os.getenv('PANDEM_HOME'), 'files/git', dls['scope']['source'], repo_name)                                             )                 
-                        id_source = self.storage_proxy.write_db({'name': dls['scope']['source'],
+                id_source = self.storage_proxy.write_db({'name': dls['scope']['source'],
                                                                  'repo': repo_name,
                                                                 'git_last_commit': last_commit.stdout.rstrip(),
                                                                 'id': source_id
                                                                 }, 
                                                                 'source').get()   
-                    else:
-                        print(f'no new files from this source : {source_id}/{subdir}')
-
 
 
     def send_heartbeat(self):
@@ -113,8 +119,9 @@ class Acquisition(pykka.ThreadingActor):
     
     
     def actor_loop(self):
+        my_proxy = self.actor_ref.proxy()
         while True:
-            self.actor_ref.proxy().monitor_source()
+            my_proxy.monitor_source()
             self.send_heartbeat()
             time.sleep(20)
 

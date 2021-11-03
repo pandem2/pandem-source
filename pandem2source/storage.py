@@ -5,6 +5,8 @@ import json
 from . import orchestrator
 import threading
 import time
+import shutil
+from io import BytesIO
 
 
 
@@ -26,13 +28,15 @@ class Storage(pykka.ThreadingActor):
         else:
             self.db_tables['job'] = pd.DataFrame({'id': pd.Series(dtype='int'),
                                              'source': pd.Series(dtype='str'), 
-                                             'source_files': pd.Series(dtype=object), #list of string
+                                             'source_files': pd.Series(dtype=object), #list of paths in staging
                                              'file_sizes': pd.Series(dtype=object),#list of integers
-                                             'progress': pd.Series(dtype='int'),
+                                             'progress': pd.Series(dtype='str'),
                                              'start_on': pd.Series(dtype=object), #parse to datetime
                                              'end_on': pd.Series(dtype=object), #parse to datetime
-                                             'source': pd.Series(dtype='str'), 
-                                             'status': pd.Series(dtype='str')})
+                                             'step': pd.Series(dtype='str'), 
+                                             'status': pd.Series(dtype='str'),
+                                             'dls_json': pd.Series(dtype=object)
+                                             })
         if os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/issues.pickle')):
             self.db_tables['issue'] = pd.read_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database/issues.pickle'))
         else:
@@ -79,9 +83,31 @@ class Storage(pykka.ThreadingActor):
             with open(os.path.join(os.getenv('PANDEM_HOME'), 'files', path), 'r') as f:
                 data_dict = json.load(f)
             return data_dict
+        if path.split('.')[-1] == "csv":
+            try:
+                with open(os.path.join(os.getenv('PANDEM_HOME'), 'files', path), 'rb') as f:
+                    bytes_data = BytesIO(f.read())
+                    return bytes_data
+            except FileNotFoundError:
+                return ''
+        else:
+            return ''
+    
 
+    def copy_files(self, src_paths, dest_paths):
+        if not os.path.isdir(os.path.join(os.getenv('PANDEM_HOME'), 'files', os.path.dirname(dest_paths[0]))):
+            os.makedirs(os.path.join(os.getenv('PANDEM_HOME'), 'files', os.path.dirname(dest_paths[0])))
+        for (src_path, dest_path) in zip(src_paths, dest_paths):
+                if src_path.split('/')[-1]=='10-09-2021.csv':
+                    print(f'file to copy src: {src_path}')
+                    print(f'file copied dest: {dest_path}')
+                shutil.copyfile(os.path.join(os.getenv('PANDEM_HOME'), 'files', src_path),
+                            os.path.join(os.getenv('PANDEM_HOME'), 'files', dest_path))  
+        
+            
+    
 
-    def list_files(self, path, match=None, recursive=False, exclude=['.git']):
+    def list_files(self, path, match=None, recursive=True, exclude=['.git']):
         files_paths = []
         if recursive:
             for (dirpath, dirnames, filenames) in os.walk(os.path.join(os.getenv('PANDEM_HOME'), 'files', path)):
@@ -90,13 +116,13 @@ class Storage(pykka.ThreadingActor):
                         dirnames.remove(dir)
                 files_paths += [os.path.join(dirpath, file) for file in filenames]
         else:
-            files_paths= os.listdir(os.path.join(os.getenv('PANDEM_HOME'), 'files', path))
-        files_names = [os.path.basename(file_path) for file_path in files_paths]
+            paths= os.listdir(os.path.join(os.getenv('PANDEM_HOME'), 'files', path))
+            files_paths = [file_path for file_path in paths if os.path.isfile(os.path.join(os.getenv('PANDEM_HOME'), 'files', path, file_path))]
         if match is not None:
-            matched_files = [{'path': path+'/'+file_name, 'name':file_name} for file_name in files_names if re.mach(match,file_name)] 
+            matched_files = [{'path': file_path.split('files/')[1], 'name':os.path.basename(file_path)} for file_path in files_paths if re.mach(match, os.path.basename(file_path))] 
             return matched_files
         else:
-            return [{'path': path+'/'+file_name, 'name':file_name} for file_name in files_names]
+            return [{'path': file_path.split('files/')[1], 'name':os.path.basename(file_path)} for file_path in files_paths]
        
         
     def delete_files(self, path, match):
@@ -113,6 +139,7 @@ class Storage(pykka.ThreadingActor):
             raise FileNotFoundError("folder {0} does not exist!".format(path))
         
 
+
     def write_db(self, record, db_class): 
         df = self.db_tables[db_class]
         if not 'id' in  record:
@@ -120,7 +147,11 @@ class Storage(pykka.ThreadingActor):
                 record['id'] = df.index.max()+1
             else:
                 record['id'] = 1
-        df.loc[record['id']] = record
+            df.at[int(record['id'])] = record
+        else:
+            for key, value in record.items():
+                df.at[int(record['id']), key] = value
+            
         self.db_tables[db_class] = df
         df.to_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle'))
         return record['id']
@@ -128,9 +159,12 @@ class Storage(pykka.ThreadingActor):
 
     def read_db(self, db_class, filter=None):
         df = self.db_tables[db_class]
-        if filter != None:
-            df = df.loc[df.apply(filter, axis = 1)]
-        return df
+        if df.shape[0] > 0:
+            if filter != None:
+                df = df.loc[df.apply(filter, axis = 1)]
+            return df
+        else:
+            return None
 
 
     def delete_db(self, db_class, filter=None):
