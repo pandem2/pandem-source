@@ -55,7 +55,7 @@ class Storage(pykka.ThreadingActor):
             self.db_tables['source'] = pd.DataFrame({'id': pd.Series(dtype='int'),
                                                      'name': pd.Series(dtype='str'), 
                                                      'repo': pd.Series(dtype='str'),
-                                                     #'subdirs': pd.Series(dtype=object), 
+                                                     'url_last_etag': pd.Series(dtype='str'), 
                                                      'git_last_commit': pd.Series(dtype='str')})        
         #send heartbeat to orchestrator that runs in background
         threading.Thread(target=self.send_heartbeat).start()

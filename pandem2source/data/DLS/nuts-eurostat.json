@@ -1,0 +1,34 @@
+{
+    "scope":{
+      "source":"nuts-eurostat",
+      "source_description":"",
+      "tags":["COVID-19", "WORLD", "COUNTRY"],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+        
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"url",
+        "url": "https://data.europa.eu/euodp/repository/ec/estat/nuts/nuts.rdf"
+      },
+      "format": {
+        "row":"rdf:RDF/rdf:Description"
+      }
+    },
+    "columns":[
+      {"name":"code", "variable":"location code", "xpath":"/rdf:Description/skos:notation"},
+      {"name":"parent", "variable":"location parent code", "xpath":"/rdf:Description/skos:broader/@rdf:resource", "find":"(?.*code/).*"},
+      {"name":"versions", "variable":"location versions", "xpath":"df:Description/skos:inScheme/@rdf:resource", "find":"(?.*version/).*"},
+      {"name":"status", "variable":"location status", "xpath":"/rdf:Description/adms:status/@rdf:resource", "find":"(?.*code/).*"}
+    ]
+  }

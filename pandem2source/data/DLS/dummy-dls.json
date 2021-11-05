@@ -1,0 +1,27 @@
+{
+    "scope":{
+      "source":"acquisition-url",
+      "source_description":"",
+      "tags":[],
+      "frequency":"",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+        
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"url",
+        "url": "https://raw.githubusercontent.com/bouthaina3/acquisition_test/main/README.md"
+      }
+      
+    }
+    
+  }
