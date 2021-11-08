@@ -21,14 +21,13 @@ class AcquisitionGITLocal(acquisition_git.AcquisitionGIT):
         # creating repo if it does no exists
         res = subprocess.run(['git', 'status'], cwd = working_dir)
         if res.returncode != 0 :
-            res = subprocess.run(["git", "init"])
-            res = subprocess.run(["git", "config", "user.name", "pandem2monitor"])
-            res = subprocess.run(["git", "config", "user.email", "pandem2monitor@pandem2.eu"])
-            res = subprocess.run(["git", "add", "."])
-            res = subprocess.run(["git", "commit", "-m" "Automatically initialized repo"])
+            res = subprocess.run(["git", "init"], cwd = working_dir)
+            res = subprocess.run(["git", "config", "user.name", "pandem2monitor"], cwd = working_dir)
+            res = subprocess.run(["git", "config", "user.email", "pandem2monitor@pandem2.eu"], cwd = working_dir)
+            res = subprocess.run(["git", "add", "."], cwd = working_dir)
+            res = subprocess.run(["git", "commit", "-m" "Automatically initialized repo"], cwd = working_dir, capture_output=True)
         else :
-            res = subprocess.run(["git", "add", "."])
-            res = subprocess.run(["git", "commit", "-m" "Committed new files"])
+            res = subprocess.run(["git", "add", "."], cwd = working_dir)
+            res = subprocess.run(["git", "commit", "-m" "Committed new files"], cwd = working_dir, capture_output=True)
             
         return super().new_files(dls, last_hash)
-        return {"hash":"", "files":[]}

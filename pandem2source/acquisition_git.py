@@ -27,36 +27,44 @@ class AcquisitionGIT(acquisition.Acquisition):
             # clonning repo is a repo remote url has been provided
             if("url" in dls['acquisition']['channel']):
               subprocess.run(['git', 'clone',  dls['acquisition']['channel']['url']], cwd=source_dir) 
-
+            
             #send all repo files in target subdirectories to the pipeline actor
             if "paths" in dls['acquisition']['channel']:
-                for subdir in dls['acquisition']['channel']['paths']:
-                    files_paths = self._storage_proxy.list_files(self.source_path(dls, repo_name, subdir)).get()
-                    files_to_pipeline.extend([file_path['path'] for file_path in files_paths ])
-            else: 
-              file_paths = self._storage_proxy.list_files(self.source_path(dls, repo_name)).get()
+              subdirs = dls['acquisition']['channel']['paths']
+            else :
+              subdirs = [""]
+
+            for subdir in subdirs:
+              files_paths = self._storage_proxy.list_files(self.source_path(dls, repo_name, subdir)).get()
               files_to_pipeline.extend([file_path['path'] for file_path in files_paths ])
 
         # the repo already exists and we know the last commit 
         else :             
-            subprocess.run(['git', 'pull',  'origin', dist_branch], cwd = repo_dir)
+            if("url" in dls['acquisition']['channel']):
+                subprocess.run(['git', 'pull',  'origin', dist_branch], cwd = repo_dir)
             
             #get updated files
-            for subdir in dls['acquisition']['channel']['paths']:
+            if "paths" in dls['acquisition']['channel']:
+              subdirs = dls['acquisition']['channel']['paths']
+            else:
+              subdirs = [""]
+            
+            for subdir in subdirs:
                 new_files_subdir = subprocess.run(['git', 'diff', '--name-only', last_hash, 'HEAD', subdir], 
                                             capture_output=True,
                                             text=True,
                                             cwd=repo_dir
                 )
                 if new_files_subdir.stdout != '':
-                    #print(f'new files: {new_files.stdout}')
                     new_files = new_files_subdir.stdout.rstrip().split('\n')
                     files_paths =  [self.source_path(dls, repo_name, new_file) for new_file in new_files]
                     files_to_pipeline.extend(files_paths)
             
-        new_commit = subprocess.run(['git', 'rev-parse', 'origin/'+dist_branch], 
+        new_commit = subprocess.run(['git', 'rev-parse', dist_branch], 
                         capture_output=True,
                         text=True,
                         cwd=repo_dir 
-        )                 
-        return {"hash":last_commit, files:files_to_pipeline}           
+        ).stdout
+        print(f"{len(files_to_pipeline)} new files found for {source_dir}")
+        ret = {"hash":new_commit, "files":files_to_pipeline}
+        return ret
