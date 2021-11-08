@@ -50,6 +50,7 @@ class Pipeline(pykka.ThreadingActor):
         #print(f'in pipeline sublit_file, job_record: {job_record}')
         job_id = self.storage_proxy.write_db(job_record, 'job').get()
         dest_files = [str(job_id)+'_'+'_'.join(path.split('/')) for path in paths]
+        print(f'dest file before copy: {dest_files}')
         #print(f'destination files: {dest_files}')
         dest_paths = [os.path.join('staging', dls['scope']['source'], dest_file) for dest_file in dest_files]
         paths_in_staging = self.storage_proxy.copy_files(paths, dest_paths)

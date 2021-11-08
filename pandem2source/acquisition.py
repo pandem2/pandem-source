@@ -130,7 +130,6 @@ class AcquisitionURL(Acquisition):
     def __init__(self, name, orchestrator_ref, storage_ref, settings): 
         super().__init__(name, orchestrator_ref, storage_ref, settings)
         
-
     def on_start(self):
         self.current_sources = dict()
         pipeline_ref = self.orchestrator_proxy.get_actor('pipeline').get()
@@ -140,7 +139,6 @@ class AcquisitionURL(Acquisition):
         threading.Thread(target=self.actor_loop).start()
 
     def add_datasource(self, dls):
-        
         source_path = os.path.join(os.getenv('PANDEM_HOME'), 'files/url', dls['scope']['source'])
         if not os.path.exists(source_path):
             os.makedirs(source_path)
@@ -149,6 +147,7 @@ class AcquisitionURL(Acquisition):
         #download content if doesn't exist
         url = dls['acquisition']['channel']['url']
         r = requests.get(url)#allow_redirects=True
+        ##monitor here
         file_path = os.path.join(source_path, '_'.join(url.split('//')[1].split('/')))
         print(f'file path is: {file_path}')
         if not os.path.exists(file_path):
@@ -156,7 +155,7 @@ class AcquisitionURL(Acquisition):
                 cont.write(r.content)
             #send downloaded file to the pipeline actor
           
-            job_id = self.pipeline_proxy.submit_files(dls, [file_path]).get()
+            job_id = self.pipeline_proxy.submit_files(dls, [file_path.split('files/')[1]]).get()
             print(f'job id for the dowloaded content is {job_id}')
            
             last_etag = r.headers.get('ETag')

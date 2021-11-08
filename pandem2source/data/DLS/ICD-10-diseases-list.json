@@ -1,9 +1,9 @@
 {
     "scope":{
-      "source":"nuts-eurostat",
+      "source":"icd-diseases",
       "source_description":"",
       "tags":[],
-      "frequency":"daily",
+      "frequency":"",
       "reference_user":"",
       "reporting_email":"",
       "globals":[

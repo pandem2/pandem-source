@@ -28,7 +28,7 @@ class Orchestration(pykka.ThreadingActor):
         dfreader_ref = dfreader.DataframeReader.start('dfreader', self.actor_ref, storage_ref, self.settings)
         self.current_actors['dfreader'] = {'ref': dfreader_ref}
         #launch format reader actor
-        ftreader_ref = formatreader.FormatReader.start('ftreader', self.actor_ref, storage_ref, self.settings)
+        ftreader_ref = formatreader.FormatReaderXML.start('ftreader', self.actor_ref, storage_ref, self.settings)
         self.current_actors['ftreader'] = {'ref': ftreader_ref}
         #launch pipeline actor
         pipeline_ref = pipeline.Pipeline.start('pipeline', self.actor_ref, storage_ref, ftreader_ref, dfreader_ref, self.settings)#ftreader_ref, dfreader_ref,

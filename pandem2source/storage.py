@@ -23,6 +23,8 @@ class Storage(pykka.ThreadingActor):
     def on_start(self):
         #create empty dataframes in self.db_tables if pickle files doesn't exist
         self.db_tables = dict()
+        test_bool = os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle'))
+        print(test_bool)
         if os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle')):
             self.db_tables['job'] = pd.read_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle'))
         else:
