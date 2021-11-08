@@ -2,8 +2,8 @@ import os
 import requests
 from . import acquisition
 
-class AcquisitionURL(acquisition.Acquisition):
 
+class AcquisitionURL(acquisition.Acquisition):
     def __init__(self, name, orchestrator_ref, settings): 
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings, channel = "url")
         
