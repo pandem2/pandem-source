@@ -3,24 +3,29 @@ import pykka
 import pandas as pd
 import json
 from . import orchestrator
+from . import worker
 import threading
 import time
 import shutil
 from io import BytesIO
 
 
-
-class Storage(pykka.ThreadingActor):
-
-
+class Storage(worker.Worker):
     def __init__(self, name, orchestrator_ref, settings): 
-        super(Storage, self).__init__()
-        self.name = name
-        self.orchestrator_proxy = orchestrator_ref.proxy()
-        self.settings = settings
-        
+        super().__init__(name, orchestrator_ref, settings)
      
+    def loop_actions(self):
+        pass
+
     def on_start(self):
+        super().on_start()
+        # creating base directories
+
+        if not os.path.exists(self.pandem_path("database")):
+           os.makedirs(self.pandem_path("database"))
+        if not os.path.exists(self.pandem_path("files")):
+           os.makedirs(self.pandem_path("files"))
+
         #create empty dataframes in self.db_tables if pickle files doesn't exist
         self.db_tables = dict()
         if os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle')):
@@ -54,19 +59,8 @@ class Storage(pykka.ThreadingActor):
         else:                                    
             self.db_tables['source'] = pd.DataFrame({'id': pd.Series(dtype='int'),
                                                      'name': pd.Series(dtype='str'), 
-                                                     'repo': pd.Series(dtype='str'),
-                                                     'url_last_etag': pd.Series(dtype='str'), 
-                                                     'git_last_commit': pd.Series(dtype='str')})        
-        #send heartbeat to orchestrator that runs in background
-        threading.Thread(target=self.send_heartbeat).start()
-
-
-    def send_heartbeat(self):
-        while True:
-            time.sleep(10)
-            self.orchestrator_proxy.get_heartbeat(self.name)
-        
-
+                                                     'last_hash': pd.Series(dtype='str')
+                                                    })        
     def write_file(self, path, name, bytes, mode): 
         ''' mode: 
             wb+  create file if it doesn't exist and open it in overwrite mode.
@@ -140,7 +134,8 @@ class Storage(pykka.ThreadingActor):
         
 
 
-    def write_db(self, record, db_class): 
+    def write_db(self, record, db_class):
+        print(f"writing {record}")
         df = self.db_tables[db_class]
         if not 'id' in  record:
             if df.shape[0] > 0:

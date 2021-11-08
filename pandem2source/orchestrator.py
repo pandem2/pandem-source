@@ -1,6 +1,6 @@
 import pykka
 from . import storage
-from . import acquisition
+from . import acquisition_url
 from . import pipeline
 from . import formatreader
 from . import dfreader
@@ -31,7 +31,7 @@ class Orchestration(pykka.ThreadingActor):
         ftreader_ref = formatreader.FormatReader.start('ftreader', self.actor_ref, storage_ref, self.settings)
         self.current_actors['ftreader'] = {'ref': ftreader_ref}
         #launch pipeline actor
-        pipeline_ref = pipeline.Pipeline.start('pipeline', self.actor_ref, storage_ref, ftreader_ref, dfreader_ref, self.settings)#ftreader_ref, dfreader_ref,
+        pipeline_ref = pipeline.Pipeline.start('pipeline', self.actor_ref, self.settings)
         pipeline_proxy = pipeline_ref.proxy()
         self.current_actors['pipeline'] = {'ref': pipeline_ref}
         #launch acquisition actor(s)
@@ -39,7 +39,7 @@ class Orchestration(pykka.ThreadingActor):
         for label in sources_labels:
             #launch only url acquisition
             if label == "url":
-                acquisition_ref = acquisition.AcquisitionURL.start('acquisition_'+label, self.actor_ref, storage_ref, self.settings)
+                acquisition_ref = acquisition_url.AcquisitionURL.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
                 acquisition_proxy = acquisition_ref.proxy()
                 dls_label = [dls for dls in dls_dicts if dls['acquisition']['channel']['name'] == label]
                 for dls in dls_label:
