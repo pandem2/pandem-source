@@ -135,7 +135,6 @@ class Storage(worker.Worker):
 
 
     def write_db(self, record, db_class):
-        print(f"writing {record}")
         df = self.db_tables[db_class]
         if not 'id' in  record:
             if df.shape[0] > 0:

@@ -23,17 +23,18 @@ class AcquisitionURL(acquisition.Acquisition):
         # If the file does not exists or if no commit is provided all files will be sent to the pipeline
         files_to_pipeline = []
         if not os.path.exists(file_path) or last_hash == "":
+            print(f"Downloading file {file_path}")
             with open (file_path,'wb') as cont:
                 cont.write(r.content)
             files_to_pipeline.extend([file_path])
 
         # the file already exists and we know the last etag 
         else:             
-            if current_etag != last_hask:
+            if current_etag != last_hash:
                 with open (file_path,'wb') as cont:
                     cont.write(r.content)
             files_to_pipeline.extend([file_path])
             
-        return {"last_hash":current_etag, files:files_to_pipeline}           
+        return {"hash":current_etag, "files":files_to_pipeline}           
 
         

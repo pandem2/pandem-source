@@ -12,7 +12,7 @@ class Pipeline(worker.Worker):
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings) 
        
     def loop_actions(self):
-        _self_proxy.process_jobs().get()
+        self._self_proxy.process_jobs().get()
 
     def on_start(self):
         super().on_start()

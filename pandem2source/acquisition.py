@@ -21,7 +21,7 @@ class Acquisition(worker.Worker):
         self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy()
 
     def loop_actions(self):
-        _self_proxy.monitor_source()
+        self._self_proxy.monitor_source()
     
     @abstractmethod
     def new_files(self, dls, last_hash):
@@ -58,8 +58,8 @@ class Acquisition(worker.Worker):
             
             #Getting new files if any
             nf = self.new_files(dls, last_hash)
-            files_to_pipeline = nf.files
-            new_hash = nf.hash
+            files_to_pipeline = nf["files"]
+            new_hash = nf["hash"]
         
             # If new files are found they will be send to the pipeline 
             if len(files_to_pipeline)>0:

@@ -49,4 +49,4 @@ class AcquisitionGIT(worker.Worker):
                         text=True,
                         cwd=repo_dir 
         )                 
-        return {"last_hash":last_commit, files:files_to_pipeline}           
+        return {"hash":last_commit, files:files_to_pipeline}           

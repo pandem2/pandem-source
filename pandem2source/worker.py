@@ -23,6 +23,7 @@ class Worker(pykka.ThreadingActor):
     def actor_loop(self):
         while True:
             self.send_heartbeat()
+            self.loop_actions()
             time.sleep(20)
 
     def pandem_path(self, *args):
