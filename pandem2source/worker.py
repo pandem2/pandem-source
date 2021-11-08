@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod, ABCMeta
 import pykka
-import subprocess
 import os
 import time
 import threading
