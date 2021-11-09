@@ -16,6 +16,7 @@ class Pipeline(worker.Worker):
         self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._ftreader_proxy = self._orchestrator_proxy.get_actor('ftreader').get().proxy()
         self._dfreader_proxy = self._orchestrator_proxy.get_actor('dfreader').get().proxy()
+        #self._standardizer_proxy = self._orchestrator_proxy.get_actor('standardizer').get().proxy()
         
         self.job_steps = dict()
         self.job_steps['read_format_started'] = []

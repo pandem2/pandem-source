@@ -4,6 +4,7 @@ from . import acquisition_url
 from . import pipeline
 from . import formatreader
 from . import dfreader
+from . import standardizer
 import datetime
 import os
 
@@ -36,6 +37,9 @@ class Orchestration(pykka.ThreadingActor):
         self.current_actors['pipeline'] = {'ref': pipeline_ref}
         #launch acquisition actor(s)
         sources_labels = set([dls['acquisition']['channel']['name'] for dls in dls_dicts])
+        #launch standardizer actor
+        standardizer_ref = standardizer.Standardizer.start('standardizer', self.actor_ref, storage_ref, self.settings)
+        self.current_actors['standardizer'] = {'ref': standardizer_ref}
         for label in sources_labels:
             #launch only url acquisition
             if label == "url":
