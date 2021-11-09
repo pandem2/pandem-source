@@ -16,7 +16,7 @@ class Pipeline(worker.Worker):
         self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._ftreader_proxy = self._orchestrator_proxy.get_actor('ftreader').get().proxy()
         self._dfreader_proxy = self._orchestrator_proxy.get_actor('dfreader').get().proxy()
-        #self._standardizer_proxy = self._orchestrator_proxy.get_actor('standardizer').get().proxy()
+        self._standardizer_proxy = self._orchestrator_proxy.get_actor('standardizer').get().proxy()
         
         self.job_steps = dict()
         self.job_steps['read_format_started'] = []
@@ -57,7 +57,6 @@ class Pipeline(worker.Worker):
         #print(f'job record for this source: {source_name} that will be added to job_steps[submitted_ended] is: {job_record}')
         self.job_steps['submitted_ended'].append(job_record)
         return job_id
-
 
     def read_format_end(self, path, df): #job_id, dls, 
         job = [element for element in self.job_steps['read_format_started'] if path in element['source_files']][0]
