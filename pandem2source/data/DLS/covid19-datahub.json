@@ -30,9 +30,9 @@
       }
     },
     "columns":[
-      {"name":"date", "variable":"reporting_date"},
-      {"name":"confirmed", "variable":"confirmed_cases"},
-      {"name":"iso_alpha_2", "variable":"iso_country_code2"},
-      {"name":"key_nuts", "variable":"location_code"}
+      {"name":"date", "variable":"reporting-date", ""},
+      {"name":"confirmed", "variable":"confirmed-cases"},
+      {"name":"iso_alpha_2", "variable":"iso-country-code2"},
+      {"name":"key_nuts", "variable":"location-code"}
     ]
 }
