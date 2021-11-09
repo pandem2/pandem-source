@@ -30,7 +30,12 @@ def main(a):
     "-v", 
     "--variables", 
     action="store_true", 
-    help="Whether to rebuild variables based on las system defaults", 
+    help="Whether to rebuild variables based on last system defaults", 
+  )
+  reset_parser.add_argument(
+    "--covid19-datahub", 
+    action="store_true", 
+    help="Reset covid19-datahub datasource to system defaults", 
   )
   
   reset_parser.set_defaults(func = do_reset)
@@ -66,6 +71,8 @@ def do_start(args, *other):
 def do_reset(args, *other):
   if args.variables:
     admin.reset_variables(in_home = True)
+  if args.covid19_datahub:
+    admin.reset_source("covid19-datahub")
      
 
 if __name__ == "__main__":
