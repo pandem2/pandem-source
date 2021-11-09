@@ -23,8 +23,9 @@ class Pipeline(worker.Worker):
         self.job_steps['read_format_end'] = []
         self.job_steps['submitted_ended'] = []
         self.job_df = defaultdict(dict)
+        last_step = "read_format_end" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
-                                          filter= lambda x: x['status']=='in progress' and x['step']!='submitted_started'
+                                          filter= lambda x: x['status']=='in progress' and x['step']!='submitted_started' and x['step']!=last_step 
                                          ).get()
         if jobs is not None:
             self.job_steps['submitted_ended'] = jobs.to_dict(orient='records')   
@@ -66,8 +67,8 @@ class Pipeline(worker.Worker):
             job_id = self._storage_proxy.write_db(job, 'job').get()
             self.job_steps['read_format_started'].remove(job)
             self.job_steps['read_format_end'].append(job)
-            for key, value in self.job_df[job['id']].items():
-                print(f'a file path for the job id: {job["id"]}: {key}')
+            #for key, value in self.job_df[job['id']].items():
+                #print(f'a file path for the job id: {job["id"]}: {key}')
         return job['id']
 
 

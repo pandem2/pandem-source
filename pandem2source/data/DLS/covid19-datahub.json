@@ -1,0 +1,38 @@
+{
+    "scope":{
+      "source":"covid19-datahub",
+      "source_description":"Unified dataset by collecting worldwide fine-grained case data, merged with exogenous variables helpful for a better understanding of COVID-19.",
+      "tags":["covid-19", "world", "countrt", "nuts-3"],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+        
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"git-local",
+        "changed_by": {"script_type":"R", "script_name":"download-covid19-datahub"}
+      },
+      "format": {
+        "name":"csv",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"MM/DD/YYYY HH:mm:ss",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"date", "variable":"reporting-date", ""},
+      {"name":"confirmed", "variable":"confirmed-cases"},
+      {"name":"iso_alpha_2", "variable":"iso-country-code2"},
+      {"name":"key_nuts", "variable":"location-code"}
+    ]
+}
