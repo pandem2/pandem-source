@@ -27,7 +27,6 @@ class FormatReader(pykka.ThreadingActor):
                 df = pd.read_csv(file_bytes)
                 pipeline_proxy = self.orchestrator_proxy.get_actor('pipeline').get().proxy()
                 job_id = pipeline_proxy.read_format_end(file_path, df).get() #dls['source_name'], 
-
         
 
     def send_heartbeat(self):

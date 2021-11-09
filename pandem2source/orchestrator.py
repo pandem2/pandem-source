@@ -1,6 +1,9 @@
 import pykka
 from . import storage
 from . import acquisition_url
+from . import acquisition_git
+from . import acquisition_git_local
+from . import script_executor
 from . import pipeline
 from . import formatreader
 from . import dfreader
@@ -32,20 +35,29 @@ class Orchestration(pykka.ThreadingActor):
         self.current_actors['ftreader'] = {'ref': ftreader_ref}
         #launch pipeline actor
         pipeline_ref = pipeline.Pipeline.start('pipeline', self.actor_ref, self.settings)
-        pipeline_proxy = pipeline_ref.proxy()
         self.current_actors['pipeline'] = {'ref': pipeline_ref}
+        #launch script executor reader
+        script_executor_ref = script_executor.ScriptExecutor.start('script_executor', self.actor_ref, self.settings)
+        self.current_actors['script_executor'] = {'ref': script_executor_ref}
         #launch acquisition actor(s)
         sources_labels = set([dls['acquisition']['channel']['name'] for dls in dls_dicts])
         for label in sources_labels:
             #launch only url acquisition
             if label == "url":
                 acquisition_ref = acquisition_url.AcquisitionURL.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
-                acquisition_proxy = acquisition_ref.proxy()
-                dls_label = [dls for dls in dls_dicts if dls['acquisition']['channel']['name'] == label]
-                for dls in dls_label:
-                    acquisition_proxy.add_datasource(dls)
-                self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label}
-        print('in orchestrator on-start')
+
+            elif label == "git":
+                acquisition_ref = acquisition_git.AcquisitionGIT.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+            elif label == "git-local":
+                acquisition_ref = acquisition_git_local.AcquisitionGITLocal.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+            else:
+              raise NotImplementedError(f"The acquisition channel {label} has not been implemented")
+
+            acquisition_proxy = acquisition_ref.proxy()
+            dls_label = [dls for dls in dls_dicts if dls['acquisition']['channel']['name'] == label]
+            for dls in dls_label:
+                acquisition_proxy.add_datasource(dls)
+            self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label}
 
 
     def get_heartbeat(self, actor_name):
