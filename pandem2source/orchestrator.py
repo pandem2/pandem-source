@@ -63,7 +63,7 @@ class Orchestration(pykka.ThreadingActor):
             self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label} 
 
         #get_df=dfreader.DataframeReader.get_df()
-        ref_alc=standardizer.Standardizer.get_variables()
+        #ref_alc=standardizer_ref.proxy().
         print ("audrey")
 
     def get_heartbeat(self, actor_name):
