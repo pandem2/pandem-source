@@ -43,7 +43,7 @@ class Orchestration(pykka.ThreadingActor):
         #launch acquisition actor(s)
         sources_labels = set([dls['acquisition']['channel']['name'] for dls in dls_dicts])
         #launch standardizer actor
-        standardizer_ref = standardizer.Standardizer.start('standardizer', self.actor_ref, storage_ref, self.settings)
+        standardizer_ref = standardizer.Standardizer.start('standardizer', self.actor_ref, self.settings)
         self.current_actors['standardizer'] = {'ref': standardizer_ref}
         for label in sources_labels:
             #launch only url acquisition
@@ -61,8 +61,11 @@ class Orchestration(pykka.ThreadingActor):
             for dls in dls_label:
                 acquisition_proxy.add_datasource(dls)
             self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label} 
-        
-        
+
+        #get_df=dfreader.DataframeReader.get_df()
+        ref_alc=standardizer.Standardizer.get_variables()
+        print ("audrey")
+
     def get_heartbeat(self, actor_name):
         now = datetime.datetime.now()
         self.current_actors[actor_name]['heartbeat'] = now

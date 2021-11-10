@@ -12,21 +12,9 @@ class Standardizer(worker.Worker):
         print(f'here in {self.name} __init__')
 
     def on_start(self):
-        threading.Thread(target=self.actor_loop).start()
         self._storage_proxy=self._orchestrator_proxy.get_actor('storage').get().proxy()
         print(f'here in {self.name} on-start')
-
-    def read_df_start(self, dls):
-        pass
-        
-    def send_heartbeat(self):
-        self._orchestrator_proxy.get_heartbeat(self.name)    
-
-    def actor_loop(self):
-        while True:
-            self.send_heartbeat()
-            time.sleep(20)
-
+          
     def get_variables(self): 
         var_list=self._storage_proxy.read_files('variables/variables.json').get()
         for var in var_list: 
@@ -40,8 +28,17 @@ class Standardizer(worker.Worker):
         return dic_variables
 
     def get_referential(self, variables_name):
-        pass
+        #variable_name = geo or diseases or country_code
+        var_geo=self._storage_proxy.read_files('variables/geo/geo_sample.json').get()
+        var_diseases=self._storage_proxy.read_files('variables/diseases/diseases_sample.json').get()
+        var_country_code=self._storage_proxy.read_files('variables/country_code/country_code_sample.json').get()
+        dic_ref=var_diseases
+        return dic_ref
 
     def standardize(self, tuples_to_validate, file_name, job_id):
+        #for var in tuples_to_validate :
+        #    if var[''] in self.get_referential('geo').values()
+        #    if var[''] in self.get_referential('diseases').values()
+        #    if var[''] in self.get_referential('country_code').values()
         pass
-
+    
