@@ -13,15 +13,13 @@ class AcquisitionURL(acquisition.Acquisition):
         file_path = self.source_path(dls, '_'.join(url.split('//')[1].split('/')))
         r = requests.get(url)#allow_redirects=True
         current_etag = r.headers.get('ETag')
-        
-        # If the file does not exists or if no commit is provided all files will be sent to the pipeline
+        # If the file does not exist or if no commit is provided all files will be sent to the pipeline
         files_to_pipeline = []
         if not os.path.exists(file_path) or last_hash == "":
             print(f"Downloading file {file_path}")
             with open (file_path,'wb') as cont:
                 cont.write(r.content)
             files_to_pipeline.extend([file_path])
-
         # the file already exists and we know the last etag 
         else:             
             if current_etag != last_hash:

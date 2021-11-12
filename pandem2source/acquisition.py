@@ -28,9 +28,9 @@ class Acquisition(worker.Worker):
        source_dir = self.source_path(dls)
        if not os.path.exists(source_dir):
            os.makedirs(source_dir)
-
        # registering new source if not already on the source table
        find_source = self._storage_proxy.read_db('source', lambda x: x['name']==dls['scope']['source']).get()
+       print(f'find_source is {find_source}')
        if find_source is None  or len(find_source["id"]) == 0:
             id_source = self._storage_proxy.write_db(
                  {
@@ -44,17 +44,18 @@ class Acquisition(worker.Worker):
        # updating the internal variable current sources
        self.current_sources[id_source] = dls              
 
-
     def monitor_source(self): 
         # Iterating over all registered sources looking for new files
         for source_id, dls in self.current_sources.items():
             last_hash = self._storage_proxy.read_db('source', lambda x: x['id']==source_id).get()['last_hash'].values[0]
-            
+            print(f'last_hash for source {dls} is {last_hash}')
             #Getting new files if any
             nf = self.new_files(dls, last_hash)
             files_to_pipeline = nf["files"]
+            print(f'files to pipeline: {files_to_pipeline}')
             new_hash = nf["hash"]
-        
+            print(f'new hash is : {new_hash}')
+
             # If new files are found they will be send to the pipeline 
             if len(files_to_pipeline)>0:
                 # Sending files to the pipeline
@@ -62,8 +63,8 @@ class Acquisition(worker.Worker):
                 # Storing the new hash into the db
                 self._storage_proxy.write_db(
                     {'name': dls['scope']['source'],
-                      'last_hash': new_hash,
-                      'id': source_id
+                     'last_hash': new_hash,
+                     'id': source_id
                     }, 
                     'source'
                 ).get()   
