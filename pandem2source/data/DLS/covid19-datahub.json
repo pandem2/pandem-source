@@ -13,7 +13,7 @@
       "update_scope":[
         {"variable":"source"},
         {"variable":"reporting_date"}
-        
+
       ]
     },
     "acquisition":{
@@ -30,7 +30,7 @@
       }
     },
     "columns":[
-      {"name":"date", "variable":"reporting-date", ""},
+      {"name":"date", "variable":"reporting-date"},
       {"name":"confirmed", "variable":"confirmed-cases"},
       {"name":"iso_alpha_2", "variable":"iso-country-code2"},
       {"name":"key_nuts", "variable":"location-code"}

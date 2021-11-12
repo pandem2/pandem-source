@@ -27,9 +27,30 @@ class Orchestration(pykka.ThreadingActor):
         source_files = storage_ref.proxy().list_files('source-definitions').get()
         # read json dls files into dicts
         dls_dicts = [storage_ref.proxy().read_files(file_name['path']).get() for file_name in source_files]
+
         #launch dataframe reader acor
+        #Comments these 2 lines to test the get_df function
         dfreader_ref = dfreader.DataframeReader.start('dfreader', self.actor_ref, storage_ref, self.settings)
         self.current_actors['dfreader'] = {'ref': dfreader_ref}
+
+
+        get_df=dfreader.DataframeReader.get_df()
+        #print(get_df)
+        #print(type(get_df)) # pandas.df
+        get_dls=dfreader.DataframeReader.get_dls()
+
+        print(get_dls)
+        #print(type(get_dls)) # dict
+        get_var=dfreader.DataframeReader.get_variables()
+        #print(get_var)
+        #print(type(get_var)) # => liste (--> FOD change pour que le type passe à dict soon)
+        df2var=dfreader.DataframeReader.df2var(get_df,get_dls,get_var)
+
+
+#TO BE CONTINUED
+        #df2var=dfreader.DataframeReader.df2var()
+
+
         #launch format reader actor
         ftreader_ref = formatreader.FormatReader.start('ftreader', self.actor_ref, storage_ref, self.settings)
         self.current_actors['ftreader'] = {'ref': ftreader_ref}
