@@ -94,9 +94,6 @@ class Storage(worker.Worker):
                 shutil.copyfile(os.path.join(os.getenv('PANDEM_HOME'), 'files', src_path),
                             os.path.join(os.getenv('PANDEM_HOME'), 'files', dest_path))  
         
-            
-    
-
     def list_files(self, path, match=None, recursive=True, exclude=['.git']):
         files_paths = []
         if recursive:

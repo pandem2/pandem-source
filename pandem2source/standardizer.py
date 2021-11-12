@@ -44,17 +44,27 @@ class Standardizer(worker.Worker):
         return referentiel
 
     #def standardize(self, tuples_to_validate, file_name, job_id):
-    def standardize(self):
+    def standardize(self,file_name, job_id):
         #tuples_to_validate = tuples
-        tuples=self._storage_proxy.read_files('variables/covid19-datahub-sample-tuples.json').get()
-        for one_tuple in tuples['tuples']: 
-            print(one_tuple['attrs'])
-            for attr in one_tuple['attrs']:
-                print(attr)
+        #file_name = nom du référentiel à recupérer
+        #job_id = nom de l'attribu à tester
 
-        #for var in tuples_to_validate :
-        #    if var[''] in self.get_referential('geo').values()
-        #    if var[''] in self.get_referential('diseases').values()
-        #    if var[''] in self.get_referential('country_code').values()
+        tuples=self._storage_proxy.read_files('variables/covid19-datahub-sample-tuples.json').get()
+        referential=self.get_referential(file_name)
+        list_ref=[]
+
+        for ref in referential: 
+            if ref['attr'] not in list_ref:
+                list_ref.append(ref['attr'])
+            else:
+                pass
+
+        for var in tuples['tuples']: 
+            one_tuple=var['attrs'][job_id]
+            if one_tuple in list_ref: 
+                print(one_tuple,'existe')
+            else:
+                #Création d'un objet issue
+                print('la maladie ', one_tuple, 'nexiste pas')
         
         return None
