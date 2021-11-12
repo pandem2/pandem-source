@@ -27,12 +27,20 @@ class Standardizer(worker.Worker):
                     dic_variables[alias['alias']]=alias_var
         return dic_variables
 
-    def get_referential(self, variables_name):
+    def get_referential(self):
+        print("audrey")
         #variable_name = geo or diseases or country_code
         var_geo=self._storage_proxy.read_files('variables/geo/geo_sample.json').get()
         var_diseases=self._storage_proxy.read_files('variables/diseases/diseases_sample.json').get()
         var_country_code=self._storage_proxy.read_files('variables/country_code/country_code_sample.json').get()
-        dic_ref=var_diseases
+        
+        for var in var_geo: 
+            dic_ref['geo']=var
+        for var in var_diseases: 
+            dic_ref['diseases']=var
+        for var in var_country_code: 
+            dic_ref['country_code']=va
+
         return dic_ref
 
     def standardize(self, tuples_to_validate, file_name, job_id):

@@ -21,12 +21,6 @@ def main(a):
     help="Whether to output debugging messages to the console", 
   )
   
-  start_parser.add_argument(
-    "--no-acquire", 
-    action="store_true", 
-    help="Whether to output debugging messages to the console", 
-  )
-  
   start_parser.set_defaults(func = do_start)
   
   # setup 
@@ -58,11 +52,6 @@ def main(a):
     args.func(args, parser)
 
 # handlers
-def do_start_dev(debug = True, no_acquire = False):
-  from types import SimpleNamespace
-  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":True}))
-
-# handlers
 def do_start(args, *other):
   if args.debug:
     root = logging.getLogger()
@@ -77,8 +66,7 @@ def do_start(args, *other):
   defaults = os.path.join(pkg_dir, "data/defaults.yml") 
   with open(defaults, "r") as f:
       settings = yaml.safe_load(f)
-  orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire)
-  return orchestrator_ref.proxy()
+  orchestrator_ref = Orchestration.start(settings)
   
 def do_reset(args, *other):
   if args.variables:
@@ -89,5 +77,3 @@ def do_reset(args, *other):
 
 if __name__ == "__main__":
   main(sys.argv[1] if len(sys.argv)>1 else None)
-
-
