@@ -77,10 +77,6 @@ class Orchestration(pykka.ThreadingActor):
                     acquisition_proxy.add_datasource(dls)
                 self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label} 
         
-        print('audrey')
-        alc=standardizer_ref.proxy().get_reference().get()
-        #print(alc)
-
     def get_heartbeat(self, actor_name):
         now = datetime.datetime.now()
         self.current_actors[actor_name]['heartbeat'] = now

@@ -27,26 +27,34 @@ class Standardizer(worker.Worker):
                     dic_variables[alias['alias']]=alias_var
         return dic_variables
 
-    def get_referential(self):
-        print("audrey")
-        #variable_name = geo or diseases or country_code
-        var_geo=self._storage_proxy.read_files('variables/geo/geo_sample.json').get()
-        var_diseases=self._storage_proxy.read_files('variables/diseases/diseases_sample.json').get()
-        var_country_code=self._storage_proxy.read_files('variables/country_code/country_code_sample.json').get()
-        
-        for var in var_geo: 
-            dic_ref['geo']=var
-        for var in var_diseases: 
-            dic_ref['diseases']=var
-        for var in var_country_code: 
-            dic_ref['country_code']=va
+    def get_referential(self,variable_name):
+        #variable_name = nom du dossier = geo or diseases or country_code
+        list_files=[]
+        referentiel=[]
+        path=os.path.join(os.getenv('PANDEM_HOME'), 'files/variables/', variable_name)
+        if os.path.isdir(path):
+            list_files=self._storage_proxy.list_files(path).get()
+            for file in list_files:
+                var_list=self._storage_proxy.read_files(file['path']).get()
+                for var in var_list['tuples']:
+                    referentiel.append(var)
+        else: 
+            return None
 
-        return dic_ref
+        return referentiel
 
-    def standardize(self, tuples_to_validate, file_name, job_id):
+    #def standardize(self, tuples_to_validate, file_name, job_id):
+    def standardize(self):
+        #tuples_to_validate = tuples
+        tuples=self._storage_proxy.read_files('variables/covid19-datahub-sample-tuples.json').get()
+        for one_tuple in tuples['tuples']: 
+            print(one_tuple['attrs'])
+            for attr in one_tuple['attrs']:
+                print(attr)
+
         #for var in tuples_to_validate :
         #    if var[''] in self.get_referential('geo').values()
         #    if var[''] in self.get_referential('diseases').values()
         #    if var[''] in self.get_referential('country_code').values()
-        pass
-    
+        
+        return None
