@@ -52,7 +52,7 @@ class Acquisition(worker.Worker):
             #Getting new files if any
             nf = self.new_files(dls, last_hash)
             files_to_pipeline = nf["files"]
-            print(f'files to pipeline: {files_to_pipeline}')
+            #print(f'files to pipeline: {files_to_pipeline}')
             new_hash = nf["hash"]
             print(f'new hash is : {new_hash}')
 

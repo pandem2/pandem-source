@@ -19,14 +19,18 @@ class Pipeline(worker.Worker):
         self._frxml_proxy = self._orchestrator_proxy.get_actor('ftreader_xml').get().proxy()
         self._frcsv_proxy = self._orchestrator_proxy.get_actor('ftreader_csv').get().proxy()
         self._unarchive_proxy = self._orchestrator_proxy.get_actor('unarchiver').get().proxy()
+        self._dfreader_proxy = self._orchestrator_proxy.get_actor('dfreader').get().proxy()
+        self._standardizer_proxy = self._orchestrator_proxy.get_actor('standardizer').get().proxy()
         self.job_steps = dict()
         self.job_steps['read_format_started'] = []
         self.job_steps['read_format_ended'] = []
         self.job_steps['submitted_ended'] = []
         self.job_steps['decompress_ended'] = []
         self.job_df = defaultdict(dict)
+        last_step = "read_format_end" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
-                                          filter=lambda x : x['status']=='in progress' and x['step']!='submitted_started').get()
+                                          filter= lambda x: x['status']=='in progress' and x['step']!='submitted_started' and x['step']!=last_step 
+                                         ).get()
         if jobs is not None:
             self.job_steps['submitted_ended'] = jobs.to_dict(orient='records')   
 
@@ -36,31 +40,39 @@ class Pipeline(worker.Worker):
     def loop_actions(self):
         self._self_proxy.process_jobs()
 
+    def send_to_readformat(self, file_path, job):
+        file_ext = os.path.splitext(file_path)[1]
+        print(f'file extenstion is: {file_ext}')
+        if file_ext == '.csv':
+            self._frcsv_proxy.read_format_start(job, file_path)
+        elif file_ext == '.rdf':
+            self._frxml_proxy.read_format_start(job, file_path)
+        elif file_ext == '.xml':
+            self._frxml_proxy.read_format_start(job, file_path)
+        else:
+            raise RuntimeError('unsupported format')
+
     def process_jobs(self):
         if len(self.job_steps['submitted_ended'])>0:
             for job in self.job_steps['submitted_ended']:
                 submitted_files = job['source_files']
-                #here send only csv files
-                for file_path in submitted_files:
-                    file_ext = os.path.splitext(file_path)[1]
-                    if file_ext == '.csv':
-                        self._frcsv_proxy.read_format_start(job, file_path)
-                    if file_ext == '.xml':
-                        self._frxml_proxy.read_format_start(job, file_path)
-                job['step'] = 'read_format_started'
-                #print(f'job is :{job}')
-                job_id = self._storage_proxy.write_db(job, 'job').get()
-                self.job_steps['read_format_started'].append(job) 
+                if "decompress" not in job['dls_json']['acquisition'].keys():#rplace the name
+                    
+                    for file_path in submitted_files:
+                        self.send_to_readformat(file_path, job)
+                    job['step'] = 'read_format_started'
+                    job_id = self._storage_proxy.write_db(job, 'job').get()
+                    self.job_steps['read_format_started'].append(job) 
+                else:
+                    
+                    self._unarchive_proxy.unarchive(job)#.get()
             self.job_steps['submitted_ended'] = []    
         if len(self.job_steps['decompress_ended'])>0:
             for job in self.job_steps['decompress_ended']:
                 submitted_files = job['source_files']
+                print(f'decompressed file: {submitted_files}')
                 for file_path in submitted_files:
-                    file_ext = os.path.splitext(file_path)[1]
-                    if file_ext == '.csv':
-                        self._frcsv_proxy.read_format_start(job, file_path)
-                    if file_ext == '.xml':
-                        self._frxml_proxy.read_format_start(job, file_path)
+                    self.send_to_readformat(file_path, job)
                 job['step'] = 'read_format_started'
                 job_id = self._storage_proxy.write_db(job, 'job').get()
                 self.job_steps['read_format_started'].append(job)
@@ -80,41 +92,45 @@ class Pipeline(worker.Worker):
         job_id = self._storage_proxy.write_db(job_record, 'job').get()
         #dest_files = [str(job_id)+'_'+'_'.join(path.split('/')) for path in paths]
         dest_files = [str(job_id)+'_'+'_'.join(path.split('files/')[1].split('/')) for path in paths]
-        print(f'dest file before copy: {dest_files}')
+       # print(f'dest file before copy: {dest_files}')
         #print(f'destination files: {dest_files}')
         paths_in_staging = [self.staging_path(dls, file) for file in dest_files]
+        #print(f'source file before copy: {paths[0]}')
+        #print(f'dest file : {paths_in_staging[0]}')
         self._storage_proxy.copy_files(paths, paths_in_staging)
         job_id = self._storage_proxy.write_db({'id': job_id,
                                               'source_files': paths_in_staging,
                                               'step': 'submitted_ended'}, 
                                              'job').get()
         job_submitted = self._storage_proxy.read_db('job', filter= lambda x: x['id']==job_id).get().to_dict(orient='records')[0]
+
         self.job_steps['submitted_ended'].append(job_submitted)
-        if "decompress" in dls["acquisition"].keys():
-            self.job_steps['submitted_ended'].remove(job_submitted)
-            self._unarchive_proxy.unarchive(job_submitted).get()
-            job_decompressed = self._storage_proxy.read_db('job', filter= lambda x: x['id']==job_id).get().to_dict(orient='records')[0]
-            self.job_steps['decompress_ended'].append(job_decompressed)
+        
     
     def decompress_end(self, job, bytes): 
-        dest_files = [str(job['id'])+'_'+'_'.join(file.split('/')) for file in job['dls_json']["acquisition"]["decompress"]["path"]]
+        print('here in decompress')
+        dest_files = [str(int(job['id']))+'_'+'_'.join(file.split('/')) for file in job['dls_json']["acquisition"]["decompress"]["path"]]
         paths_in_staging = [self.staging_path(job['dls_json'], file) for file in dest_files]
+        print(f'path after decompress: {paths_in_staging}')
         for path, byte in zip(paths_in_staging, bytes):
-            self._storage_proxy.write_file(path, byte, 'wb+')
+            self._storage_proxy.write_file(path, byte, 'wb+').get()
         job_id = self._storage_proxy.write_db({'id': job['id'],
+                                                'source_files': paths_in_staging,
                                               'step': 'decompress_ended'},
                                              'job').get()
+        job_decompressed = self._storage_proxy.read_db('job', filter= lambda x: x['id']==job_id).get().to_dict(orient='records')[0]
+        self.job_steps['decompress_ended'].append(job_decompressed)
+
 
     def read_format_end(self, job, path, df): 
-
-        #job = [element for element in self.job_steps['read_format_started'] if path in element['source_files']][0]
         job_id = int(job['id'])
-        print(f'df head for file: {path} is : {df.head()}')
+        print(f'df head for file: {path} is : {df.head(10)}')
         self.job_df[job_id][path] = df
-        job['step'] = 'read_format_end'
-        job_id = self._storage_proxy.write_db(job, 'job').get()
-        self.job_steps['read_format_started'].remove(job)
-        self.job_steps['read_format_ended'].append(job)
+        if len(self.job_df[job['id']]) == len(job['source_files']):
+            job['step'] = 'read_format_end'
+            job_id = self._storage_proxy.write_db(job, 'job').get()
+            self.job_steps['read_format_started'].remove(job)
+            self.job_steps['read_format_ended'].append(job)
         # for key, value in self.job_df[job_id].items():
         #     print(f'a file path for the job id: {}: {key}')
         
@@ -123,6 +139,5 @@ class Pipeline(worker.Worker):
   
 
 
- 
 
 

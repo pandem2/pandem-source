@@ -26,6 +26,7 @@
       }
     },
     "columns":[
+      
       {"name":"code", "variable":"location code", "xpath":"skos:notation/text()"},
       {"name":"parent", "variable":"location parent code", "xpath":"skos:broader/@rdf:resource", "find":"([^/]+)/?$"},
       {"name":"versions", "variable":"location versions", "xpath":"skos:inScheme/@rdf:resource", "find":"([^/]+)/?$"},

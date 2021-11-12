@@ -14,9 +14,21 @@ class FormatReader(worker.Worker):
 
     def loop_actions(self):
         pass
-    
-    @abstractmethod
-    def read_format_start(self, path, dls):
-        pass
 
+    @abstractmethod
+    def read_df(self, file_path, dls):
+        pass
+    
+    def read_format_start(self, job, file_path):
+        df = self.read_df(file_path, job['dls_json'])###############
+        self._pipeline_proxy.read_format_end(job, file_path, df).get()
+
+    # def read_format_start(self, file_path, dls):
+    #     file_bytes = self.storage_proxy.read_files(file_path).get()
+    #     if file_bytes != '':
+    #         if dls['acquisition']['format']['name']=='csv':
+    #             df = pd.read_csv(file_bytes)
+    #             pipeline_proxy = self.orchestrator_proxy.get_actor('pipeline').get().proxy()
+    #             job_id = pipeline_proxy.read_format_end(file_path, df).get() #dls['source_name'], 
+        
 
