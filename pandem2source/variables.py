@@ -26,4 +26,19 @@ class Variables(worker.Worker):
                       dic_variables[alias['alias']]=alias_var
         return dic_variables
 
+    def get_referential(self,variable_name):
+        list_files=[]
+        referentiel=[]
+        path=os.path.join(os.getenv('PANDEM_HOME'), 'files/variables/', variable_name)
+        if os.path.isdir(path):
+            list_files=self._storage_proxy.list_files(path).get()
+            for file in list_files:
+                var_list=self._storage_proxy.read_files(file['path']).get()
+                for var in var_list['tuples']:
+                    referentiel.append(var)
+        else: 
+            return None
+
+        return referentiel
+
 

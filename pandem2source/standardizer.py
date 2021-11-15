@@ -12,21 +12,12 @@ class Standardizer(worker.Worker):
         print(f'here in {self.name} __init__')
 
     def on_start(self):
-        threading.Thread(target=self.actor_loop).start()
         self._storage_proxy=self._orchestrator_proxy.get_actor('storage').get().proxy()
         print(f'here in {self.name} on-start')
+        self._varaibles_proxy=self._orchestrator_proxy.get_actor('variables').get().proxy()
+        print(f'here in {self.name} on-start')
 
-    def read_df_start(self, dls):
-        pass
-        
-    def send_heartbeat(self):
-        self._orchestrator_proxy.get_heartbeat(self.name)    
-
-    def actor_loop(self):
-        while True:
-            self.send_heartbeat()
-            time.sleep(20)
-
+          
     def get_variables(self): 
         var_list=self._storage_proxy.read_files('variables/variables.json').get()
         for var in var_list: 
@@ -39,9 +30,10 @@ class Standardizer(worker.Worker):
                     dic_variables[alias['alias']]=alias_var
         return dic_variables
 
-    def get_referential(self, variables_name):
-        pass
-
-    def standardize(self, tuples_to_validate, file_name, job_id):
+    #def standardize(self, tuples_to_validate, file_name, job_id):
+    def standardize(self,file_name, job_id):
+        #tuples_to_validate = tuples fichier passé en parametre  
+        #file_name = nom du référentiel à recupérer
+        #job_id = nom de l'attribu à tester
         pass
 

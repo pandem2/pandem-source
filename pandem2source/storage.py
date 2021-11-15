@@ -91,7 +91,6 @@ class Storage(worker.Worker):
         for (src_path, dest_path) in zip(src_paths, dest_paths):
             shutil.copyfile(src_path, dest_path)  
         
-            
     def list_files(self, path, match=None, recursive=True, exclude=['.git']):
         files_paths = []
         if recursive:

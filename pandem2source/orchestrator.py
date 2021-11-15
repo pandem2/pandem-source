@@ -89,7 +89,6 @@ class Orchestration(pykka.ThreadingActor):
                 for dls in dls_label:
                     acquisition_proxy.add_datasource(dls)
                 self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label} 
-
         
     def get_heartbeat(self, actor_name):
         now = datetime.datetime.now()
@@ -108,8 +107,3 @@ class Orchestration(pykka.ThreadingActor):
         "heartbeat": [(it["heartbeat"] if "heartbeat" in it else pd.NA)  for it in map.values()]
       })
       return df 
-    
-
-
-
-    
