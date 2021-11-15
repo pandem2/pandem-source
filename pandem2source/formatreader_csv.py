@@ -7,7 +7,7 @@ class FormatReaderCSV(formatreader.FormatReader):
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)
     
     def read_df(self, file_path, dls):
-        fle_bytes = self._storage_proxy.read_files(file_path).get()
+        file_bytes = self._storage_proxy.read_files(file_path).get()
         if file_bytes != '':
             df = pd.read_csv(file_bytes) 
         else:

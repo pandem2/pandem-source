@@ -10,7 +10,6 @@ class FormatReaderXML(formatreader.FormatReader):
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)
           
     def read_format_start(self, job, file_path):
-        print(file_path)
         dls = job['dls_json']
         tree = etree.parse(file_path)
         root = tree.getroot()

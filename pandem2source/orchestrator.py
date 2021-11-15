@@ -35,10 +35,6 @@ class Orchestration(pykka.ThreadingActor):
         dfreader_ref = dfreader.DataframeReader.start('dfreader', self.actor_ref, storage_ref, self.settings)
         self.current_actors['dfreader'] = {'ref': dfreader_ref}
         
-        # # launch format reader actor
-        # ftreader_ref = formatreader.FormatReader.start('ftreader', self.actor_ref, storage_ref, self.settings)
-        # self.current_actors['ftreader'] = {'ref': ftreader_ref}
-        
         #launch xml format reader actor
         xmlreader_ref = formatreader_xml.FormatReaderXML.start('ftreader_xml', self.actor_ref, self.settings)
         self.current_actors['ftreader_xml'] = {'ref': xmlreader_ref}
@@ -102,8 +98,7 @@ class Orchestration(pykka.ThreadingActor):
         
     def get_actor(self, actor_name):
         return self.current_actors[actor_name]['ref']
-
-
+        
 
     def actors_df(self):
       map = self.current_actors

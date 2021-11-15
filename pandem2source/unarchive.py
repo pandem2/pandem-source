@@ -19,16 +19,12 @@ class Unarchive(worker.Worker):
     
     def unarchive(self, job): 
         #print('here in unarchive')
-        files_to_filter = job['dls_json']["acquisition"]["decompress"]["path"]
-       # print(f'files_to_filter: {files_to_filter}')
-        zip_path = job['source_files'][0]
-       # print(f'zip bpath is: {zip_path}')
-        filtered_bytes = []
-        for file in files_to_filter:
-            #print(f'file before filter {file}')
-            with ZipFile(zip_path) as zip_archive:
-                filtered_bytes.append(BytesIO(zip_archive.read(file)).read())
-        self._pipeline_proxy.decompress_end(job, filtered_bytes)#.get()
+        # print(f'files_to_filter: {files_to_filter}')
+        for zip_path in job['source_files']:
+            for file in job['dls_json']["acquisition"]["decompress"]["path"]:
+                print(f'file to filter {file}')
+                with ZipFile(zip_path) as zip_archive:
+                    self._pipeline_proxy.decompress_end(job, zip_path, file, BytesIO(zip_archive.read(file)).read())#.get()
 
 
        
