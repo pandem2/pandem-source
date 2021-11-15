@@ -1,4 +1,5 @@
 from . import worker
+import os
 
 
 class Variables(worker.Worker):
