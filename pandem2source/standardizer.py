@@ -3,6 +3,7 @@ import os
 import time
 import threading
 from . import worker
+from datetime import datetime
 
 
 class Standardizer(worker.Worker):
@@ -30,10 +31,30 @@ class Standardizer(worker.Worker):
                     dic_variables[alias['alias']]=alias_var
         return dic_variables
 
-    #def standardize(self, tuples_to_validate, file_name, job_id):
-    def standardize(self,file_name, job_id):
-        #tuples_to_validate = tuples fichier passé en parametre  
-        #file_name = nom du référentiel à recupérer
-        #job_id = nom de l'attribu à tester
-        pass
+    #def standardize(self, tuples_to_validate, var_name, job):
+    def standardize(self,var_name):  
+        job={'job_id':123, 'step':'step-job'}
+        tuples=self._storage_proxy.read_files('variables/covid19-datahub-sample-tuples.json').get()
+        referential=self._varaibles_proxy.get_referential(var_name).get()
+        list_issues=[]
+        list_ref=[]
+        list_ref=set([x['attr'] for x in referential])
+
+        for var in tuples['tuples']:
+            one_tuple=var['attrs'][var_name]
+            if one_tuple in list_ref: 
+                None
+            else:
+                message=(f"Code {one_tuple} does not exist in referential '{var_name}'. Line {var['attrs']['line_number']} in file {tuples['scope']['file_name']} (source: '{tuples['scope']['source']}').")
+                issue={ job['step'], 
+                        var['attrs']['line_number'], 
+                        tuples['scope']['source'], 
+                        tuples['scope']['file_name'], 
+                        message, 
+                        datetime.now(), 
+                        job['job_id'], 
+                        "ref-not-found"}
+                list_issues.append(issue)
+                #si aucune erreur on retourne la liste des tuples
+        return list_issues
 
