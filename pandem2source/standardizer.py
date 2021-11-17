@@ -73,9 +73,7 @@ class Standardizer(worker.Worker):
             var['attrs']['sent_on']=tuples['scope']['sent_on']
             var['attrs']['sent_by']=tuples['scope']['sent_by']
             for global_var in std_tuples['scope']['globals']:
-                pass
-                #var['attrs']['global_var['variables']']=global_var
-                #print (global_var)
+                var['attrs']['globals']=global_var
 
         if not(list_issues): 
             return std_tuples
