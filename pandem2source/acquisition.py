@@ -49,6 +49,7 @@ class Acquisition(worker.Worker):
         for source_id, dls in self.current_sources.items():
             last_hash = self._storage_proxy.read_db('source', lambda x: x['id']==source_id).get()['last_hash'].values[0]
             #Getting new files if any
+            print(f'last hash is: {last_hash}')
             nf = self.new_files(dls, last_hash)
             files_to_pipeline = nf["files"]
             #print(f'files to pipeline: {files_to_pipeline}')

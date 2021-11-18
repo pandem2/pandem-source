@@ -51,9 +51,20 @@ def write_json_variables(dest):
   file.close()
 
 def reset_source(source_name):
+  dls_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", "DLS", f"{source_name}.json"))
+  if os.path.exists(dls_from):
+    dls_to = util.pandem_path("files", "source-definitions", f"{source_name}.json")
+    dls_to_dir = util.pandem_path("files", "source-definitions")
+    if not os.path.exists(dls_to_dir):
+      os.makedirs(dls_to_dir)
+    shutil.copyfile(dls_from, dls_to)
+  else:
+    raise ValueError(f"Cannot find source definition {source_name} within pandem default sources")
+  
+  # copytin script if any
   with open(util.pandem_path("files", "source-definitions", f"{source_name}.json"), "r") as f:
     dls = json.load(f)
-  # copytin script if any
+    
   if "changed_by" in dls["acquisition"]["channel"] and  "script_type" in dls["acquisition"]["channel"]["changed_by"]:
     script_type = dls["acquisition"]["channel"]["changed_by"]["script_type"]
     script_name = dls["acquisition"]["channel"]["changed_by"]["script_name"]
@@ -64,13 +75,5 @@ def reset_source(source_name):
       os.makedirs(script_to_dir)
     shutil.copyfile(script_from, script_to)
 
-  dls_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", "DLS", f"{source_name}.json"))
-  if os.path.exists(dls_from):
-    dls_to = util.pandem_path("files", "source-definitions", f"{source_name}.json")
-    dls_to_dir = util.pandem_path("files", "source-definitions")
-    if not os.path.exists(dls_to_dir):
-      os.makedirs(dls_to_dir)
-    shutil.copyfile(dls_from, dls_to)
-  else:
-    raise ValueError(f"Cannot find source definition {source_name} within pandem default sources")
+
 
