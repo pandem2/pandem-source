@@ -17,7 +17,6 @@ import pandas as pd
 from itertools import chain
 
 class Orchestration(pykka.ThreadingActor):
-<<<<<<< HEAD
     
     def __init__(self, settings, start_acquisition = True):
         super(Orchestration, self).__init__()
@@ -55,7 +54,6 @@ class Orchestration(pykka.ThreadingActor):
         # launch script executor reader
         script_executor_ref = script_executor.ScriptExecutor.start('script_executor', self.actor_ref, self.settings)
         self.current_actors['script_executor'] = {'ref': script_executor_ref}
-<<<<<<< HEAD
         
         # launch standardizer actor
         standardizer_ref = standardizer.Standardizer.start('standardizer', self.actor_ref, self.settings)

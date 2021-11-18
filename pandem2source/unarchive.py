@@ -17,14 +17,11 @@ class Unarchive(worker.Worker):
     def loop_actions(self):
         pass
     
-    def unarchive(self, job): 
+    def unarchive(self, job, archive_path, filter_path): 
         #print('here in unarchive')
         # print(f'files_to_filter: {files_to_filter}')
-        for zip_path in job['source_files']:
-            for file in job['dls_json']["acquisition"]["decompress"]["path"]:
-                print(f'file to filter {file}')
-                with ZipFile(zip_path) as zip_archive:
-                    self._pipeline_proxy.decompress_end(job, zip_path, file, BytesIO(zip_archive.read(file)).read())#.get()
+        with ZipFile(archive_path) as zip_archive:
+            self._pipeline_proxy.unarchive_end(archive_path, filter_path, BytesIO(zip_archive.read(filter_path)).read(), job)
 
 
        

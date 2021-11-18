@@ -142,10 +142,11 @@ class Storage(worker.Worker):
 
     def read_db(self, db_class, filter=None):
         df = self.db_tables[db_class]
+
         if df.shape[0] > 0:
             if filter != None:
                 df = df.loc[df.apply(filter, axis = 1)]
-            return df
+            return df.astype({"id": int})
         else:
             return None
 

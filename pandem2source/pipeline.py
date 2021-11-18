@@ -21,66 +21,74 @@ class Pipeline(worker.Worker):
         self._unarchive_proxy = self._orchestrator_proxy.get_actor('unarchiver').get().proxy()
         self._dfreader_proxy = self._orchestrator_proxy.get_actor('dfreader').get().proxy()
         self._standardizer_proxy = self._orchestrator_proxy.get_actor('standardizer').get().proxy()
-        self.job_steps = dict()
-        self.job_steps['read_format_started'] = []
-        self.job_steps['read_format_ended'] = []
-        self.job_steps['submitted_ended'] = []
-        self.job_steps['decompress_ended'] = []
-        self.job_df = defaultdict(dict)
+        self.job_steps = defaultdict(dict)
         self.decompressed_files = defaultdict(list)
-        last_step = "read_format_end" #TODO: update this as last step evolves
+        self.job_df = defaultdict(dict)
+        self.job_tuples = defaultdict(dict)
+        self.job_stdtuples = defaultdict(dict)
+        self.pending_count = {}
+
+        self.job_dicos = [self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.pending_count]
+
+        self.last_step = "publish_end" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
-                                          filter= lambda x: x['status']=='in progress' and x['step']!='submitted_started' and x['step']!=last_step 
+                                          filter= lambda x: x['status']=='in progress' and x['step']!='submitted_started' and x['step']!=self.last_step 
                                          ).get()
         if jobs is not None:
-            self.job_steps['submitted_ended'] = jobs.to_dict(orient='records')   
+            self.job_steps['submitted_ended'] = dict([(j["id"], j) for j in jobs.to_dict(orient = 'records')])   
 
-
-    def staging_path(self, dls, *args):
-        return self.pandem_path(f'files/staging', dls['scope']['source'], *args)
     
 
     def loop_actions(self):
         self._self_proxy.process_jobs()
 
-
-    def send_to_readformat(self, file_path, job):
-        file_ext = os.path.splitext(file_path)[1]
-        print(f'file extenstion is: {file_ext}')
-        if file_ext == '.csv':
-            self._frcsv_proxy.read_format_start(job, file_path)
-        elif file_ext == '.rdf':
-            self._frxml_proxy.read_format_start(job, file_path)
-        elif file_ext == '.xml':
-            self._frxml_proxy.read_format_start(job, file_path)
-        else:
-            raise RuntimeError('unsupported format')
-
-
     def process_jobs(self):
-        if len(self.job_steps['submitted_ended'])>0:
-            for job in self.job_steps['submitted_ended']:
-                submitted_files = job['source_files']
-                if "decompress" not in job['dls_json']['acquisition'].keys():
-                    for file_path in submitted_files:
-                        self.send_to_readformat(file_path, job)
-                    job['step'] = 'read_format_started'
-                    job_id = self._storage_proxy.write_db(job, 'job').get()
-                    self.job_steps['read_format_started'].append(job) 
-                else:
-                    self._unarchive_proxy.unarchive(job)
-            self.job_steps['submitted_ended'] = []    
-        if len(self.job_steps['decompress_ended'])>0:
-            for job in self.job_steps['decompress_ended']:
-                submitted_files = self.decompressed_files[job['id']]
-                print(f'decompressed files: {submitted_files}')
-                for file_path in submitted_files:
-                    self.send_to_readformat(file_path, job)
-                job['step'] = 'read_format_started'
-                job_id = self._storage_proxy.write_db(job, 'job').get()
-                self.job_steps['read_format_started'].append(job)
-            self.job_steps['decompress_ended'] = []
-         
+        # This function will process active jobs asynchronoulsy.
+        # Based on current status an action will be performed and the status will be updated
+        
+        # Jobs after submit that has just been submitted 
+        # they will go to decompress or to format read
+        for job in self.job_steps['submitted_ended'].values():
+            submitted_files = job['source_files']
+            if "decompress" not in job['dls_json']['acquisition'].keys():
+                self.update_job_step(job, 'read_format_started')
+                self.send_to_readformat(submitted_files, job)
+            else:
+                self.update_job_step(job, 'unarchive_started')
+                self.send_to_unarchive(submitted_files, job)
+        
+        # Jobs after decompression ends
+        for job in self.job_steps['unarchive_ended']:
+            decompressed_files = self.decompressed_files[job['id']]
+            self.update_job_step(job, 'read_format_started')
+            self.send_to_readformat(decompressed_files, job)
+
+        # Jobs after read format ends
+        for job in self.job_steps['read_format_ended']:
+            dfs = self.job_df[job["id"]]
+            self.update_job_step(job, 'read_df_started')
+            self.send_to_read_df(dfs, job)
+        
+        # Jobs after read df ends
+        for job in self.job_steps['read_df_ended']:
+            tuples = self.job_tuples[job["id"]]
+            self.update_job_step(job, 'standardize_started')
+            self.send_to_standardize(tuples, job)
+
+        # Jobs after standardize ends
+        for job in self.job_steps['standardize_ended']:
+            tuples = self.job_stdtuples[job["id"]]
+            self.update_job_step(job, 'publish_started')
+            self.send_to_publish(tuples, job)
+        
+        # Jobs after publish ends
+        for job in self.job_steps['publish_ended']:
+            # cleaning job dicos
+            for job_dico in job_dicos:
+              if job["id"] in job_dico:
+                job_dico.pop(job[job["id"]])
+            # TODO: delete jobs other than last 10 jobs per source
+    
 
     def submit_files(self, dls, paths):
         job_record = {'source': dls['scope']['source'],
@@ -102,36 +110,103 @@ class Pipeline(worker.Worker):
                                              'job').get()
         job_submitted = self._storage_proxy.read_db('job', filter= lambda x: x['id']==job_id).get().to_dict(orient='records')[0]
 
-        self.job_steps['submitted_ended'].append(job_submitted)
+        self.update_job_step(job, 'submitted_ended')
+
+    def send_to_readformat(self, paths, job):
+       self.pending_count[job["id"]] = len(paths)
+       for file_path in paths:
+          file_ext = os.path.splitext(file_path)[1]
+          print(f'file extenstion is: {file_ext}')
+          if file_ext == '.csv':
+              self._frcsv_proxy.read_format_start(job, file_path)
+          elif file_ext == '.rdf':
+              self._frxml_proxy.read_format_start(job, file_path)
+          elif file_ext == '.xml':
+              self._frxml_proxy.read_format_start(job, file_path)
+          else:
+              raise RuntimeError('unsupported format')
+
+    def read_format_end(self, job, path, df): 
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+
+        print(f'df head for file: {path} is : {df.head(10)}')
+        self.job_df[job_id][path] = df
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'read_format_ended')
+
+    def send_to_unarchive(self, paths, job):
+        filter_paths = job['dls_json']["acquisition"]["decompress"]["path"]
+        self.pending_count[job["id"]] = len(paths) * len(filter_paths)
         
+        for archive_path in paths:
+          for filter_path in filter_paths:
+            self._unarchive_proxy.unarchive(archive_path, filter_path, job)
+
     
-    def decompress_end(self, job, zip_path, file, bytes):
+    def unarchive_end(self, archive_path, filter_path, bytes, job):
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        
         dest_file = os.path.basename(zip_path)+'_'+('_'.join(file.split('/'))) 
         path_in_staging = self.staging_path(job['dls_json'], dest_file)
         self.decompressed_files[job['id']].append(path_in_staging)
         self._storage_proxy.write_file(path_in_staging, bytes, 'wb+').get()
-        if len(self.decompressed_files[job['id']]) == len(job['source_files'])*len(job['dls_json']["acquisition"]["decompress"]["path"]):
-            job_id = self._storage_proxy.write_db({'id': job['id'],
-                                              'step': 'decompress_ended'},
-                                             'job').get()
-            job_decompressed = self._storage_proxy.read_db('job', filter= lambda x: x['id']==job_id).get().to_dict(orient='records')[0]
-            self.job_steps['decompress_ended'].append(job_decompressed)
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'unarchive_ended')
 
+    def send_to_read_df(self, dfs, job):
+        self.pending_count[job["id"]] = len(dfs)
+        for path, df in dfs.items():
+            self._dfreader_proxy.df2tuple(df, path, job)
 
-    def read_format_end(self, job, path, df): 
-        job_id = int(job['id'])
-        print(f'df head for file: {path} is : {df.head(10)}')
-        self.job_df[job_id][path] = df
-        if len(self.job_df[job['id']]) == len(job['source_files']):
-            job['step'] = 'read_format_end'
-            job_id = self._storage_proxy.write_db(job, 'job').get()
-            self.job_steps['read_format_started'].remove(job)
-            self.job_steps['read_format_ended'].append(job)
+    def read_df_end(self, tuples, path, job): 
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        self.job_tuples[job_id][path] = tuples
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'read_df_ended')
+
+    def send_to_standardize(self, tuples, job):
+        self.pending_count[job["id"]] = len(tuples)
+        for path, ttuples in tuples.items():
+            self._dfreader_proxy.df2tuple(tuples, path, job)
+
+    def standardize_end(self, path, tuples, job): 
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         
+        self.job_stdtuples[job_id][path] = tuples
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'standardize_ended')
 
+    def send_to_publish(self, tuples, job):
+        self.pending_count[job["id"]] = len(tuples)
+        for path, ttuples in tuples.items():
+            self._variables_proxy.write(tuples, path, job)
 
+    def publish_end(self, path, job): 
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'publish_ended')
+
+    # this function returns a future that can be waited to ensure that file job is written to disk
+    def update_job_step(self, job, step):
+        print(f"Changing to step {step} for job {job['id']} source {job['dls_json']['scope']['source']}")
+        # removing job from current step dict
+        if job["step"] in self.job_steps and job["id"]:
+          if job["id"] in self.job_steps[job["step"]]:
+            self.job_steps[job["step"]].pop(job["id"])
+          else:
+            print(f"Warning: could not find id {job['id']} in job_steps {job['step']}") 
+        # changing the job step 
+        job["step"] = step
+
+        # addong the job to te new dict unless is on the last step
+        if step == self.last_step:
+          job["status"] = "Success"
+        else:
+          self.job_steps[step][job["id"]] = job
+
+        return self._storage_proxy.write_db(job, 'job')
   
 
-
-
+    def staging_path(self, dls, *args):
+        return self.pandem_path(f'files/staging', dls['scope']['source'], *args)
 

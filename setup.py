@@ -19,7 +19,8 @@ setup(
       "pyyaml",
       "pandas",
       "openpyxl",
-      "pykka"
+      "pykka",
+      "lxml"
     ],
     packages=find_packages(exclude=('tests', 'docs')),
     include_package_data=True
