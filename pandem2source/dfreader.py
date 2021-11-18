@@ -76,7 +76,7 @@ class DataframeReader(worker.Worker):
         else :
             message=("DLS file not conform, columns element is missing.")
             print(message)
-            issue={ job['step'],
+            issue={ "step":job['step'],
                     "unknown",              #the column element is not found
                     dls['scope']['source'],
                     dls['scope']['source'], #file_name DLS à passer en paramètre ? l'attribut n'existe pas dans le dls
@@ -132,7 +132,7 @@ class DataframeReader(worker.Worker):
 
                 if var[item['variable']]['unit'] == 'date':
 
-                    if df[item['name']].dtypes == 'date' :
+                    if df[item['name']].dtypes in ['date', 'obj', 'str'] :
                         issues[item["name"]] = None
 
                     if df[item['name']].dtypes != 'date' :
@@ -149,7 +149,7 @@ class DataframeReader(worker.Worker):
 
                 if var[item['variable']]['unit'] == 'people':
 
-                    if df[item['name']].dtypes == 'integer' :
+                    if df[item['name']].dtypes in ['integer', 'str', "obj"] :
                         issues[item["name"]] = None
 
                     if df[item['name']].dtypes != 'integer' :
@@ -185,8 +185,29 @@ class DataframeReader(worker.Worker):
         return issues
 
 
+    def translate(self, value, dtype, unit, parse_format):   # parameters to pass after : df, dls, file_name
 
+        """Checks if the variable indicated in the column element from dls exists in variables.json files
+        and if yes, checks the dataframe variables types, if not as expected in variables.json, raises an issue"""
 
+        if unit is None or unit in ["str"] :
+            if dtype in ["str"]:
+                return value
+            else:
+                return str(value)
+        if unit == 'date' :
+            if dtype == 'date':
+                return value
+            else:
+              return datetime.strptime(value, format)
+
+        elif unit in ["person", "int"] :
+            if dtype in ["int"]:
+                return value
+            else:
+                return int(value)
+        else raise ValueError("undefined case for casting")
+    
     def df2var(self):   # parameters to add after df=None, dls=None, job=None, file_name=None
 
         var = self.get_variables()
@@ -201,7 +222,9 @@ class DataframeReader(worker.Worker):
             df.insert(0, 'line_number', range(0, len(df))) #numérotation qui démarre à 0 ou 1 ?
 
         if dls['columns']:
-            dls_col_list = dls['columns']
+            cols_vars = dict((t["name"],t["variable"]) for t in  dls['columns'])
+            cols_types = dict((k,var[v]["type"]) for k,v in cols_vars.items())
+            types_ok = dict((t["name"],  t["name"] in type_issues and type_issues[t["name"]] is None) for t in  dls['columns'])
             print(dls_col_list)
         for key in dls_col_list:
             print(key['name'])
@@ -209,22 +232,44 @@ class DataframeReader(worker.Worker):
 
         ret = {"scope":dls["scope"]}
         tuples = []
-
+        #TODO: make sure that index is 0-(N-1)
         for row in range(len(df)):
-            tuple = {}
+
             for col in df.columns:
-                if col in type_issues and type_issues[col] is None:
+                if col_vars[col] in ["observation", "indicator"] and types_ok[col]:
                     for keys in dls_col_list:
-                        if col in keys['name']:
+                        tuple = {"obs":{cols_vars[col]:df[col][row]}, "attrs":{"line_number":df["line_number"][row]}}
+                        for attr_col in df.columns:
+                            if col_vars[attr_col] not in ["observation", "indicator"] and types_ok[attr_col]:
+                                try:
+                                  val = self.translate(df[col][row], df[col].dtypes, variables[col_vars[col]]["unit"])
+                                except e:
+                                  issues.append(
+                                    {job['step'],
+                                            "unknown",
+                                            dls['scope']['source'],
+                                            filename,         #file_name à passer en paramètre de la fonction à ajouter
+                                            f"Cannot cast value {df[col][row]} into unit {variables[col_vars[col]]['unit']}",
+                                            datetime.now(),
+                                            job['job_id'],
+                                            "cannot-cast"}
+
+                                  )
+                                tuple["attrs"][cols_vars[attr_col]] =
+
+
+
+
+#                        if col in keys['name']:
                             #print("Variable known")
-                            var_name = keys['variable']
-                            print("Var name", var_name)
-                            if var_name in var and var[keys['variable']]['type'] == 'characteristic' :
-                                print("characteristic found")
-                                tuple["obs"]={f"'{var_name}': {df[col][row]} "}
-                                tuple["attrs"]={f"line_number :{df['line_number'][row]} "}
-                                print(tuple)
-                                tuples.append(tuple)
+#                            var_name = keys['variable']
+#                            print("Var name", var_name)
+#                            if var_name in var and var[keys['variable']]['type'] == 'characteristic' :
+#                                print("characteristic found")
+#                                tuple["obs"]={f"'{var_name}': {df[col][row]} "}
+#                                tuple["attrs"]={f"line_number :{df['line_number'][row]} "}
+#                                print(tuple)
+#                        tuples.append(tuple)  # a revoir le tuple est ajouté autant de fois qu'il y a de colonnes du coup
 
 
 #location-code => characteristic
