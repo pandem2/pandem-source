@@ -75,12 +75,14 @@ class Orchestration(pykka.ThreadingActor):
         
         if self.start_acquisition:
             for label in sources_labels:
-                if label == "url":
-                    acquisition_ref = acquisition_url.AcquisitionURL.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+                # if label == "url":
+                #     acquisition_ref = acquisition_url.AcquisitionURL.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
                 # elif label == "git":
                 #     acquisition_ref = acquisition_git.AcquisitionGIT.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
                 # elif label == "git-local":
                 #     acquisition_ref = acquisition_git_local.AcquisitionGITLocal.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+                if label == "git-local":
+                    acquisition_ref = acquisition_git_local.AcquisitionGITLocal.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
                 # else:
                 #   raise NotImplementedError(f"The acquisition channel {label} has not been implemented")
 

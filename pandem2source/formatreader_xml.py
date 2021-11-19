@@ -8,9 +8,8 @@ class FormatReaderXML(formatreader.FormatReader):
 
     def __init__(self, name, orchestrator_ref, settings): 
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)
-          
-    def read_format_start(self, job, file_path):
-        dls = job['dls_json']
+
+    def read_df(self, file_path, dls):
         tree = etree.parse(file_path)
         root = tree.getroot()
         nsmap = root.nsmap
@@ -33,4 +32,7 @@ class FormatReaderXML(formatreader.FormatReader):
                     dict_col[col['name']] = None
             rows.append(dict_col)
         df = pd.DataFrame(rows, columns = cols)
-        self._pipeline_proxy.read_format_end(job, file_path, df).get()
+        return df
+
+
+          

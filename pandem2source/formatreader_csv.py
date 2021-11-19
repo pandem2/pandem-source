@@ -13,6 +13,9 @@ class FormatReaderCSV(formatreader.FormatReader):
         else:
             raise ValueError('can not read from empty bytes')
         return df
+    
+    
+
 
           
    

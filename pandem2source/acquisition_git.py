@@ -9,6 +9,7 @@ class AcquisitionGIT(acquisition.Acquisition):
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings, channel = "git")
 
     def new_files(self, dls, last_hash):
+        print('Im in git new files')
         if("url" in dls['acquisition']['channel']):
           repo_name = dls['acquisition']['channel']['url'].split('/')[-1].split(".")[0]
           repo_dir = self.source_path(dls, repo_name)

@@ -12,13 +12,16 @@ class AcquisitionGITLocal(acquisition_git.AcquisitionGIT):
         self._script_executor_proxy = self._orchestrator_proxy.get_actor('script_executor').get().proxy()
 
     def new_files(self, dls, last_hash):
+        print('Im in git_local new_files')
         script_name = dls["acquisition"]["channel"]["changed_by"]["script_name"]
         script_type = dls["acquisition"]["channel"]["changed_by"]["script_type"]
         working_dir = self.source_path(dls)
         # executing the updating script
-        #self._script_executor_proxy.execute(script_name = script_name, script_type = script_type, working_dir = working_dir)
+        self._script_executor_proxy.execute(script_name = script_name, script_type = script_type, working_dir = working_dir).get()
 
         # creating repo if it does no exists
+        # if not os.path.exists(working_dir):
+        #     os.makedirs(working_dir)
         res = subprocess.run(['git', 'status'], cwd = working_dir)
         if res.returncode != 0 :
             res = subprocess.run(["git", "init"], cwd = working_dir)
