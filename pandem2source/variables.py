@@ -56,7 +56,7 @@ class Variables(worker.Worker):
                 requested_vars = [var_tuple for var_tuple in var_tuples \
                                      if all(att in var_tuple['attrs'] and any(val in var_tuple['attrs'][att] for val in filter[att]) \
                                             for att in filter)]
-            requested_list.extend(requested_vars)
+                requested_list.extend(requested_vars)
             return requested_list
         else: 
             return None
@@ -65,40 +65,49 @@ class Variables(worker.Worker):
     def get_partition(self, tuple, partition):
         return '_'.join([key + '-' + val for key, val in tuple['attrs'].items() if key in partition]) + '.json'
 
-
-        
+    
     def write_variable(self, input_tuples, partition):
         partition_dict = defaultdict(list)
         for tuple in input_tuples['tuples']:
-            file_name = self.get_partition(tuple, partition)
-            partition_dict[file_name].append(tuple)
+            for key, var in tuple.items():
+                if key != "attrs":
+                    var_name = list(tuple[key].keys())[0]
+            partition_dict[var_name].append(tuple) 
+        partition_dict_final = defaultdict(lambda: defaultdict(list))
+        for var, tuple_list in partition_dict.items():
+            for tuple in tuple_list:
+                file_name = self.get_partition(tuple, partition)
+                partition_dict_final[var][file_name].append(tuple)
         update_filter = []
         for filter in input_tuples['scope']['update_scope']:
             if not isinstance(filter['value'], list):
                 update_filter.append({'variable':filter['variable'], 'value':[filter['value']]})
             else:
                 update_filter.append(filter)
-        for file, tuples in partition_dict.items():
-            #var_dir: same partition file in two variables directories?
-            file_path = util.pandem_path('files/variables', file)
-            if not os.path.exists(file_path):
-                tuples_to_dump = {'tuples': tuples}
-                with open(file_path, 'w+') as f:
-                    json.dump(tuples_to_dump, f)
-            else:
-                with open(file_path, 'r') as f:
-                    last_tuples = json.load(f)
-                for tup in last_tuples['tuples']:
-                    cond_count = len(update_filter)
-                    for filt in update_filter: 
-                        if filt['variable'] in tup['attrs'].keys() and tup['attrs'][filt['variable']] in filt['value']:
-                            cond_count = cond_count - 1
-                    if cond_count > 0:
-                        print(tup)
-                        tuples.append(tup)            
-                tuples_to_dump = {'tuples': tuples}
-                with open(file_path, 'w') as f:
-                    json.dump(tuples_to_dump, f)
+        for var, tuples_dict in partition_dict_final.items():
+            var_dir = util.pandem_path('files/variables', var)
+            if not os.path.exists(var_dir):
+                os.makedirs(var_dir)
+            for file_name, tuples_list in tuples_dict.items():
+                file_path = util.pandem_path(var_dir, file_name)
+                if not os.path.exists(file_path):
+                    tuples_to_dump = {'tuples': tuples_list}
+                    with open(file_path, 'w+') as f:
+                        json.dump(tuples_to_dump, f)
+                else:
+                    with open(file_path, 'r') as f:
+                        last_tuples = json.load(f)
+                    for tup in last_tuples['tuples']:
+                        cond_count = len(update_filter)
+                        for filt in update_filter: 
+                            if filt['variable'] in tup['attrs'].keys() and tup['attrs'][filt['variable']] in filt['value']:
+                                cond_count = cond_count - 1
+                        if cond_count > 0:
+                            print(tup)
+                            tuples_list.append(tup)            
+                    tuples_to_dump = {'tuples': tuples_list}
+                    with open(file_path, 'w') as f:
+                        json.dump(tuples_to_dump, f)
 
                     
 
