@@ -60,53 +60,50 @@ class DataframeReader(worker.Worker):
             return variables
 
 
-    def check_df_columns(self): #to pass in parameters : df, dls, file_name
+    def check_df_columns(self):                              #to pass in parameters : df, dls, file_name
 
         """Checks if the DLS columns names exist in dataframe"""
 
         df = self.get_df()
         dls = self.get_dls()
         dls_col_list=[]
-        list_issues=[]
-        job={'job_id':123, 'step':'step-job'}
-        file_name = "AAA"
+        issues = {}
+        job={'job_id':123, 'step':'step-job'}                 # job ref ?
+        file_name = "AAA"                                     # should be passed in parameters
 
-        if dls['columns']:
+        if 'columns' in dls.keys() :
             dls_col_list = dls['columns']
+
         else :
-            message=("DLS file not conform, columns element is missing.")
-            print(message)
-            issue={ "step":job['step'],
-                    "unknown",              #the column element is not found
-                    dls['scope']['source'],
-                    dls['scope']['source'], #file_name DLS à passer en paramètre ? l'attribut n'existe pas dans le dls
-                    message,
-                    datetime.now(),
-                    job['job_id'],
-                    "ref-not-found"}
-            list_issues.append(issue)
+            message=("DLS file not conform, 'columns' element is missing.")
+            issue={ 'step': job['step'],
+                    'line' : "unknown",                        #the column element is not found, no line to raise
+                    'source' : dls['scope']['source'],
+                    'file' : dls['scope']['source'],           #file_name DLS à passer en paramètre ? l'attribut n'existe pas dans le dls
+                    'message' : message,
+                    'raised_on' : datetime.now(),
+                    'job_id' : job['job_id'],
+                    'issue_type' : "dls-not-conform"}
+            issues["DLS file"] = issue
 
-        for item in dls_col_list:            #à voir si peut être remplacé par un check dans dls directement
+        for item in dls_col_list:
             if item['name'] not in df.columns :
-                message=("Column", item['name'], "not found in dataframe ")
-                print(message)
-                issue={ job['step'],
-                        1,
-                        dls['scope']['source'],
-                        dls['scope']['source'], #file_name DLS à passer en paramètre ? l'attribut n'existe pas dans le dls
-                        message,
-                        datetime.now(),
-                        job['job_id'],
-                        "ref-not-found"}
-                list_issues.append(issue)
-            #else :                             # To delete, remains just for testing
-            #    print("column found :", item['name'], "in dataframe")
+                message=(f"Column '{item['name']}' not found in dataframe ")
+                issue={ 'step' : job['step'],
+                        'line' : 1,
+                        'source' : dls['scope']['source'],
+                        'file' : dls['scope']['source'],        #file_name DLS à passer en paramètre ? l'attribut n'existe pas dans le dls
+                        'message': message,
+                        'raised_on' : datetime.now(),
+                        'job_id' : job['job_id'],
+                        'issue_type' : "col-not-found"}
+                issues[item["name"]] = issue
 
-        return list_issues
+        return issues
 
 
 
-    def check_df_var_type(self):   # parameters to pass after : df, dls, file_name
+    def check_df_var_type(self):                                  # parameters to pass after : df, dls, file_name
 
         """Checks if the variable indicated in the column element from dls exists in variables.json files
         and if yes, checks the dataframe variables types, if not as expected in variables.json, raises an issue"""
@@ -116,7 +113,6 @@ class DataframeReader(worker.Worker):
         var=self.get_variables()
 
         dls_col_list=[]
-        list_issues=[]
         job={'job_id':123, 'step':'step-job'}
         line_number=12
         file_name = "AAA"
@@ -132,19 +128,19 @@ class DataframeReader(worker.Worker):
 
                 if var[item['variable']]['unit'] == 'date':
 
-                    if df[item['name']].dtypes in ['date', 'obj', 'str'] :
+                    if df[item['name']].dtypes in ['date', 'object', 'str'] :
                         issues[item["name"]] = None
 
-                    if df[item['name']].dtypes != 'date' :
+                    else :
                         message = (f"Type '{df[item['name']].dtypes}' in source file is not compatible with variable {item['variable']} with unit 'date' ")
-                        issue={ job['step'],
-                                1,
-                                dls['scope']['source'],
-                                dls['scope']['source'],         #file_name à passer en paramètre de la fonction à ajouter
-                                message,
-                                datetime.now(),
-                                job['job_id'],
-                                "ref-not-found"}
+                        issue={ 'step' : job['step'],
+                                'line' : 1,
+                                'source' : dls['scope']['source'],
+                                'file' : dls['scope']['source'],         #file_name à passer en paramètre de la fonction à ajouter
+                                'message' : message,
+                                'raised_on' : datetime.now(),
+                                'job_id' : job['job_id'],
+                                'issue_type' : "ref-not-found"}
                         issues[item["name"]] = issue
 
                 if var[item['variable']]['unit'] == 'people':
@@ -152,16 +148,16 @@ class DataframeReader(worker.Worker):
                     if df[item['name']].dtypes in ['integer', 'str', "obj"] :
                         issues[item["name"]] = None
 
-                    if df[item['name']].dtypes != 'integer' :
+                    else :   #issue raised if type is float 
                         message = (f"Type '{df[item['name']].dtypes}' in source file is not compatible with variable {item['variable']} with unit 'integer' ")
-                        issue = {job['step'],
-                                1,
-                                dls['scope']['source'],
-                                dls['scope']['source'],         #file_name à passer en paramètre de la fonction à ajouter
-                                message,
-                                datetime.now(),
-                                job['job_id'],
-                                "ref-not-found"}
+                        issue = {'step' : job['step'],
+                                'line' : 1,
+                                'source' : dls['scope']['source'],
+                                'file' : dls['scope']['source'],         #file_name à passer en paramètre de la fonction à ajouter
+                                'message' : message,
+                                'raised_on' : datetime.now(),
+                                'job_id' : job['job_id'],
+                                'issue_type' : "ref-not-found"}
                         issues[item["name"]] = issue
 
                 if var[item['variable']]['unit'] == None :
@@ -171,14 +167,14 @@ class DataframeReader(worker.Worker):
                     issues[item["name"]] = None
             else :
                 message = ("Variable defined on source definition file is unknown")
-                issue = {job['step'],
-                        "unknown",
-                        dls['scope']['source'],
-                        dls['scope']['source'],         #file_name à passer en paramètre de la fonction à ajouter
-                        message,
-                        datetime.now(),
-                        job['job_id'],
-                        "ref-not-found"}
+                issue = {'step' : job['step'],
+                        'line' : "unknown",
+                        'source' : dls['scope']['source'],
+                        'file' : dls['scope']['source'],         #file_name à passer en paramètre de la fonction à ajouter
+                        'message' : message,
+                        'raised_on' : datetime.now(),
+                        'job_id' : job['job_id'],
+                        'issue_type' : "ref-not-found"}
                 issues[item["name"]] = issue
 
 
@@ -206,8 +202,8 @@ class DataframeReader(worker.Worker):
                 return value
             else:
                 return int(value)
-        else raise ValueError("undefined case for casting")
-    
+        else : raise ValueError("undefined case for casting")
+
     def df2var(self):   # parameters to add after df=None, dls=None, job=None, file_name=None
 
         var = self.get_variables()
@@ -253,9 +249,8 @@ class DataframeReader(worker.Worker):
                                             datetime.now(),
                                             job['job_id'],
                                             "cannot-cast"}
-
                                   )
-                                tuple["attrs"][cols_vars[attr_col]] =
+                                #tuple["attrs"][cols_vars[attr_col]] =
 
 
 
