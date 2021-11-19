@@ -17,14 +17,15 @@ import pandas as pd
 from itertools import chain
 
 class Orchestration(pykka.ThreadingActor):
-    
+
     def __init__(self, settings, start_acquisition = True):
         super(Orchestration, self).__init__()
         self.settings = settings
         self.current_actors = dict()
         self.start_acquisition = start_acquisition
-        
-    def on_start(self):      
+
+
+    def on_start(self):
         # Launching the storage actor which can be used by any actor
         storage_ref = storage.Storage.start('storage', self.actor_ref, self.settings)
         storage_proxy = storage_ref.proxy()
@@ -50,19 +51,19 @@ class Orchestration(pykka.ThreadingActor):
         # launch pipeline actor
         pipeline_ref = pipeline.Pipeline.start('pipeline', self.actor_ref, self.settings)
         self.current_actors['pipeline'] = {'ref': pipeline_ref}
-        
+
         # launch script executor reader
         script_executor_ref = script_executor.ScriptExecutor.start('script_executor', self.actor_ref, self.settings)
         self.current_actors['script_executor'] = {'ref': script_executor_ref}
-        
-        # launch standardizer actor
+
+       # launch standardizer actor
         standardizer_ref = standardizer.Standardizer.start('standardizer', self.actor_ref, self.settings)
         self.current_actors['standardizer'] = {'ref': standardizer_ref}
-        
+
         # launch variables actor
         variables_ref = variables.Variables.start('variables', self.actor_ref, self.settings)
         self.current_actors['variables'] = {'ref': variables_ref}
-       
+
         # Launching acquisition actors (active actors)
         # List source definition files within 'source-definitions' through storage actor to get 
         # source_files = storage_ref.proxy().list_files('source-definitions').get()
@@ -90,13 +91,15 @@ class Orchestration(pykka.ThreadingActor):
                 dls_label = [dls for dls in dls_dicts if dls['acquisition']['channel']['name'] == label]
                 for dls in dls_label:
                     acquisition_proxy.add_datasource(dls)
-                self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label} 
         
+                self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label}
+
+
     def get_heartbeat(self, actor_name):
         now = datetime.datetime.now()
         self.current_actors[actor_name]['heartbeat'] = now
         #print(f'heartbeat from {actor_name} at: {now}')
-        
+
     def get_actor(self, actor_name):
         return self.current_actors[actor_name]['ref']
         
@@ -104,9 +107,8 @@ class Orchestration(pykka.ThreadingActor):
     def actors_df(self):
       map = self.current_actors
       df = pd.DataFrame(data = {
-        "actor": map.keys(), 
+        "actor": map.keys(),
         "last_seen_seconds": [((datetime.datetime.now() - it["heartbeat"]).total_seconds() if "heartbeat" in it else pd.NA)  for it in map.values()],
         "heartbeat": [(it["heartbeat"] if "heartbeat" in it else pd.NA)  for it in map.values()]
       })
-      return df 
-
+      return df
