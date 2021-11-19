@@ -30,7 +30,6 @@ class Acquisition(worker.Worker):
            os.makedirs(source_dir)
        # registering new source if not already on the source table
        find_source = self._storage_proxy.read_db('source', lambda x: x['name']==dls['scope']['source']).get()
-       print(f'find_source is {find_source}')
        if find_source is None  or len(find_source["id"]) == 0:
             id_source = self._storage_proxy.write_db(
                  {
@@ -56,6 +55,8 @@ class Acquisition(worker.Worker):
             new_hash = nf["hash"]
             # If new files are found they will be send to the pipeline 
             if len(files_to_pipeline)>0:
+                #TODO: remove!!!!!!!!!!!!!!!!!
+                files_to_pipeline = files_to_pipeline[0:1]
                 # Sending files to the pipeline
                 self._pipeline_proxy.submit_files(dls, files_to_pipeline).get()
                 # Storing the new hash into the db

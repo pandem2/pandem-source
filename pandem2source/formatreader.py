@@ -19,9 +19,9 @@ class FormatReader(worker.Worker):
     def read_df(self, file_path, dls):
         pass
     
-    def read_format_start(self, job, file_path):
+    def read_format_start(self, file_path, job):
         df = self.read_df(file_path, job['dls_json'])
-        self._pipeline_proxy.read_format_end(job, file_path, df).get()
+        self._pipeline_proxy.read_format_end(df, file_path, job).get()
 
         
 

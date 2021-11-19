@@ -75,5 +75,10 @@ def reset_source(source_name):
       os.makedirs(script_to_dir)
     shutil.copyfile(script_from, script_to)
 
+def delete_all():
+    if os.path.exists(util.pandem_path("files")):
+      shutil.rmtree(util.pandem_path("files"))
+    if os.path.exists(util.pandem_path("database")):
+      shutil.rmtree(util.pandem_path("database"))
 
 

@@ -35,7 +35,10 @@ class Pipeline(worker.Worker):
                                           filter= lambda x: x['status']=='in progress' and x['step']!='submitted_started' and x['step']!=self.last_step 
                                          ).get()
         if jobs is not None:
-            self.job_steps['submitted_ended'] = dict([(j["id"], j) for j in jobs.to_dict(orient = 'records')])   
+            jobs = jobs.to_dict(orient = 'records')
+            for j in jobs:
+              j["step"]="submitted_ended"
+            self.job_steps['submitted_ended'] = dict([(j["id"], j) for j in jobs])   
 
     
 
@@ -48,7 +51,7 @@ class Pipeline(worker.Worker):
         
         # Jobs after submit that has just been submitted 
         # they will go to decompress or to format read
-        for job in self.job_steps['submitted_ended'].values():
+        for job in self.job_steps['submitted_ended'].copy().values():
             submitted_files = job['source_files']
             if "decompress" not in job['dls_json']['acquisition'].keys():
                 self.update_job_step(job, 'read_format_started')
@@ -58,31 +61,31 @@ class Pipeline(worker.Worker):
                 self.send_to_unarchive(submitted_files, job)
         
         # Jobs after decompression ends
-        for job in self.job_steps['unarchive_ended']:
+        for job in self.job_steps['unarchive_ended'].copy().values():
             decompressed_files = self.decompressed_files[job['id']]
             self.update_job_step(job, 'read_format_started')
             self.send_to_readformat(decompressed_files, job)
 
         # Jobs after read format ends
-        for job in self.job_steps['read_format_ended']:
+        for job in self.job_steps['read_format_ended'].copy().values():
             dfs = self.job_df[job["id"]]
             self.update_job_step(job, 'read_df_started')
             self.send_to_read_df(dfs, job)
         
         # Jobs after read df ends
-        for job in self.job_steps['read_df_ended']:
+        for job in self.job_steps['read_df_ended'].copy().values():
             tuples = self.job_tuples[job["id"]]
             self.update_job_step(job, 'standardize_started')
             self.send_to_standardize(tuples, job)
 
         # Jobs after standardize ends
-        for job in self.job_steps['standardize_ended']:
+        for job in self.job_steps['standardize_ended'].copy().values():
             tuples = self.job_stdtuples[job["id"]]
             self.update_job_step(job, 'publish_started')
             self.send_to_publish(tuples, job)
         
         # Jobs after publish ends
-        for job in self.job_steps['publish_ended']:
+        for job in self.job_steps['publish_ended'].copy().values():
             # cleaning job dicos
             for job_dico in job_dicos:
               if job["id"] in job_dico:
@@ -108,7 +111,7 @@ class Pipeline(worker.Worker):
                                               'source_files': paths_in_staging,
                                               'step': 'submitted_ended'}, 
                                              'job').get()
-        job_submitted = self._storage_proxy.read_db('job', filter= lambda x: x['id']==job_id).get().to_dict(orient='records')[0]
+        job = self._storage_proxy.read_db('job', filter= lambda x: x['id']==job_id).get().to_dict(orient='records')[0]
 
         self.update_job_step(job, 'submitted_ended')
 
@@ -118,19 +121,19 @@ class Pipeline(worker.Worker):
           file_ext = os.path.splitext(file_path)[1]
           print(f'file extenstion is: {file_ext}')
           if file_ext == '.csv':
-              self._frcsv_proxy.read_format_start(job, file_path)
+              self._frcsv_proxy.read_format_start(file_path, job)
           elif file_ext == '.rdf':
-              self._frxml_proxy.read_format_start(job, file_path)
+              self._frxml_proxy.read_format_start(file_path, job)
           elif file_ext == '.xml':
-              self._frxml_proxy.read_format_start(job, file_path)
+              self._frxml_proxy.read_format_start(file_path, job)
           else:
               raise RuntimeError('unsupported format')
 
-    def read_format_end(self, job, path, df): 
+    def read_format_end(self, df, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
 
         print(f'df head for file: {path} is : {df.head(10)}')
-        self.job_df[job_id][path] = df
+        self.job_df[job["id"]][path] = df
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'read_format_ended')
 
@@ -160,7 +163,7 @@ class Pipeline(worker.Worker):
 
     def read_df_end(self, tuples, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        self.job_tuples[job_id][path] = tuples
+        self.job_tuples[job["id"]][path] = tuples
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'read_df_ended')
 
@@ -172,7 +175,7 @@ class Pipeline(worker.Worker):
     def standardize_end(self, path, tuples, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         
-        self.job_stdtuples[job_id][path] = tuples
+        self.job_stdtuples[job["id"]][path] = tuples
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'standardize_ended')
 

@@ -76,7 +76,7 @@ class DataframeReader(worker.Worker):
         else :
             message=("DLS file not conform, columns element is missing.")
             print(message)
-            issue={ "step":job['step'],
+            issue={ job['step'],
                     "unknown",              #the column element is not found
                     dls['scope']['source'],
                     dls['scope']['source'], #file_name DLS à passer en paramètre ? l'attribut n'existe pas dans le dls
@@ -206,7 +206,8 @@ class DataframeReader(worker.Worker):
                 return value
             else:
                 return int(value)
-        else raise ValueError("undefined case for casting")
+        else: 
+          raise ValueError("undefined case for casting")
     
     def df2var(self):   # parameters to add after df=None, dls=None, job=None, file_name=None
 
@@ -255,7 +256,7 @@ class DataframeReader(worker.Worker):
                                             "cannot-cast"}
 
                                   )
-                                tuple["attrs"][cols_vars[attr_col]] =
+                                tuple["attrs"][cols_vars[attr_col]] = val
 
 
 
