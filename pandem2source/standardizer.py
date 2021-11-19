@@ -4,6 +4,7 @@ import time
 import threading
 from . import worker
 from datetime import datetime
+import copy
 
 
 class Standardizer(worker.Worker):
@@ -15,46 +16,89 @@ class Standardizer(worker.Worker):
     def on_start(self):
         self._storage_proxy=self._orchestrator_proxy.get_actor('storage').get().proxy()
         print(f'here in {self.name} on-start')
-        self._varaibles_proxy=self._orchestrator_proxy.get_actor('variables').get().proxy()
+        self._variables_proxy=self._orchestrator_proxy.get_actor('variables').get().proxy()
         print(f'here in {self.name} on-start')
 
-          
-    def get_variables(self): 
-        var_list=self._storage_proxy.read_files('variables/variables.json').get()
-        for var in var_list: 
-            dic_variables[var['variable']]=var
-            if 'aliases' in dic_variables :
-                for alias in dic_variables['aliases']:
-                    alias_var=var.clone()
-                    alias_var['variable']=alias['alias']
-                    alias_var['modifiers']=alias['modifiers']
-                    dic_variables[alias['alias']]=alias_var
-        return dic_variables
-
-    #def standardize(self, tuples_to_validate, var_name, job):
-    def standardize(self,var_name):  
+    #def standardize(self, tuples_to_validate, job):
+    def standardize(self):  
+        """
+            IN:         tuples_to_validate and object job
+            ACTIONS:    check the code and updates with a code if the values are in a ref
+            OUT:        if issues not null list of issue
+                        else list of tuples standardize
+        """
+        #Initialisation
         job={'job_id':123, 'step':'step-job'}
+        line_number='12'
         tuples=self._storage_proxy.read_files('variables/covid19-datahub-sample-tuples.json').get()
-        referential=self._varaibles_proxy.get_referential(var_name).get()
+        std_tuples={'scope':{}, 'tuples':[]}
+        std_var={}
+        variables=self._variables_proxy.get_variables().get()
         list_issues=[]
         list_ref=[]
-        list_ref=set([x['attr'] for x in referential])
+        global_tuple={}
+        update_tuple={}
+        refs_alias={}
+        refs_values={}
 
-        for var in tuples['tuples']:
-            one_tuple=var['attrs'][var_name]
-            if one_tuple in list_ref: 
-                None
+        type_translate=['referential_alias']
+        type_validate=['referential', 'referential_alias']
+        
+        for i in range(-2, len(tuples['tuples'])):
+            #retrieves the globals variable
+            if i == -2: 
+                std_var['attrs']=dict([(x['variable'],x['value']) for x in tuples['scope']['globals']])
+            #retrieves the update variable
+            elif i == -1: 
+                std_var['attrs']=dict([(x['variable'],x['value']) for x in tuples['scope']['update_scope']])
+            #retrieves the tupple
             else:
-                message=(f"Code {one_tuple} does not exist in referential '{var_name}'. Line {var['attrs']['line_number']} in file {tuples['scope']['file_name']} (source: '{tuples['scope']['source']}').")
-                issue={ job['step'], 
-                        var['attrs']['line_number'], 
-                        tuples['scope']['source'], 
-                        tuples['scope']['file_name'], 
-                        message, 
-                        datetime.now(), 
-                        job['job_id'], 
-                        "ref-not-found"}
-                list_issues.append(issue)
-                #si aucune erreur on retourne la liste des tuples
-        return list_issues
+                std_var=copy.deepcopy(tuples['tuples'][i])
 
+
+            for var_name in std_var['attrs'].copy().keys():
+                #retrieves the referentiel
+                if var_name not in refs_values and variables[var_name]['type'] in type_validate:
+                    referential=self._variables_proxy.get_referential(var_name).get()
+                    refs_values[var_name]=set([x['attr'] for x in referential])
+                if var_name not in refs_alias and variables[var_name]['type'] in type_translate: 
+                    alias=self._variables_proxy.get_referential(var_name).get() 
+                    code=variables[var_name]['linked_attributes'][0]
+                    refs_alias[var_name] = dict([(x['attr'],x['attrs'][code]) for x in alias])
+                var_value=std_var['attrs'][var_name]
+
+                #variable type is referentiel_translate
+                if variables[var_name]['type'] in type_translate:
+                    if var_value in refs_values[var_name]:
+                        if var_name in refs_alias : 
+                            std_var['attrs'].pop(var_name)
+                            std_var['attrs'][code]=refs_alias[var_name][var_value]
+
+                else:
+                    #Create a issue
+                    message=(f"Code {var_value} does not exist in referential '{var_name}'. Line {line_number} in file {tuples['scope']['file_name']} (source: '{tuples['scope']['source']}').")
+                    issue={ job['step'], 
+                            line_number, 
+                            tuples['scope']['source'], 
+                            tuples['scope']['file_name'], 
+                            message, 
+                            datetime.now().isoformat(timespec='minutes'), 
+                            job['job_id'], 
+                            "ref-not-found"}
+                    list_issues.append(issue)
+
+            if i == -2: 
+                global_tuple=std_var
+            elif i == -1: 
+                update_tuple=std_var
+            else:
+                for cle, value in global_tuple['attrs'].items():
+                    std_var['attrs'][cle]=value
+                std_tuples['tuples'].append(std_var)
+
+        std_tuples['scope']=tuples['scope']['update_scope']
+
+        if not(list_issues): 
+            return std_tuples
+        else: 
+            return list_issues

@@ -32,7 +32,7 @@ def read_variables_xls():
 
   for col in df.columns:
     if col != "description":
-      df[col] = df[col].str.lower().str.replace(", ", ",").str.replace(".", "").str.replace(" ", "-")
+      df[col] = df[col].str.lower().str.replace(", ", ",").str.replace(".", "").str.replace(" ", "_")
     if col == "linked_attributes" or col == "datasets":
       df[col] = df[col].str.split(",")
     if col == "aliases":
