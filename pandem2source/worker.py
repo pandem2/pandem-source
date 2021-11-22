@@ -23,7 +23,7 @@ class Worker(pykka.ThreadingActor):
         while True:
             self.send_heartbeat()
             self.loop_actions()
-            time.sleep(20)
+            time.sleep(2)
 
     def pandem_path(self, *args):
         return os.path.join(os.getenv('PANDEM_HOME'), *args)

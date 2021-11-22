@@ -10,14 +10,10 @@ import copy
 class Standardizer(worker.Worker):
     def __init__(self, name, orchestrator_ref, settings): 
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)
-        self._orchestrator_proxy = orchestrator_ref.proxy()
-        print(f'here in {self.name} __init__')
 
     def on_start(self):
         self._storage_proxy=self._orchestrator_proxy.get_actor('storage').get().proxy()
-        print(f'here in {self.name} on-start')
         self._variables_proxy=self._orchestrator_proxy.get_actor('variables').get().proxy()
-        print(f'here in {self.name} on-start')
 
     #def standardize(self, tuples_to_validate, job):
     def standardize(self):  

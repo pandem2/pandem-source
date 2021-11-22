@@ -26,9 +26,10 @@ class Pipeline(worker.Worker):
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
         self.job_stdtuples = defaultdict(dict)
+        self.job_issues = defaultdict(list)
         self.pending_count = {}
 
-        self.job_dicos = [self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.pending_count]
+        self.job_dicos = [self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.pending_count, self.job_issues]
 
         self.last_step = "publish_end" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
@@ -159,25 +160,33 @@ class Pipeline(worker.Worker):
     def send_to_read_df(self, dfs, job):
         self.pending_count[job["id"]] = len(dfs)
         for path, df in dfs.items():
-            self._dfreader_proxy.df2tuple(df, path, job)
+            self._dfreader_proxy.df2tuple(df, path, job, job["dls_json"])
 
-    def read_df_end(self, tuples, path, job): 
+    def read_df_end(self, tuples, issues, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_tuples[job["id"]][path] = tuples
+        self.job_issues[job["id"]].extend(issues)
         if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'read_df_ended')
+            if len(self.job_issues[job["id"]]) == 0:
+                self.update_job_step(job, 'read_df_ended')
+            else:
+                self.update_job_step(job, 'aborted')
+                
 
     def send_to_standardize(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
-            self._dfreader_proxy.df2tuple(tuples, path, job)
+            self._dfreader_proxy.standardize(tuples, path, job, job["dls_json"])
 
-    def standardize_end(self, path, tuples, job): 
+    def standardize_end(self, path, tuples, issues, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        
         self.job_stdtuples[job["id"]][path] = tuples
+        self.job_issues[job["id"]].extend(issues)
         if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'standardize_ended')
+            if len(self.job_issues[job["id"]]) == 0:
+                self.update_job_step(job, 'standardize_ended')
+            else:
+                self.update_job_step(job, 'aborted')
 
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)

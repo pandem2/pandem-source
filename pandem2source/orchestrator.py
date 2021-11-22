@@ -66,10 +66,8 @@ class Orchestration(pykka.ThreadingActor):
 
         # Launching acquisition actors (active actors)
         # List source definition files within 'source-definitions' through storage actor to get 
-        # source_files = storage_ref.proxy().list_files('source-definitions').get()
         source_files = storage_proxy.list_files('source-definitions').get()
         # read json dls files into dicts
-        #dls_dicts = [storage_ref.proxy().read_files(file_name['path']).get() for file_name in source_files]
         dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in source_files]
 
         sources_labels = set([dls['acquisition']['channel']['name'] for dls in dls_dicts])

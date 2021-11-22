@@ -8,7 +8,6 @@ from collections import defaultdict
 class Variables(worker.Worker):
     def __init__(self, name, orchestrator_ref, settings): 
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)
-        self._orchestrator_proxy = orchestrator_ref.proxy()
 
     def on_start(self):
         super().on_start()
@@ -16,7 +15,7 @@ class Variables(worker.Worker):
 
     def get_variables(self): 
         dic_variables = dict()
-        var_list=self._storage_proxy.read_files('variables/variables.json').get()
+        var_list=self._storage_proxy.read_file('variables/variables.json').get()
         for var in var_list: 
             dic_variables[var['variable']]=var
             if 'aliases' in var :
@@ -37,7 +36,7 @@ class Variables(worker.Worker):
         if os.path.isdir(path):
             list_files=self._storage_proxy.list_files(path).get()
             for file in list_files:
-                var_list=self._storage_proxy.read_files(file['path']).get()
+                var_list=self._storage_proxy.read_file(file['path']).get()
                 for var in var_list['tuples']:
                     referentiel.append(var)
         else: 
