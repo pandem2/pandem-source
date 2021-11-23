@@ -7,6 +7,7 @@ from . import worker
 
 
 class Storage(worker.Worker):
+   
     def __init__(self, name, orchestrator_ref, settings): 
         super().__init__(name, orchestrator_ref, settings)
      
@@ -55,21 +56,23 @@ class Storage(worker.Worker):
         else:                                    
             self.db_tables['source'] = pd.DataFrame({'id': pd.Series(dtype='int'),
                                                      'name': pd.Series(dtype='str'), 
-                                                     'last_hash': pd.Series(dtype='str')
+                                                     'last_hash': pd.Series(dtype='str'),
+                                                     'last_exec':pd.Series(dtype=object),
+                                                     'next_exec': pd.Series(dtype=object)
                                                     })   
 
              
     def write_file(self, path, bytes, mode): #absolute path here
-        ''' mode: 
-            wb+  create file if it doesn't exist and open it in overwrite mode.
-                It overwrites the file if it already exists
-            ab+  create file if it doesn't exist and open it in append mode
-        '''
+        
+        
         with open(path, mode) as f:
             f.write(bytes) 
     
 
     def read_file(self, path): #absolute path here
+    
+
+
         if path.split('.')[-1] == "json":
             with open(path, 'r') as f:
                 data_dict = json.load(f)
@@ -156,11 +159,10 @@ class Storage(worker.Worker):
 
     def read_db(self, db_class, filter=None):
         df = self.db_tables[db_class]
-
         if df.shape[0] > 0:
             if filter != None:
                 df = df.loc[df.apply(filter, axis = 1)]
-            return df.astype({"id": int})
+            return df
         else:
             return None
 

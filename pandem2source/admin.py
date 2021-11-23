@@ -8,7 +8,7 @@ from . import util
 
 def reset_variables(in_package = False, in_home = True):
   if in_package:
-    write_json_variablesi( pkg_resources.resource_filename("pandem2source", "data/DLS/variables.json"))
+    write_json_variables( pkg_resources.resource_filename("pandem2source", "data/DLS/variables.json"))
   if in_home:
     dir_path = util.pandem_path("files", "variables")
     file_path = util.pandem_path("files", "variables", "variables.json")
