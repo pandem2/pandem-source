@@ -10,7 +10,6 @@ import numpy as np
 import json
 
 class DataframeReader(worker.Worker):
-    #Temporary delete of the Worker class to develop the DF2variables function
     __metaclass__ = ABCMeta
 
     def __init__(self, name, orchestrator_ref, storage_ref, settings):
@@ -24,7 +23,6 @@ class DataframeReader(worker.Worker):
 
     def get_variables(self):
         return self._variables_proxy.get_variables().get()
-
 
     def check_df_columns(self, df, job, dls, file_name, variables):
         """Checks if the DLS columns names exist in dataframe
@@ -89,7 +87,7 @@ class DataframeReader(worker.Worker):
                                 'issue_type' : "ref-not-found"}
                         issues[item["name"]] = issue
                 elif var[item['variable']]['unit'] == 'people':
-                    if df[item['name']].dtypes in ['integer', 'str', "obj", "float64"] :
+                    if df[item['name']].dtypes in ['integer', 'str', "obj", "float64", "int64"] :
                         issues[item["name"]] = None
                     else :
                         message = (f"Type '{df[item['name']].dtypes}' in source file is not compatible with variable {item['variable']} with unit 'integer' ")
@@ -229,8 +227,8 @@ class DataframeReader(worker.Worker):
         ret = {"scope":dls["scope"].copy()}
         ret["scope"]["file_name"] = file_name
         # validating that globals are property instantiated
-        if "scope" in dls and "globals" in dls["scope"] : 
-          ret["scope"]["globals"] = self.add_values(dls["scope"]["globals"], tuples = [], issues = issues, dls = dls, job = job, file_name = file_name)
+        #if "scope" in dls and "globals" in dls["scope"] : 
+        #  ret["scope"]["globals"] = self.add_values(dls["scope"]["globals"], tuples = [], issues = issues, dls = dls, job = job, file_name = file_name)
         # instantiating update scope based on existing values on tuple
         if "scope" in dls and "update_scope" in dls["scope"]:
           ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, issues = issues, dls = dls, job = job, file_name = file_name)

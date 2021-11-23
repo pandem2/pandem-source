@@ -23,6 +23,7 @@ class Pipeline(worker.Worker):
         self._unarchive_proxy = self._orchestrator_proxy.get_actor('unarchiver').get().proxy()
         self._dfreader_proxy = self._orchestrator_proxy.get_actor('dfreader').get().proxy()
         self._standardizer_proxy = self._orchestrator_proxy.get_actor('standardizer').get().proxy()
+        self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
         self.job_steps = defaultdict(dict)
         self.decompressed_files = defaultdict(list)
         self.job_df = defaultdict(dict)
@@ -94,9 +95,9 @@ class Pipeline(worker.Worker):
         # Jobs after publish ends
         for job in self.job_steps['publish_ended'].copy().values():
             # cleaning job dicos
-            for job_dico in job_dicos:
+            for job_dico in self.job_dicos:
               if job["id"] in job_dico:
-                job_dico.pop(job[job["id"]])
+                job_dico.pop(job["id"])
             # TODO: delete jobs other than last 10 jobs per source
     
 
@@ -184,7 +185,7 @@ class Pipeline(worker.Worker):
         for path, ttuples in tuples.items():
             self._standardizer_proxy.standardize(ttuples, path, job, job["dls_json"])
 
-    def standardize_end(self, path, tuples, issues, job): 
+    def standardize_end(self, tuples, issues, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_stdtuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
@@ -197,7 +198,7 @@ class Pipeline(worker.Worker):
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
-            self._variables_proxy.write(ttuples, path, job)
+            self._variables_proxy.write_variable(ttuples, path, job)
 
     def publish_end(self, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1

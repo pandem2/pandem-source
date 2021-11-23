@@ -3,6 +3,8 @@ import os
 from . import util 
 import itertools
 import json
+import datetime
+import numpy
 from collections import defaultdict
 
 class Variables(worker.Worker):
@@ -12,6 +14,7 @@ class Variables(worker.Worker):
     def on_start(self):
         super().on_start()
         self._storage_proxy=self._orchestrator_proxy.get_actor('storage').get().proxy()
+        self._pipeline_proxy=self._orchestrator_proxy.get_actor('pipeline').get().proxy()
 
     def get_variables(self): 
         dic_variables = dict()
@@ -62,10 +65,20 @@ class Variables(worker.Worker):
 
     
     def get_partition(self, tuple, partition):
-        return '_'.join([key + '-' + val for key, val in tuple['attrs'].items() if key in partition]) + '.json'
+        if partition is None:
+          return 'default.json'
+        else:
+          return '_'.join([key + '-' + val for key, val in tuple['attrs'].items() if key in partition]) + '.json'
 
-    
-    def write_variable(self, input_tuples, partition):
+
+    def write_variable(self, input_tuples, path, job):
+        class JsonEncoder(json.JSONEncoder):
+          def default(self, z):
+            if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64):
+              return (str(z))
+            else:
+              return super().default(z)
+        variables = self.get_variables()
         partition_dict = defaultdict(list)
         for tuple in input_tuples['tuples']:
             for key, var in tuple.items():
@@ -75,7 +88,7 @@ class Variables(worker.Worker):
         partition_dict_final = defaultdict(lambda: defaultdict(list))
         for var, tuple_list in partition_dict.items():
             for tuple in tuple_list:
-                file_name = self.get_partition(tuple, partition)
+                file_name = self.get_partition(tuple, variables[var]["partition"])
                 partition_dict_final[var][file_name].append(tuple)
         update_filter = []
         for filter in input_tuples['scope']['update_scope']:
@@ -92,22 +105,23 @@ class Variables(worker.Worker):
                 if not os.path.exists(file_path):
                     tuples_to_dump = {'tuples': tuples_list}
                     with open(file_path, 'w+') as f:
-                        json.dump(tuples_to_dump, f)
+                        json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
                 else:
                     with open(file_path, 'r') as f:
                         last_tuples = json.load(f)
+                    tuple_list = []
+                    tuples_to_dump = {'tuples': tuples_list}
                     for tup in last_tuples['tuples']:
                         cond_count = len(update_filter)
                         for filt in update_filter: 
                             if filt['variable'] in tup['attrs'].keys() and tup['attrs'][filt['variable']] in filt['value']:
                                 cond_count = cond_count - 1
                         if cond_count > 0:
-                            print(tup)
                             tuples_list.append(tup)            
-                    tuples_to_dump = {'tuples': tuples_list}
                     with open(file_path, 'w') as f:
-                        json.dump(tuples_to_dump, f)
+                        json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
 
+        self._pipeline_proxy.publish_end( path = path, job = job)
                     
 
 

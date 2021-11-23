@@ -7,8 +7,6 @@
       "reference_user":"",
       "reporting_email":"",
       "globals":[
-        {"variable":"source"},
-        {"variable":"pathogen", "value":"COVID-19"}
       ],
       "update_scope":[
         {"variable":"source"},

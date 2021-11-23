@@ -15,6 +15,7 @@ class Standardizer(worker.Worker):
     def on_start(self):
         self._storage_proxy=self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._variables_proxy=self._orchestrator_proxy.get_actor('variables').get().proxy()
+        self._pipeline_proxy=self._orchestrator_proxy.get_actor('pipeline').get().proxy()
 
     #def standardize(self, tuples_to_validate, job):
     def standardize(self, tuples, path, job, dls):  
@@ -40,7 +41,7 @@ class Standardizer(worker.Worker):
             std_var = {}
             #retrieves the globals variable
             if i == -2: 
-                std_var['attrs']=dict([(x['variable'],x['value']) for x in tuples['scope']['globals']])
+                std_var['attrs']=dict([(x['variable'],x['value']) for x in tuples['scope']['globals'] if 'value' in x])
             #retrieves the update variable
             elif i == -1: 
                 std_var['attrs']=dict([(x['variable'],x['value']) for x in tuples['scope']['update_scope']])
@@ -53,7 +54,7 @@ class Standardizer(worker.Worker):
                 if var_name not in refs_values and var_name in variables and variables[var_name]['type'] in type_validate:
                     referential=self._variables_proxy.get_referential(var_name).get()
                     if referential is not None:
-                        refs_values[var_name]=set([x['attr'] for x in referential])
+                        refs_values[var_name]=set([x['attr'][var_name] for x in referential])
                     else: 
                         refs_values[var_name] = None
                 if var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
@@ -97,9 +98,5 @@ class Standardizer(worker.Worker):
                 std_tuples['tuples'].append(std_var)
 
         std_tuples['scope']['update_scope']=tuples['scope']['update_scope']
-
-        print("\n".join(util.pretty(list_issues).split("\n")[0:100])) 
-        if not(list_issues): 
-            return std_tuples
-        else: 
-            return list_issues
+        #print("\n".join(util.pretty(std_tuples).split("\n")[0:100]))
+        self._pipeline_proxy.standardize_end(tuples = std_tuples, issues = list_issues, path = path, job = job)

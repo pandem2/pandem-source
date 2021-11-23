@@ -56,7 +56,7 @@ class Acquisition(worker.Worker):
             # If new files are found they will be send to the pipeline 
             if len(files_to_pipeline)>0:
                 #TODO: remove!!!!!!!!!!!!!!!!!
-                files_to_pipeline = files_to_pipeline[0:1]
+                #files_to_pipeline = files_to_pipeline[0:1]
                 # Sending files to the pipeline
                 self._pipeline_proxy.submit_files(dls, files_to_pipeline).get()
                 # Storing the new hash into the db
