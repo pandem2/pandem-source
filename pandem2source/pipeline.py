@@ -6,12 +6,14 @@ import datetime
 import json
 from collections import defaultdict
 from . import worker
+from . import util
 from abc import ABC, abstractmethod, ABCMeta
 
 class Pipeline(worker.Worker):
     __metaclass__ = ABCMeta  
-    def __init__(self, name, orchestrator_ref, settings): 
+    def __init__(self, name, orchestrator_ref, settings, retry_failed = False): 
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)
+        self.retry_failed = retry_failed
 
     def on_start(self):
         super().on_start()
@@ -33,12 +35,16 @@ class Pipeline(worker.Worker):
 
         self.last_step = "publish_end" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
-                                          filter= lambda x: x['status']=='in progress' and x['step']!='submitted_started' and x['step']!=self.last_step 
+                                          filter= lambda x: 
+                                             ( x['status'] == 'in progress' or (x['status'] == 'failed' and self.retry_failed)) 
+                                             and x['step'] != 'submitted_started' 
+                                             and x['step'] != self.last_step 
                                          ).get()
         if jobs is not None:
             jobs = jobs.to_dict(orient = 'records')
             for j in jobs:
               j["step"]="submitted_ended"
+              j["status"]="in progress"
             self.job_steps['submitted_ended'] = dict([(j["id"], j) for j in jobs])   
 
     
@@ -150,7 +156,7 @@ class Pipeline(worker.Worker):
     def unarchive_end(self, archive_path, filter_path, bytes, job):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         
-        dest_file = os.path.basename(zip_path)+'_'+('_'.join(file.split('/'))) 
+        dest_file = os.path.basename(archive_path)+'_'+('_'.join(filter_path.split('/'))) 
         path_in_staging = self.staging_path(job['dls_json'], dest_file)
         self.decompressed_files[job['id']].append(path_in_staging)
         self._storage_proxy.write_file(path_in_staging, bytes, 'wb+').get()
@@ -170,13 +176,13 @@ class Pipeline(worker.Worker):
             if len(self.job_issues[job["id"]]) == 0:
                 self.update_job_step(job, 'read_df_ended')
             else:
-                self.update_job_step(job, 'aborted')
+                self.fail_job(job)
                 
 
     def send_to_standardize(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
-            self._dfreader_proxy.standardize(tuples, path, job, job["dls_json"])
+            self._standardizer_proxy.standardize(ttuples, path, job, job["dls_json"])
 
     def standardize_end(self, path, tuples, issues, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
@@ -186,12 +192,12 @@ class Pipeline(worker.Worker):
             if len(self.job_issues[job["id"]]) == 0:
                 self.update_job_step(job, 'standardize_ended')
             else:
-                self.update_job_step(job, 'aborted')
+                self.fail_job(job)
 
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
-            self._variables_proxy.write(tuples, path, job)
+            self._variables_proxy.write(ttuples, path, job)
 
     def publish_end(self, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
@@ -215,6 +221,21 @@ class Pipeline(worker.Worker):
           job["status"] = "Success"
         else:
           self.job_steps[step][job["id"]] = job
+
+        return self._storage_proxy.write_db(job, 'job')
+    
+    # this function returns a future that can be waited to ensure that file job is written to disk
+    def fail_job(self, job):
+        print(f"Changing status of job {job['id']} to 'failed' for {job['dls_json']['scope']['source']}")
+        print(util.pretty(self.job_issues[job["id"]]))
+        # removing job from current step dict
+        if job["step"] in self.job_steps and job["id"]:
+          if job["id"] in self.job_steps[job["step"]]:
+            self.job_steps[job["step"]].pop(job["id"])
+          else:
+            print(f"Warning: could not find id {job['id']} in job_steps {job['step']}") 
+        # changing the job status 
+        job["status"] = "failed"
 
         return self._storage_proxy.write_db(job, 'job')
   

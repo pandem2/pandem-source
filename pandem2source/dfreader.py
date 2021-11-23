@@ -148,10 +148,8 @@ class DataframeReader(worker.Worker):
           raise ValueError("undefined case for casting")
     
 
-
-
     def df2tuple(self, df, path, job, dls): 
-        var = self.get_variables()
+        variables = self.get_variables()
         dls_col_list=[]
         file_name = util.absolute_to_relative(path, "files/staging/")
        
@@ -160,58 +158,115 @@ class DataframeReader(worker.Worker):
             df['line_number'] = range(1, len(df)+1) 
 
         # Checking column names and compatible types
-        col_issues = self.check_df_columns(df = df, job = job, dls = dls, file_name = path, variables = var)
+        col_issues = self.check_df_columns(df = df, job = job, dls = dls, file_name = path, variables = variables)
         issues = list([i for i in col_issues.values() if i is not None]) 
 
-        if dls['columns']:
-            col_vars = dict((t["name"],t["variable"]) for t in  dls['columns'])
-            col_types = dict((k,var[v]["type"]) for k,v in col_vars.items())
-            types_ok = dict((t["name"],  t["name"] in col_issues and col_issues[t["name"]] is None) for t in  dls['columns'])
-        
+        types_ok = dict((t["name"],  t["name"] in col_issues and col_issues[t["name"]] is None) for t in  dls['columns'])
+        col_vars = dict((t["name"], t["variable"]) for t in  dls['columns'])
+        col_types = dict((k,variables[v]["type"]) for k,v in col_vars.items() if v in variables)
+        insert_cols = dict((t["name"], ("obs" if col_types[t["name"]] in ["observation", "indicator"] else "attr")) 
+          for t in  dls['columns'] 
+          if types_ok[t["name"]] and
+            ("action" in t and t["action"] == "insert" or col_types[t["name"]] in ["observation", "indicator"])
+        )
+        attr_cols = {}
+        for col, typ in insert_cols.items():
+          if typ in ["observation", "indicator"]:
+            attr_cols[col] =  [k for k, v in col_types.items() if v in  ["observation", "indicator"] and types_ok[k]]
+          else:
+            attr_cols[col] =  [k for k, v in col_vars.items() if 
+              types_ok[k] and  
+              (
+                (variables[col_vars[col]]["linked_attributes"] is not None and  
+                v in variables[col_vars[col]]["linked_attributes"]) or
+                  col_types[k] in ["characteristic"]
+              )
+            ]
 
-        ret = {"scope":dls["scope"]}
         tuples = []
-
         for row in range(len(df)):
-            for col in df.columns:
-                if col in col_types and col_types[col] in ["observation", "indicator"]  and types_ok[col]:
-                    tup = {"attrs":{
-                        "line_number":df["line_number"][row],
-                        "file_name":file_name
-                      }
-                    }
-                    try:
-                      tup["obs"] = {
-                          col_vars[col]:self.translate(df[col][row], df[col].dtypes, var[col_vars[col]]["unit"])
-                      }
-                    except Exception as e:
-                      issues.append({
-                        "step":job['step'],
-                        "line":df["line_number"][row],
-                        "source":dls['scope']['source'],
-                        "file":file_name,
-                        "message":f"Cannot cast value {df[col][row]} into unit {var[col_vars[col]]['unit']} \n {e}",
-                        "raised_on":datetime.now(),
-                        "job_id":job['id'],
-                        "issue_type":"cannot-cast"
-                      })
-                    for attr_col in df.columns:
-                        if attr_col in col_types and col_types[attr_col] not in ["observation", "indicator"] and types_ok[attr_col]:
-                            val = None
-                            try:
-                              val = self.translate(df[attr_col][row], df[attr_col].dtypes, var[col_vars[attr_col]]["unit"])
-                            except Exception as e:
-                              issues.append({
-                                "step":job['step'],
-                                "line":df["line_number"][row],
-                                "source":dls['scope']['source'],
-                                "file":file_name,
-                                "message":f"Cannot cast value {df[attr_col][row]} into unit {var[col_vars[attr_col]]['unit']} \n {e}",
-                                "raised_on":datetime.now(),
-                                "job_id":job['id'],
-                                "issue_type":"cannot-cast"
-                              })
-                            if val is not None:
-                              tup["attrs"][col_vars[attr_col]] = val
-                    tuples.append(tup)
-        self._pipeline_proxy.read_df_end(tuples = tuples, issues = issues, path = path, job = job)
+            for col, group in insert_cols.items():
+                tup = {"attrs":{
+                    "line_number":df["line_number"][row]
+                    ,"source":dls["scope"]["source"]
+                    ,"file":file_name
+                  }
+                }
+                try:
+                  tup[group] = {
+                      col_vars[col]:self.translate(df[col][row], df[col].dtypes, variables[col_vars[col]]["unit"])
+                  }
+                except Exception as e:
+                  issues.append({
+                    "step":job['step'],
+                    "line":df["line_number"][row],
+                    "source":dls['scope']['source'],
+                    "file":file_name,
+                    "message":f"Cannot cast value {df[col][row]} into unit {variables[col_vars[col]]['unit']} \n {e}",
+                    "raised_on":datetime.now(),
+                    "job_id":job['id'],
+                    "issue_type":"cannot-cast"
+                  })
+                for attr_col in attr_cols[col]:
+                     val = None
+                     try:
+                       val = self.translate(df[attr_col][row], df[attr_col].dtypes, variables[col_vars[attr_col]]["unit"])
+                     except Exception as e:
+                       issues.append({
+                         "step":job['step'],
+                         "line":df["line_number"][row],
+                         "source":dls['scope']['source'],
+                         "file":file_name,
+                         "message":f"Cannot cast value {df[attr_col][row]} into unit {variables[col_vars[attr_col]]['unit']} \n {e}",
+                         "raised_on":datetime.now(),
+                         "job_id":job['id'],
+                         "issue_type":"cannot-cast"
+                       })
+                     if val is not None:
+                       tup["attrs"][col_vars[attr_col]] = val
+                tuples.append(tup)
+        
+        ret = {"scope":dls["scope"].copy()}
+        ret["scope"]["file_name"] = file_name
+        # validating that globals are property instantiated
+        if "scope" in dls and "globals" in dls["scope"] : 
+          ret["scope"]["globals"] = self.add_values(dls["scope"]["globals"], tuples = [], issues = issues, dls = dls, job = job, file_name = file_name)
+        # instantiating update scope based on existing values on tuple
+        if "scope" in dls and "update_scope" in dls["scope"]:
+          ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, issues = issues, dls = dls, job = job, file_name = file_name)
+        ret["tuples"] = tuples
+        
+        self._pipeline_proxy.read_df_end(tuples = ret, issues = issues, path = path, job = job)
+    
+
+    def add_values(self, var_list, tuples, issues, dls, job, file_name):
+        ret = []
+        for var in var_list:
+          if "variable" in var and "value" in var :
+            # all good no need to get distinct values
+            if not isinstance(var["value"], list):
+              r = var.copy()
+              r["value"] = [var["value"]]
+              ret.append(r)
+            else :
+              ret.append(var)
+          elif "variable" in var :
+            # value is midding we are going to try to get it from tuples
+            r = var.copy()
+            r["value"] = list(set(x["attrs"][var["variable"]] for x in tuples if var["variable"] in x["attrs"]))
+            ret.append(r)
+          else :
+            message = (f"Variable {var['variable']} needs to be instantiated ad per DLS but no valuer where found on dataset ")
+            issue = {'step' : job['step'],
+                    'line' : 0,
+                    'source' : dls['scope']['source'],
+                    'file' : file_name,
+                    'message' : message,
+                    'raised_on' : datetime.now(),
+                    'job_id' : job['id'],
+                    'issue_type' : "cannot-instantiate"
+            }
+            issues.append(issue)
+        return ret
+
+

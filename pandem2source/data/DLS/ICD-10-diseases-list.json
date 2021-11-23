@@ -7,12 +7,9 @@
       "reference_user":"",
       "reporting_email":"",
       "globals":[
-        {"variable":"source"},
-        {"variable":"pathogen", "value":"COVID-19"}
       ],
       "update_scope":[
-        {"variable":"source"},
-        {"variable":"reporting_date"}
+        {"variable":"source"}
         
       ]
     },
@@ -30,7 +27,7 @@
       }
     },
     "columns":[
-      {"name":"code", "xpath":"name/text()"},
-      {"name":"name", "xpath":"desc/text()"}
+      {"name":"code", "xpath":"name/text()", "variable":"pathogen_code", "action":"insert"},
+      {"name":"name", "xpath":"desc/text()", "variable":"pathogen_name", "action":"insert"}
     ]
   }

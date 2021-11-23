@@ -17,7 +17,7 @@ class Unarchive(worker.Worker):
     def loop_actions(self):
         pass
     
-    def unarchive(self, job, archive_path, filter_path): 
+    def unarchive(self, archive_path, filter_path, job): 
         #print('here in unarchive')
         # print(f'files_to_filter: {files_to_filter}')
         with ZipFile(archive_path) as zip_archive:

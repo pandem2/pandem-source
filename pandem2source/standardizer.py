@@ -3,6 +3,7 @@ import os
 import time
 import threading
 from . import worker
+from . import util
 from datetime import datetime
 import copy
 
@@ -16,17 +17,13 @@ class Standardizer(worker.Worker):
         self._variables_proxy=self._orchestrator_proxy.get_actor('variables').get().proxy()
 
     #def standardize(self, tuples_to_validate, job):
-    def standardize(self):  
+    def standardize(self, tuples, path, job, dls):  
         """
             IN:         tuples_to_validate and object job
             ACTIONS:    check the code and updates with a code if the values are in a ref
             OUT:        if issues not null list of issue
                         else list of tuples standardize
         """
-        #Initialisation
-        job={'job_id':123, 'step':'step-job'}
-        line_number='12'
-        tuples=self._storage_proxy.read_files('variables/covid19-datahub-sample-tuples.json').get()
         std_tuples={'scope':{}, 'tuples':[]}
         std_var={}
         variables=self._variables_proxy.get_variables().get()
@@ -36,11 +33,11 @@ class Standardizer(worker.Worker):
         update_tuple={}
         refs_alias={}
         refs_values={}
-
+        ignore_check = set(c["variable"] for c in dls["columns"] if "action" in c and c["action"] == "insert")
         type_translate=['referential_alias']
         type_validate=['referential', 'referential_alias']
-        
         for i in range(-2, len(tuples['tuples'])):
+            std_var = {}
             #retrieves the globals variable
             if i == -2: 
                 std_var['attrs']=dict([(x['variable'],x['value']) for x in tuples['scope']['globals']])
@@ -51,36 +48,43 @@ class Standardizer(worker.Worker):
             else:
                 std_var=copy.deepcopy(tuples['tuples'][i])
 
-
             for var_name in std_var['attrs'].copy().keys():
                 #retrieves the referentiel
-                if var_name not in refs_values and variables[var_name]['type'] in type_validate:
+                if var_name not in refs_values and var_name in variables and variables[var_name]['type'] in type_validate:
                     referential=self._variables_proxy.get_referential(var_name).get()
-                    refs_values[var_name]=set([x['attr'] for x in referential])
-                if var_name not in refs_alias and variables[var_name]['type'] in type_translate: 
+                    if referential is not None:
+                        refs_values[var_name]=set([x['attr'] for x in referential])
+                    else: 
+                        refs_values[var_name] = None
+                if var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
                     alias=self._variables_proxy.get_referential(var_name).get() 
                     code=variables[var_name]['linked_attributes'][0]
                     refs_alias[var_name] = dict([(x['attr'],x['attrs'][code]) for x in alias])
+                
                 var_value=std_var['attrs'][var_name]
 
                 #variable type is referentiel_translate
-                if variables[var_name]['type'] in type_translate:
-                    if var_value in refs_values[var_name]:
-                        if var_name in refs_alias : 
-                            std_var['attrs'].pop(var_name)
-                            std_var['attrs'][code]=refs_alias[var_name][var_value]
-
-                else:
-                    #Create a issue
-                    message=(f"Code {var_value} does not exist in referential '{var_name}'. Line {line_number} in file {tuples['scope']['file_name']} (source: '{tuples['scope']['source']}').")
-                    issue={ job['step'], 
-                            line_number, 
-                            tuples['scope']['source'], 
-                            tuples['scope']['file_name'], 
-                            message, 
-                            datetime.now().isoformat(timespec='minutes'), 
-                            job['job_id'], 
-                            "ref-not-found"}
+                if var_name in ignore_check or var_name not in variables:
+                  pass
+                elif variables[var_name]['type'] in type_validate and refs_values[var_name] is not None and var_value in refs_values[var_name]:
+                  pass
+                elif variables[var_name]['type'] in type_translate and refs_values[var_name] is not None and var_value in refs_values[var_name]:
+                  std_var['attrs'].pop(var_name)
+                  std_var['attrs'][code]=refs_alias[var_name][var_value]
+                elif variables[var_name]['type'] in type_translate or variables[var_name]['type'] in type_validate :
+                    #Create a issue since validation failed 
+                    file_name = tuples['scope']['file_name']
+                    line_number = tuples['tuples'][i]['attrs']['line_number'] 
+                    message=(f"Code {var_value} does not exist in referential '{var_name}'. Line {line_number} in file {file_name} (source: '{tuples['scope']['source']}').")
+                    issue={ "step":job['step'], 
+                            "line":line_number, 
+                            "source":tuples['scope']['source'], 
+                            "file":file_name, 
+                            "message":message, 
+                            "raised_on":datetime.now(), 
+                            "job_id":job['id'], 
+                            "issue_type":"ref-not-found"
+                    }
                     list_issues.append(issue)
 
             if i == -2: 
@@ -92,8 +96,9 @@ class Standardizer(worker.Worker):
                     std_var['attrs'][cle]=value
                 std_tuples['tuples'].append(std_var)
 
-        std_tuples['scope']=tuples['scope']['update_scope']
+        std_tuples['scope']['update_scope']=tuples['scope']['update_scope']
 
+        print("\n".join(util.pretty(list_issues).split("\n")[0:100])) 
         if not(list_issues): 
             return std_tuples
         else: 
