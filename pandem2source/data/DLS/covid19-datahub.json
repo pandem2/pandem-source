@@ -32,6 +32,16 @@
     "columns":[
       {"name":"date", "variable":"reporting_date"},
       {"name":"confirmed", "variable":"confirmed_cases"},
+      {"name":"recovered", "variable":"recovered_cases"},
+      {"name":"deaths", "variable":"number_of_deaths"},
+      {"name":"tests", "variable":"number_of_tests_performed"},
+      {"name":"vaccines", "variable":"doses_injected"},
+      {"name":"people_vaccinated", "variable":"people_that_has_received_at_least_one_dose"},
+      {"name":"people_fully_vaccinated", "variable":"people_fully_vaccinated"},
+      {"name":"hosp", "variable":"number_of_infected_patients"},
+      {"name":"icu", "variable":"number_of_icu_patients"},
+      {"name":"vent", "variable":"number_of_patients_with_ventilator"},
+      {"name":"population", "variable":"population"},
       {"name":"iso_alpha_2", "variable":"iso_country_code_2"},
       {"name":"key_nuts", "variable":"geo_code"}
     ]

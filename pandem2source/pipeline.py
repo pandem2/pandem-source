@@ -41,11 +41,14 @@ class Pipeline(worker.Worker):
                                              and x['step'] != 'submitted_started' 
                                              and x['step'] != self.last_step 
                                          ).get()
-        if jobs is not None:
+        if jobs is not None :
             jobs = jobs.to_dict(orient = 'records')
+
+            new_dls = dict((dls["scope"]["source"],dls) for dls in  (self._storage_proxy.read_file(f["path"]).get() for f in self._storage_proxy.list_files('source-definitions').get()))
             for j in jobs:
               j["step"]="submitted_ended"
               j["status"]="in progress"
+              j["dls_json"] = new_dls[j["source"]]
             self.job_steps['submitted_ended'] = dict([(j["id"], j) for j in jobs])   
 
     

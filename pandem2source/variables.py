@@ -20,12 +20,12 @@ class Variables(worker.Worker):
         dic_variables = dict()
         var_list=self._storage_proxy.read_file('variables/variables.json').get()
         for var in var_list: 
-            dic_variables[var['variable']]=var
+            dic_variables[var['variable']]=var.copy()
             if 'aliases' in var :
                 for alias in var['aliases']:
                     alias_var=var.copy()
-                    if "alias" in alias:
-                      alias_var['variable']=alias['alias']
+                    #if "alias" in alias:
+                    #  alias_var['variable']=alias['alias']
                     if "modifiers" in alias:
                       alias_var['modifiers']=alias['modifiers']
                     if "alias" in alias:
@@ -81,10 +81,12 @@ class Variables(worker.Worker):
         variables = self.get_variables()
         partition_dict = defaultdict(list)
         for tuple in input_tuples['tuples']:
+            var_name = None
             for key, var in tuple.items():
-                if key != "attrs":
+                if key != "attrs" and len(tuple[key].keys()) > 0:
                     var_name = list(tuple[key].keys())[0]
-            partition_dict[var_name].append(tuple) 
+            if var_name is not None:
+              partition_dict[var_name].append(tuple) 
         partition_dict_final = defaultdict(lambda: defaultdict(list))
         for var, tuple_list in partition_dict.items():
             for tuple in tuple_list:

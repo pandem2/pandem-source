@@ -33,7 +33,7 @@ def read_variables_xls():
 
   for col in df.columns:
     if col != "description":
-      df[col] = df[col].str.lower().str.replace(", ", ",").str.replace(".", "").str.replace(" ", "_")
+      df[col] = df[col].str.lower().str.replace(", ", ",", regex=False).str.replace(".", "", regex=False).str.replace(" ", "_",regex=False)
     if col in ["linked_attributes", "datasets", "partition"]:
       df[col] = df[col].str.split(",")
     if col == "aliases":
