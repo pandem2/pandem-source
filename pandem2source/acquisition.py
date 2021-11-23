@@ -111,6 +111,7 @@ class Acquisition(worker.Worker):
             self.monitor_repeat = Acquisition.Repeat(timedelta(hours=loop_frequency))
         self.register_action(repeat=self.heartbeat_repeat, action=lambda: self.monitor_source(id_source, dls), id_source=id_source)        
 
+<<<<<<< HEAD
     # def monitor_source(self): 
     #     # Iterating over all registered sources looking for new files
     #     for source_id, dls in self.current_sources.items():
@@ -135,4 +136,30 @@ class Acquisition(worker.Worker):
     #                 }, 
     #                 'source'
     #             ).get()   
+=======
+    def monitor_source(self): 
+        # Iterating over all registered sources looking for new files
+        for source_id, dls in self.current_sources.items():
+            last_hash = self._storage_proxy.read_db('source', lambda x: x['id']==source_id).get()['last_hash'].values[0]
+            #Getting new files if any
+            print(f'last hash is: {last_hash}')
+            nf = self.new_files(dls, last_hash)
+            files_to_pipeline = nf["files"]
+            #print(f'files to pipeline: {files_to_pipeline}')
+            new_hash = nf["hash"]
+            # If new files are found they will be send to the pipeline 
+            if len(files_to_pipeline)>0:
+                #TODO: remove!!!!!!!!!!!!!!!!!
+                #files_to_pipeline = files_to_pipeline[0:1]
+                # Sending files to the pipeline
+                self._pipeline_proxy.submit_files(dls, files_to_pipeline).get()
+                # Storing the new hash into the db
+                self._storage_proxy.write_db(
+                    {'name': dls['scope']['source'],
+                     'last_hash': new_hash,
+                     'id': source_id
+                    }, 
+                    'source'
+                ).get()   
+>>>>>>> main
 

@@ -23,6 +23,7 @@ def read_variables_xls():
     "Variable":"variable", 
     "Data Family":"data_family", 
     "Linked Attributes":"linked_attributes", 
+    "Partition":"partition", 
     "Aliases":"aliases", 
     "Description":"description", 
     "Type":"type", 
@@ -33,7 +34,7 @@ def read_variables_xls():
   for col in df.columns:
     if col != "description":
       df[col] = df[col].str.lower().str.replace(", ", ",").str.replace(".", "").str.replace(" ", "_")
-    if col == "linked_attributes" or col == "datasets":
+    if col in ["linked_attributes", "datasets", "partition"]:
       df[col] = df[col].str.split(",")
     if col == "aliases":
       df[col] = df[col].apply(json.loads)

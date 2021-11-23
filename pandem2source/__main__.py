@@ -27,6 +27,12 @@ def main(a):
     help="Whether to output debugging messages to the console", 
   )
   
+  start_parser.add_argument(
+    "--retry-failed", 
+    action="store_true", 
+    help="Whether to retry failed jobs", 
+  )
+  
   start_parser.set_defaults(func = do_start)
   
   # setup 
@@ -63,9 +69,9 @@ def main(a):
     args.func(args, parser)
 
 # handlers
-def do_start_dev(debug = True, no_acquire = False):
+def do_start_dev(debug = True, no_acquire = False, retry_failed = False):
   from types import SimpleNamespace
-  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire}))
+  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed}))
 
 # handlers
 def do_start(args, *other):
@@ -82,7 +88,7 @@ def do_start(args, *other):
   defaults = os.path.join(pkg_dir, "data/defaults.yml") 
   with open(defaults, "r") as f:
       settings = yaml.safe_load(f)
-  orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire)
+  orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed)
   return orchestrator_ref.proxy()
   
 def do_reset(args, *other):
@@ -91,6 +97,8 @@ def do_reset(args, *other):
   if args.variables or args.restore_factory_defaults:
     admin.reset_variables(in_home = True)
   if args.covid19_datahub or args.restore_factory_defaults:
+    admin.reset_source("nuts-eurostat")
+    admin.reset_source("ICD-10-diseases-list")
     admin.reset_source("covid19-datahub")
      
 

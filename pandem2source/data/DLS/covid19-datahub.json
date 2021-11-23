@@ -8,7 +8,7 @@
       "reporting_email":"",
       "globals":[
         {"variable":"source"},
-        {"variable":"pathogen", "value":"COVID-19"}
+        {"variable":"pathogen_name", "value":"COVID-19"}
       ],
       "update_scope":[
         {"variable":"source"},
@@ -30,9 +30,9 @@
       }
     },
     "columns":[
-      {"name":"date", "variable":"reporting-date"},
-      {"name":"confirmed", "variable":"confirmed-cases"},
-      {"name":"iso_alpha_2", "variable":"iso-cloountry-code2"},
-      {"name":"key_nuts", "variable":"location-code"}
+      {"name":"date", "variable":"reporting_date"},
+      {"name":"confirmed", "variable":"confirmed_cases"},
+      {"name":"iso_alpha_2", "variable":"iso_country_code_2"},
+      {"name":"key_nuts", "variable":"geo_code"}
     ]
 }

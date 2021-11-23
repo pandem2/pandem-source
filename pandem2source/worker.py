@@ -6,7 +6,14 @@ import threading
 from datetime import datetime, timedelta
 
 class Worker(pykka.ThreadingActor):
+    '''
+    The Worker abstract class implements a Pykka actor and gives a blueprint for actors that are launched by the orchestrator actor.
 
+    Args:
+        name (str): The name given by the orchestration actor to this worker.
+        orchestrator_ref: The orchestrator reference.
+        setting: The package default configuration values.
+    '''
     __metaclass__ = ABCMeta  
 
     class Repeat:
@@ -28,11 +35,13 @@ class Worker(pykka.ThreadingActor):
         
     
     def on_start(self):
+        '''Extends the Pykka on_start method for optional setup after initialisation and before processing messages.'''
         self.heartbeat_repeat = Worker.Repeat(timedelta(seconds=20))
         self.register_action(self.heartbeat_repeat, self.send_heartbeat) #if action function has parameters use lambda: self.send_heartbeat(self.xyz)
         threading.Thread(target=self.actor_loop).start()
 
     def send_heartbeat(self):
+        '''A class method that sends heartbeat meassages to the orchestrator'''
         self._orchestrator_proxy.get_heartbeat(self.name)
 
     @abstractmethod
@@ -41,6 +50,7 @@ class Worker(pykka.ThreadingActor):
 
 
     def pandem_path(self, *args):
+        '''A class method to get the absolute path from relative paths components'''
         return os.path.join(os.getenv('PANDEM_HOME'), *args)
 
     def register_action(self, repeat, action, last_exec=None, id_source=None):

@@ -70,19 +70,19 @@ class Storage(worker.Worker):
     
 
     def read_file(self, path): #absolute path here
-    
-
-
-        if path.split('.')[-1] == "json":
-            with open(path, 'r') as f:
+        if path.startswith('PANDEM_HOME'):
+          file_path = path
+        else :
+          file_path = os.path.join(os.getenv('PANDEM_HOME'), 'files', path)
+        
+        if file_path.split('.')[-1] == "json":
+            with open(file_path, 'r') as f:
                 data_dict = json.load(f)
             return data_dict
-        if path.split('.')[-1] == "csv":
-            with open(path, 'rb') as f:
+        else :
+            with open(file_path, 'rb') as f:
                 bytes_data = BytesIO(f.read())
             return bytes_data
-        else:
-            raise RuntimeError('Unsupported file extention')
 
 
     def copy_files(self, src_paths, dest_paths): #absolute paths here

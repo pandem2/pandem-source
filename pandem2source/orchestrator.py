@@ -18,11 +18,12 @@ from itertools import chain
 
 class Orchestration(pykka.ThreadingActor):
 
-    def __init__(self, settings, start_acquisition = True):
+    def __init__(self, settings, start_acquisition = True, retry_failed = False):
         super(Orchestration, self).__init__()
         self.settings = settings
         self.current_actors = dict()
         self.start_acquisition = start_acquisition
+        self.retry_failed = retry_failed
 
 
     def on_start(self):
@@ -49,14 +50,14 @@ class Orchestration(pykka.ThreadingActor):
         self.current_actors['unarchiver'] = {'ref': unarchive_ref}
 
         # launch pipeline actor
-        pipeline_ref = pipeline.Pipeline.start('pipeline', self.actor_ref, self.settings)
+        pipeline_ref = pipeline.Pipeline.start('pipeline', self.actor_ref, self.settings, self.retry_failed)
         self.current_actors['pipeline'] = {'ref': pipeline_ref}
 
         # launch script executor reader
         script_executor_ref = script_executor.ScriptExecutor.start('script_executor', self.actor_ref, self.settings)
         self.current_actors['script_executor'] = {'ref': script_executor_ref}
 
-       # launch standardizer actor
+        # launch standardizer actor
         standardizer_ref = standardizer.Standardizer.start('standardizer', self.actor_ref, self.settings)
         self.current_actors['standardizer'] = {'ref': standardizer_ref}
 
@@ -66,10 +67,8 @@ class Orchestration(pykka.ThreadingActor):
 
         # Launching acquisition actors (active actors)
         # List source definition files within 'source-definitions' through storage actor to get 
-        # source_files = storage_ref.proxy().list_files('source-definitions').get()
         source_files = storage_proxy.list_files('source-definitions').get()
         # read json dls files into dicts
-        #dls_dicts = [storage_ref.proxy().read_files(file_name['path']).get() for file_name in source_files]
         dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in source_files]
 
         sources_labels = set([dls['acquisition']['channel']['name'] for dls in dls_dicts])

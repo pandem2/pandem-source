@@ -7,8 +7,6 @@
       "reference_user":"",
       "reporting_email":"",
       "globals":[
-        {"variable":"source"},
-        {"variable":"pathogen", "value":"COVID-19"}
       ],
       "update_scope":[
         {"variable":"source"},
@@ -26,10 +24,8 @@
       }
     },
     "columns":[
-      {"name":"name", "variable":"location name", "xpath":"skos:prefLabel/text()"},
-      {"name":"code", "variable":"location code", "xpath":"skos:notation/text()"},
-      {"name":"parent", "variable":"location parent code", "xpath":"skos:broader/@rdf:resource", "find":"([^/]+)/?$"},
-      {"name":"versions", "variable":"location versions", "xpath":"skos:inScheme/@rdf:resource", "find":"([^/]+)/?$"},
-      {"name":"status", "variable":"location status", "xpath":"adms:status/@rdf:resource", "find":"([^/]+)/?$"}
+      {"name":"name", "variable":"geo_name", "xpath":"skos:prefLabel/text()", "action":"insert"},
+      {"name":"code", "variable":"geo_code", "xpath":"skos:notation/text()", "action":"insert"},
+      {"name":"parent", "variable":"geo_parent", "xpath":"skos:broader/@rdf:resource", "find":"([^/]+)/?$", "action":"insert"}
     ]
   }
