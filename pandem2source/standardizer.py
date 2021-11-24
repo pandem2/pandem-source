@@ -54,6 +54,7 @@ class Standardizer(worker.Worker):
                 if var_name not in refs_values and var_name in variables and variables[var_name]['type'] in type_validate:
                     referential=self._variables_proxy.get_referential(var_name).get()
                     if referential is not None:
+                        print(refs_values.keys())
                         refs_values[var_name]=set([x['attr'][var_name] for x in referential])
                     else: 
                         refs_values[var_name] = None

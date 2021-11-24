@@ -184,44 +184,42 @@ class DataframeReader(worker.Worker):
         tuples = []
         for row in range(len(df)):
             for col, group in insert_cols.items():
-                tup = {"attrs":{
+                tup = {
+                  "attrs":{
                     "line_number":df["line_number"][row]
                     ,"source":dls["scope"]["source"]
                     ,"file":file_name
-                  }
+                  },
                 }
-                try:
-                  tup[group] = {
-                      col_vars[col]:self.translate(df[col][row], df[col].dtypes, variables[col_vars[col]]["unit"])
-                  }
-                except Exception as e:
-                  issues.append({
-                    "step":job['step'],
-                    "line":df["line_number"][row],
-                    "source":dls['scope']['source'],
-                    "file":file_name,
-                    "message":f"Cannot cast value {df[col][row]} into unit {variables[col_vars[col]]['unit']} \n {e}",
-                    "raised_on":datetime.now(),
-                    "job_id":job['id'],
-                    "issue_type":"cannot-cast"
-                  })
+                self.translate_or_issue(
+                    tup = tup,
+                    group = group,
+                    val = df[col][row], 
+                    issues = issues, 
+                    dtype = df[col].dtypes, 
+                    unit = variables[col_vars[col]]["unit"], 
+                    dls = dls, 
+                    job = job, 
+                    line_number = df["line_number"][row], 
+                    file_name = file_name,
+                    var_name = col_vars[col],
+                    variables = variables
+                )
                 for attr_col in attr_cols[col]:
-                     val = None
-                     try:
-                       val = self.translate(df[attr_col][row], df[attr_col].dtypes, variables[col_vars[attr_col]]["unit"])
-                     except Exception as e:
-                       issues.append({
-                         "step":job['step'],
-                         "line":df["line_number"][row],
-                         "source":dls['scope']['source'],
-                         "file":file_name,
-                         "message":f"Cannot cast value {df[attr_col][row]} into unit {variables[col_vars[attr_col]]['unit']} \n {e}",
-                         "raised_on":datetime.now(),
-                         "job_id":job['id'],
-                         "issue_type":"cannot-cast"
-                       })
-                     if val is not None:
-                       tup["attrs"][col_vars[attr_col]] = val
+                    self.translate_or_issue(
+                        tup = tup,
+                        group = "attrs",
+                        val = df[attr_col][row], 
+                        issues = issues, 
+                        dtype = df[attr_col].dtypes, 
+                        unit = variables[col_vars[attr_col]]["unit"], 
+                        dls = dls, 
+                        job = job, 
+                        line_number = df["line_number"][row], 
+                        file_name = file_name,
+                        var_name = col_vars[attr_col],
+                        variables = variables
+                    )
                 tuples.append(tup)
         
         ret = {"scope":dls["scope"].copy()}
@@ -266,5 +264,33 @@ class DataframeReader(worker.Worker):
             }
             issues.append(issue)
         return ret
+    def translate_or_issue(self, tup, group, val, issues, dtype, unit, dls, job, line_number, file_name, var_name, variables):
+        trans = None
+        try:
+          trans = self.translate(val, dtype, unit)
+        except Exception as e:
+          issues.append({
+            "step":job['step'],
+            "line":line_number,
+            "source":dls['scope']['source'],
+            "file":file_name,
+            "message":f"Cannot cast value {val} into unit {unit} \n {e}",
+            "raised_on":datetime.now(),
+            "job_id":job['id'],
+            "issue_type":"cannot-cast"
+          })
+        if trans is not None:
+            if group not in tup:
+              tup[group] = {}
+            tup[group][variables[var_name]["variable"]] = trans
+            self.add_alias_context(tup, var_name, variables)
 
+    def add_alias_context(self, tup, var_name, variables):
+        if var_name in variables and "modifiers" in variables[var_name]:
+            for mod in variables[var_name]["modifiers"]:
+              mod_var = mod["variable"]
+              if not "attrs" in tup:
+                tup["attrs"] = {}
+              if mod_var not in tup["attrs"] or tup["attrs"][mod_var] is None:
+                  tup["attrs"][mod_var] = mod["value"]
 

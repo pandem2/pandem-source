@@ -46,8 +46,16 @@ class Worker(pykka.ThreadingActor):
 
     @abstractmethod
     def actor_loop(self):
+<<<<<<< HEAD
         pass
 
+=======
+        '''A class method that sends heartbeat mesaages and implements other loop actions at regular intervals'''
+        while True: 
+            self.send_heartbeat()
+            self.loop_actions()
+            time.sleep(2)
+>>>>>>> main
 
     def pandem_path(self, *args):
         '''A class method to get the absolute path from relative paths components'''
