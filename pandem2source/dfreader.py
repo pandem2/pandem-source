@@ -124,6 +124,8 @@ class DataframeReader(worker.Worker):
 
         """Convert the format of dataframe column if expected unit is different"""
 
+        if pd.isna(value):
+            return None
         if unit is None or unit in ["str"] :
             if dtype in ["str"]:
                 return value
@@ -150,7 +152,7 @@ class DataframeReader(worker.Worker):
         variables = self.get_variables()
         dls_col_list=[]
         file_name = util.absolute_to_relative(path, "files/staging/")
-       
+      
         # adding column line number if it does not exists
         if 'line_number' not in df.columns :
             df['line_number'] = range(1, len(df)+1) 
@@ -168,9 +170,10 @@ class DataframeReader(worker.Worker):
             ("action" in t and t["action"] == "insert" or col_types[t["name"]] in ["observation", "indicator"])
         )
         attr_cols = {}
-        for col, typ in insert_cols.items():
+        for col  in insert_cols.keys():
+          typ = col_types[col]
           if typ in ["observation", "indicator"]:
-            attr_cols[col] =  [k for k, v in col_types.items() if v in  ["observation", "indicator"] and types_ok[k]]
+            attr_cols[col] =  [k for k, v in col_types.items() if v not in  ["observation", "indicator"] and types_ok[k]]
           else:
             attr_cols[col] =  [k for k, v in col_vars.items() if 
               types_ok[k] and  
@@ -206,6 +209,7 @@ class DataframeReader(worker.Worker):
                     variables = variables
                 )
                 for attr_col in attr_cols[col]:
+
                     self.translate_or_issue(
                         tup = tup,
                         group = "attrs",

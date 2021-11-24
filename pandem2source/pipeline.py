@@ -143,7 +143,7 @@ class Pipeline(worker.Worker):
     def read_format_end(self, df, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
 
-        print(f'df head for file: {path} is : {df.head(10)}')
+        #print(f'df head for file: {path} is : {df.head(10)}')
         self.job_df[job["id"]][path] = df
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'read_format_ended')
@@ -177,10 +177,10 @@ class Pipeline(worker.Worker):
         self.job_tuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
         if self.pending_count[job["id"]] == 0:
-            if len(self.job_issues[job["id"]]) == 0:
+            #if len(self.job_issues[job["id"]]) == 0:
                 self.update_job_step(job, 'read_df_ended')
-            else:
-                self.fail_job(job)
+            #else:
+            #    self.fail_job(job)
                 
 
     def send_to_standardize(self, tuples, job):
@@ -193,10 +193,10 @@ class Pipeline(worker.Worker):
         self.job_stdtuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
         if self.pending_count[job["id"]] == 0:
-            if len(self.job_issues[job["id"]]) == 0:
+            #if len(self.job_issues[job["id"]]) == 0:
                 self.update_job_step(job, 'standardize_ended')
-            else:
-                self.fail_job(job)
+            #else:
+            #    self.fail_job(job)
 
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)

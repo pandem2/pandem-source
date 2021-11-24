@@ -34,7 +34,7 @@ class Worker(pykka.ThreadingActor):
         while True: 
             self.send_heartbeat()
             self.loop_actions()
-            time.sleep(2)
+            time.sleep(20)
 
     def pandem_path(self, *args):
         '''A class method to get the absolute path from relative paths components'''
