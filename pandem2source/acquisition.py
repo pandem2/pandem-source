@@ -15,6 +15,7 @@ class Acquisition(worker.Worker):
         self.current_sources = dict()
         self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
+        print(f'self._actions in acquisition is {self._actions}')
 
     
     @abstractmethod
@@ -25,6 +26,7 @@ class Acquisition(worker.Worker):
         return self.pandem_path(f'files/{self.channel}', dls['scope']['source'], *args)
 
     def monitor_source(self, source_id, dls, freq): 
+        print(f'here acquisition monitor_source loop: {self._actions[1]["last_exec"]}')
         last_hash = self._storage_proxy.read_db('source', lambda x: x['id']==source_id).get()['last_hash'].values[0]
         #Getting new files if any
         print(f'last hash is: {last_hash}')

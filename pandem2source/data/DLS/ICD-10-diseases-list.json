@@ -3,7 +3,7 @@
       "source":"icd-diseases",
       "source_description":"",
       "tags":[],
-      "frequency":"",
+      "frequency":"every 30 seconds",
       "reference_user":"",
       "reporting_email":"",
       "globals":[

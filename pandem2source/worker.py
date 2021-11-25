@@ -40,13 +40,19 @@ class Worker(pykka.ThreadingActor):
 
     def actor_loop(self):
         while True:
-            time.sleep(0.1)
+            time.sleep(1)
             last_executions = [action['last_exec'] if action['last_exec'] is not None else datetime.now()-timedelta(days=2) \
                                for action in self._actions]
+            #print(f'last execution list is: {last_executions}')
             next_executions = [action['repeat'].next_execution(last_exec) for action, last_exec in zip(self._actions, last_executions)]
+            #print(f'next execution list is: {next_executions}')
             next_deltas = [(next_time - datetime.now()).total_seconds() for next_time in next_executions]
+            #print(f'next deltas list is: {next_deltas}')
             next_action_index = next_deltas.index(min(next_deltas)) #return the index of the first min value
+            #print(f'next action index is: {next_action_index}')
+
             next_action = self._actions[next_action_index]
+            #print(f'next action is: {next_action}')
             if datetime.now() > next_executions[next_action_index]:
                 if next_action['repeat'].start is not None and  next_action['repeat'].end is not None:
                     if next_action['repeat'].start <= datetime.now().time() <= next_action['repeat'].end:

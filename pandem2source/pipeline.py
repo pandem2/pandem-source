@@ -49,7 +49,11 @@ class Pipeline(worker.Worker):
               j["step"]="submitted_ended"
               j["status"]="in progress"
               j["dls_json"] = new_dls[j["source"]]
-            self.job_steps['submitted_ended'] = dict([(j["id"], j) for j in jobs])   
+            self.job_steps['submitted_ended'] = dict([(j["id"], j) for j in jobs])  
+
+        process_repeat = worker.Repeat(datetime.timedelta(seconds=1))
+        self.register_action(process_repeat, self.process_jobs) 
+        
 
     
 
@@ -57,6 +61,8 @@ class Pipeline(worker.Worker):
         self._self_proxy.process_jobs()
 
     def process_jobs(self):
+        print(f'here pipeline process_job loop: {self._actions[1]["last_exec"]}')
+
         # This function will process active jobs asynchronoulsy.
         # Based on current status an action will be performed and the status will be updated
         
@@ -132,15 +138,17 @@ class Pipeline(worker.Worker):
           file_ext = os.path.splitext(file_path)[1]
           print(f'file extenstion is: {file_ext}')
           if file_ext == '.csv':
-              self._frcsv_proxy.read_format_start(file_path, job)
+              self._frcsv_proxy.read_format_start(job, file_path)
           elif file_ext == '.rdf':
-              self._frxml_proxy.read_format_start(file_path, job)
+              self._frxml_proxy.read_format_start(job, file_path)
           elif file_ext == '.xml':
-              self._frxml_proxy.read_format_start(file_path, job)
+              self._frxml_proxy.read_format_start(job, file_path)
           else:
               raise RuntimeError('unsupported format')
 
-    def read_format_end(self, df, path, job): 
+    def read_format_end(self, job, path, df):
+        #print(f'df head for {job["id"]} is: {df.head()}')
+        #print(f'pending_count is: {self.pending_count}')
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
 
         #print(f'df head for file: {path} is : {df.head(10)}')
