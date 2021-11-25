@@ -48,20 +48,18 @@ class Standardizer(worker.Worker):
             #retrieves the tupple
             else:
                 std_var=copy.deepcopy(tuples['tuples'][i])
-
             for var_name in std_var['attrs'].copy().keys():
                 #retrieves the referentiel
                 if var_name not in refs_values and var_name in variables and variables[var_name]['type'] in type_validate:
                     referential=self._variables_proxy.get_referential(var_name).get()
                     if referential is not None:
-                        print(refs_values.keys())
                         refs_values[var_name]=set([x['attr'][var_name] for x in referential])
                     else: 
                         refs_values[var_name] = None
                 if var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
                     alias=self._variables_proxy.get_referential(var_name).get() 
                     code=variables[var_name]['linked_attributes'][0]
-                    refs_alias[var_name] = dict([(x['attr'],x['attrs'][code]) for x in alias])
+                    refs_alias[var_name] = dict((x['attr'][var_name],x['attrs'][code]) for x in alias)
                 
                 var_value=std_var['attrs'][var_name]
 
@@ -69,10 +67,9 @@ class Standardizer(worker.Worker):
                 if var_name in ignore_check or var_name not in variables:
                   pass
                 elif variables[var_name]['type'] in type_validate and refs_values[var_name] is not None and var_value in refs_values[var_name]:
-                  pass
-                elif variables[var_name]['type'] in type_translate and refs_values[var_name] is not None and var_value in refs_values[var_name]:
-                  std_var['attrs'].pop(var_name)
-                  std_var['attrs'][code]=refs_alias[var_name][var_value]
+                  if variables[var_name]['type'] in type_translate and refs_values[var_name] is not None and var_value in refs_values[var_name]:
+                    std_var['attrs'].pop(var_name)
+                    std_var['attrs'][code]=refs_alias[var_name][var_value]
                 elif variables[var_name]['type'] in type_translate or variables[var_name]['type'] in type_validate :
                     #Create a issue since validation failed 
                     file_name = tuples['scope']['file_name']

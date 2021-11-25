@@ -42,7 +42,6 @@
       {"name":"icu", "variable":"number_of_icu_patients"},
       {"name":"vent", "variable":"number_of_patients_with_ventilator"},
       {"name":"population", "variable":"population"},
-      {"name":"iso_alpha_2", "variable":"iso_country_code_2"},
       {"name":"key_nuts", "variable":"geo_code"}
     ]
 }
