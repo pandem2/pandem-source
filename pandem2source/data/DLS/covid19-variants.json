@@ -1,18 +1,19 @@
 {
   "scope":{
-    "source":"covid19-variants",
+    "source":"ecdc-covid19-variants",
     "source_description":"Information about the volume of COVID-19 sequencing, the number and percentage of variants of concern by week, country and variant. Data collected by the ECDC from  the GISAID EpiCoV database and TESSy",
-    "tags":[""],
+    "tags":["ecdc"],
     "frequency":"daily",
+    "frequency_start_hour":3,
+    "frequency_end_hour":7,
     "reference_user":"",
     "reporting_email":"",
     "globals":[
-      {"variable":"source"},
       {"variable":"pathogen_name", "value":"COVID-19"}
     ],
     "update_scope":[
       {"variable":"source"},
-      {"variable":"reporting_date"}
+      {"variable":"reporting_week"}
 
     ]
   },
@@ -25,23 +26,14 @@
       "name":"csv",
       "decimal_sign":".",
       "thousands_separator":"",
-      "date_format":"YYYY-MM-DD",
+      "date_format":"isoweek",
       "encoding":"UTF-8"
     }
   },
   "columns":[
-    {"name":"date", "variable":"reporting_date"},
-    {"name":"confirmed", "variable":"confirmed_cases"},
-    {"name":"recovered", "variable":"recovered_cases"},
-    {"name":"deaths", "variable":"number_of_deaths"},
-    {"name":"tests", "variable":"number_of_tests_performed"},
-    {"name":"vaccines", "variable":"doses_injected"},
-    {"name":"people_vaccinated", "variable":"people_that_has_received_at_least_one_dose"},
-    {"name":"people_fully_vaccinated", "variable":"people_fully_vaccinated"},
-    {"name":"hosp", "variable":"number_of_infected_patients"},
-    {"name":"icu", "variable":"number_of_icu_patients"},
-    {"name":"vent", "variable":"number_of_patients_with_ventilator"},
-    {"name":"population", "variable":"population"},
-    {"name":"key_nuts", "variable":"geo_code"}
+    {"name":"country_code", "variable":"geo_code"},
+    {"name":"year_week", "variable":"reporting_week"},
+    {"name":"variant", "variable":"variant",  "action":"insert"},
+    {"name":"number_detections_variant", "variable":"number_detections_variant"}
   ]
 }

@@ -15,7 +15,6 @@ class Acquisition(worker.Worker):
         self.current_sources = dict()
         self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
-        print(f'self._actions in acquisition is {self._actions}')
 
     
     @abstractmethod

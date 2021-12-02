@@ -99,7 +99,8 @@ def do_reset(args, *other):
   if args.covid19_datahub or args.restore_factory_defaults:
     admin.reset_source("nuts-eurostat")
     admin.reset_source("ICD-10-diseases-list")
-    admin.reset_source("covid19-datahub")
+    #admin.reset_source("covid19-datahub")
+    admin.reset_source("covid19-variants")
      
 
 if __name__ == "__main__":

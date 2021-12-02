@@ -95,7 +95,7 @@ class Orchestration(pykka.ThreadingActor):
     def get_heartbeat(self, actor_name):
         now = datetime.datetime.now()
         self.current_actors[actor_name]['heartbeat'] = now
-        print(f'heartbeat from {actor_name} at: {now}')
+        #print(f'heartbeat from {actor_name} at: {now}')
 
     def get_actor(self, actor_name):
         return self.current_actors[actor_name]['ref']

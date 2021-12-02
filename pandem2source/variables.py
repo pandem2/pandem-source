@@ -103,9 +103,20 @@ class Variables(worker.Worker):
             if not os.path.exists(var_dir):
                 os.makedirs(var_dir)
             for file_name, tuples_list in tuples_dict.items():
+                if 'attr' in tuples_list[0]:
+                    unique_values = {}
+                    for index, tuple in enumerate(tuples_list):
+                        if tuple['attr'][var] not in unique_values.values():
+                            unique_values[index] = tuple['attr'][var]
+                    tuples_list = [tuples_list[key] for key in unique_values.keys()]
+                    if var=='variant':
+                        print(f'file name {file_name} tuple list is: {tuples_list}')
+
+               
                 file_path = util.pandem_path(var_dir, file_name)
                 if not os.path.exists(file_path):
                     tuples_to_dump = {'tuples': tuples_list}
+                    
                     with open(file_path, 'w+') as f:
                         json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
                 else:

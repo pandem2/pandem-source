@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod, ABCMeta
 import pandas as pd
 import numpy as np
 import json
+from isoweek import Week
 
 class DataframeReader(worker.Worker):
     __metaclass__ = ABCMeta
