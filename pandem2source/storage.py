@@ -50,7 +50,9 @@ class Storage(worker.Worker):
                                              'message': pd.Series(dtype='str'),
                                              'raised_on': pd.Series(dtype=object),
                                              'job_id': pd.Series(dtype='int'), 
-                                             'issue_type': pd.Series(dtype='str')})
+                                             'issue_type': pd.Series(dtype='str'),
+                                             'issue_severity': pd.Series(dtype='str')
+                                             })
         if os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/sources.pickle')):
             self.db_tables['source'] = pd.read_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database/sources.pickle'))
         else:                                    

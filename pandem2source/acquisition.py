@@ -56,8 +56,6 @@ class Acquisition(worker.Worker):
                                     ).get()  
 
 
- 
-            
 
     def add_datasource(self, dls):
         source_dir = self.source_path(dls)
@@ -79,7 +77,7 @@ class Acquisition(worker.Worker):
         self.current_sources[id_source] = dls 
         loop_frequency_str = dls['scope']['frequency'].strip()
         if loop_frequency_str=='':
-            monitor_repeat = worker.Repeat(timedelta(days=1))          #what should be done here?
+            monitor_repeat = worker.Repeat(timedelta(days=1))         
         elif loop_frequency_str=='daily': #could we have frequecy less than daily?
             monitor_repeat = worker.Repeat(timedelta(days=1))
         elif loop_frequency_str.split(' ')[-1]=='seconds':

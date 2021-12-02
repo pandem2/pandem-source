@@ -21,6 +21,8 @@ class DataframeReader(worker.Worker):
         super().on_start()
         self._variables_proxy=self._orchestrator_proxy.get_actor('variables').get().proxy()
         self._pipeline_proxy=self._orchestrator_proxy.get_actor('pipeline').get().proxy()
+        self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
+
 
     def get_variables(self):
         return self._variables_proxy.get_variables().get()
@@ -45,7 +47,8 @@ class DataframeReader(worker.Worker):
                     'message' : message,
                     'raised_on' : datetime.now(),
                     'job_id' : job['id'],
-                    'issue_type' : "dls-not-conform"}
+                    'issue_type' : "dls-not-conform",
+                    'issue_severity':"error"}
             issues["DLS file"] = issue
 
         
@@ -59,7 +62,9 @@ class DataframeReader(worker.Worker):
                     'message' : message,
                     'raised_on' : datetime.now(),
                     'job_id' : job['id'],
-                    'issue_type' : "dls-not-conform"}
+                    'issue_type' : "dls-not-conform",
+                    'issue_severity':"error"
+                    }
               issues["DLS file"] = issue
             elif item['name'] not in df.columns :
                 message=(f"Column '{item['name']}' not found in dataframe ")
@@ -70,7 +75,8 @@ class DataframeReader(worker.Worker):
                         'message': message,
                         'raised_on' : datetime.now(),
                         'job_id' : job['id'],
-                        'issue_type' : "col-not-found"}
+                        'issue_type' : "col-not-found",
+                        'issue_severity':"error"}                       
                 issues[item["name"]] = issue
             elif item['variable'] in var:
                 if var[item['variable']]['unit'] == 'date':
@@ -85,7 +91,8 @@ class DataframeReader(worker.Worker):
                                 'message' : message,
                                 'raised_on' : datetime.now(),
                                 'job_id' : job['id'],
-                                'issue_type' : "ref-not-found"}
+                                'issue_type' : "ref-not-found",
+                                'issue_severity':"warning"}
                         issues[item["name"]] = issue
                 elif var[item['variable']]['unit'] == 'people':
                     if df[item['name']].dtypes in ['integer', 'str', "obj", "float64", "int64"] :
@@ -99,7 +106,8 @@ class DataframeReader(worker.Worker):
                                 'message' : message,
                                 'raised_on' : datetime.now(),
                                 'job_id' : job['id'],
-                                'issue_type' : "ref-not-found"}
+                                'issue_type' : "ref-not-found",
+                                'issue_severity':"warning"}
                         issues[item["name"]] = issue
 
                 elif var[item['variable']]['unit'] == None :
@@ -115,7 +123,8 @@ class DataframeReader(worker.Worker):
                         'message' : message,
                         'raised_on' : datetime.now(),
                         'job_id' : job['id'],
-                        'issue_type' : "ref-not-found"
+                        'issue_type' : "ref-not-found",
+                        'issue_severity':"error"
                 }
                 issues[item["name"]] = issue
         return issues
@@ -237,6 +246,10 @@ class DataframeReader(worker.Worker):
           ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, issues = issues, dls = dls, job = job, file_name = file_name)
         ret["tuples"] = tuples
         
+        #write to database here
+        for issue in issues:
+            self._storage_proxy.write_db(record=issue, db_class='issue').get()  
+
         self._pipeline_proxy.read_df_end(tuples = ret, issues = issues, path = path, job = job)
     
 
@@ -257,7 +270,7 @@ class DataframeReader(worker.Worker):
             r["value"] = list(set(x["attrs"][var["variable"]] for x in tuples if var["variable"] in x["attrs"]))
             ret.append(r)
           else :
-            message = (f"Variable {var['variable']} needs to be instantiated ad per DLS but no valuer where found on dataset ")
+            message = (f"Variable {var['variable']} needs to be instantiated ad per DLS but no valuer where found on dataset")
             issue = {'step' : job['step'],
                     'line' : 0,
                     'source' : dls['scope']['source'],
@@ -265,7 +278,8 @@ class DataframeReader(worker.Worker):
                     'message' : message,
                     'raised_on' : datetime.now(),
                     'job_id' : job['id'],
-                    'issue_type' : "cannot-instantiate"
+                    'issue_type' : "cannot-instantiate",
+                    'issue_severity':"warning"
             }
             issues.append(issue)
         return ret
@@ -282,7 +296,8 @@ class DataframeReader(worker.Worker):
             "message":f"Cannot cast value {val} into unit {unit} \n {e}",
             "raised_on":datetime.now(),
             "job_id":job['id'],
-            "issue_type":"cannot-cast"
+            "issue_type":"cannot-cast",
+            'issue_severity':"warning"
           })
         if trans is not None:
             if group not in tup:

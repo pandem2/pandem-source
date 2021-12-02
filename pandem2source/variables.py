@@ -109,8 +109,6 @@ class Variables(worker.Worker):
                         if tuple['attr'][var] not in unique_values.values():
                             unique_values[index] = tuple['attr'][var]
                     tuples_list = [tuples_list[key] for key in unique_values.keys()]
-                    if var=='variant':
-                        print(f'file name {file_name} tuple list is: {tuples_list}')
 
                
                 file_path = util.pandem_path(var_dir, file_name)

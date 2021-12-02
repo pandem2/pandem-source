@@ -179,11 +179,11 @@ class Pipeline(worker.Worker):
         self.job_tuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
         if self.pending_count[job["id"]] == 0:
-            #if len(self.job_issues[job["id"]]) == 0:
+            errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
+            if errors_number == 0:
                 self.update_job_step(job, 'read_df_ended')
-            #else:
-            #    self.fail_job(job)
-                
+            else:
+                self.fail_job(job)
 
     def send_to_standardize(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
@@ -195,10 +195,11 @@ class Pipeline(worker.Worker):
         self.job_stdtuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
         if self.pending_count[job["id"]] == 0:
-            #if len(self.job_issues[job["id"]]) == 0:
+            errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
+            if errors_number == 0:
                 self.update_job_step(job, 'standardize_ended')
-            #else:
-            #    self.fail_job(job)
+            else:
+                self.fail_job(job)
 
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
