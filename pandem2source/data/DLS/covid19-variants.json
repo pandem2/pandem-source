@@ -33,7 +33,7 @@
   "columns":[
     {"name":"country_code", "variable":"geo_code"},
     {"name":"year_week", "variable":"reporting_week"},
-    {"name":"Variant", "variable":"variant",  "action":"insert"},
+    {"name":"variant", "variable":"variant",  "action":"insert"},
     {"name":"number_detections_variant", "variable":"number_detections_variant"}
   ]
 }

@@ -44,7 +44,6 @@ class Variables(worker.Worker):
                     referentiel.append(var)
         else: 
             return None
-
         return referentiel
 
 

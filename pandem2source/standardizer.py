@@ -99,7 +99,4 @@ class Standardizer(worker.Worker):
         std_tuples['scope']['update_scope']=tuples['scope']['update_scope']
         #print("\n".join(util.pretty(std_tuples).split("\n")[0:100]))
 
-        # whrite issues to database here
-        for issue in list_issues:
-            self._storage_proxy.write_db(record=issue, db_class='issue').get()  
         self._pipeline_proxy.standardize_end(tuples = std_tuples, issues = list_issues, path = path, job = job)

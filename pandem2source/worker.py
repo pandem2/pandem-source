@@ -80,8 +80,8 @@ class Repeat:
             self.start = start #:datetime.time()
             self.end = end #:datatime.time()
         
-        def next_execution(self, last_excec): #last_exec:datetime.datetime()
-            return last_excec + self.tdelta #return:
+        def next_execution(self, last_excec):
+            return last_excec + self.tdelta 
 
 
 

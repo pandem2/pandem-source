@@ -179,6 +179,7 @@ class Pipeline(worker.Worker):
         self.job_tuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
         if self.pending_count[job["id"]] == 0:
+            self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
             if errors_number == 0:
                 self.update_job_step(job, 'read_df_ended')
@@ -195,6 +196,7 @@ class Pipeline(worker.Worker):
         self.job_stdtuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
         if self.pending_count[job["id"]] == 0:
+            self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
             if errors_number == 0:
                 self.update_job_step(job, 'standardize_ended')
@@ -245,6 +247,16 @@ class Pipeline(worker.Worker):
         job["status"] = "failed"
 
         return self._storage_proxy.write_db(job, 'job')
+
+    def write_issues(self, issues):
+        issues_codes = set([issue['issue_type'] for issue in issues])
+        for code in issues_codes:
+            issues_to_write = [issue for issue in issues if issue['issue_type']==code]
+            if len(issues_to_write)>50:
+                issues_to_write = issues_to_write[:49]
+            for issue in issues_to_write:
+                self._storage_proxy.write_db(record=issue, db_class='issue').get() 
+
   
 
     def staging_path(self, dls, *args):

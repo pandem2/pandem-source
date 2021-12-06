@@ -81,6 +81,8 @@ class Orchestration(pykka.ThreadingActor):
                     acquisition_ref = acquisition_git.AcquisitionGIT.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
                 elif label == "git-local":
                     acquisition_ref = acquisition_git_local.AcquisitionGITLocal.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+                elif label == "local-input":
+                    acquisition_ref = acquisition_git_local.AcquisitionGITLocal.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
                 else:
                     raise NotImplementedError(f"The acquisition channel {label} has not been implemented")
 

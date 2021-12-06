@@ -246,9 +246,7 @@ class DataframeReader(worker.Worker):
           ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, issues = issues, dls = dls, job = job, file_name = file_name)
         ret["tuples"] = tuples
         
-        #write to database here
-        for issue in issues:
-            self._storage_proxy.write_db(record=issue, db_class='issue').get()  
+        
 
         self._pipeline_proxy.read_df_end(tuples = ret, issues = issues, path = path, job = job)
     
