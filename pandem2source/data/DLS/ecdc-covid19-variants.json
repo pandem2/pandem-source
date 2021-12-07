@@ -4,8 +4,8 @@
     "source_description":"Information about the volume of COVID-19 sequencing, the number and percentage of variants of concern by week, country and variant. Data collected by the ECDC from  the GISAID EpiCoV database and TESSy",
     "tags":["ecdc"],
     "frequency":"daily",
-    "frequency_start_hour":3,
-    "frequency_end_hour":7,
+    "frequency_start_hour":0,
+    "frequency_end_hour":24,
     "reference_user":"",
     "reporting_email":"",
     "globals":[
@@ -33,7 +33,7 @@
   "columns":[
     {"name":"country_code", "variable":"geo_code"},
     {"name":"year_week", "variable":"reporting_week"},
-    {"name":"Variant", "variable":"variant",  "action":"insert"},
+    {"name":"variant", "variable":"variant",  "action":"insert"},
     {"name":"number_detections_variant", "variable":"number_detections_variant"}
   ]
 }

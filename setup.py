@@ -7,7 +7,7 @@ with open('README.md') as f:
 
 setup(
     name='pandem-source',
-    version='0.0.3',
+    version='0.0.4',
     description='Manage heterogeneous data sources for pandem 2 project',
     long_description=readme,
     long_description_content_type='text/markdown',
@@ -20,8 +20,7 @@ setup(
       "pandas",
       "openpyxl",
       "pykka",
-      "lxml",
-      #"isoweek"
+      "lxml"
     ],
     packages=find_packages(exclude=('tests', 'docs')),
     include_package_data=True

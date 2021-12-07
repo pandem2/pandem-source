@@ -41,10 +41,8 @@ class Worker(pykka.ThreadingActor):
     def actor_loop(self):
         while True:
             time.sleep(1)
-            last_executions = [action['last_exec'] if action['last_exec'] is not None else datetime.now()-timedelta(days=2) \
-                               for action in self._actions]
             #print(f'last execution list is: {last_executions}')
-            next_executions = [action['repeat'].next_execution(last_exec) for action, last_exec in zip(self._actions, last_executions)]
+            next_executions = [action['repeat'].next_exec() for action in self._actions]
             #print(f'next execution list is: {next_executions}')
             next_deltas = [(next_time - datetime.now()).total_seconds() for next_time in next_executions]
             #print(f'next deltas list is: {next_deltas}')
@@ -54,34 +52,50 @@ class Worker(pykka.ThreadingActor):
             next_action = self._actions[next_action_index]
             #print(f'next action is: {next_action}')
             if datetime.now() > next_executions[next_action_index]:
-                if next_action['repeat'].start is not None and  next_action['repeat'].end is not None:
-                    if next_action['repeat'].start <= datetime.now().time() <= next_action['repeat'].end:
-                        next_action["func"]()
-                        next_action['last_exec'] = datetime.now()
-                        self._actions[next_action_index] = next_action
+                next_action["repeat"].last_exec = datetime.now()
+                next_action["func"]()
+                if next_action["oneshot"]:
+                  self._actions.pop(next_action_index)
                 else:
-                    next_action["func"]()
-                    next_action['last_exec'] = datetime.now()
-                    self._actions[next_action_index] = next_action 
+                  self._actions[next_action_index] = next_action 
 
 
     def pandem_path(self, *args):
         '''A class method to get the absolute path from relative paths components'''
         return os.path.join(os.getenv('PANDEM_HOME'), *args)
 
-    def register_action(self, repeat, action, last_exec=None, id_source=None):
-        self._actions.append({'repeat': repeat, 'func': action, 'last_exec': last_exec })
+    def register_action(self, repeat, action, oneshot = False):
+        self._actions.append({'repeat': repeat, 'func': action, 'oneshot':oneshot })
         
 
 
 class Repeat:
-        def __init__(self, tdelta, start=None, end=None):
-            self.tdelta = tdelta #:datetime.timedelta()
-            self.start = start #:datetime.time()
-            self.end = end #:datatime.time()
+        def __init__(self, tdelta, start_hour=None, end_hour=None, last_exec=None):
+            self.tdelta = tdelta
+            self.start_hour = start_hour
+            self.end_hour = end_hour
+            self.last_exec = last_exec
         
-        def next_execution(self, last_excec): #last_exec:datetime.datetime()
-            return last_excec + self.tdelta #return:
+        def next_exec(self): #last_exec:datetime.datetime()
+            if self.last_exec is None:
+              next_exec = datetime.now()
+            else :
+              next_exec = self.last_exec + self.tdelta
+
+              if self.start_hour is None:
+                st = 0
+              else:
+                st = self.start_hour
+
+              if self.end_hour is None:
+                en = 25
+              else:
+                en = self.end_hour
+
+              # if next execution is outside of the hour window, next execution will be next day at the beginning of the period
+              if next_exec.hour < st or next_exec.hour > en:
+                next_exec = datetime.combine(next_exec.date(), datetime.min.time()) + timedelta(days = 1, hours = st)
+            return next_exec
 
 
 

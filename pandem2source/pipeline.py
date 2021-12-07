@@ -34,7 +34,7 @@ class Pipeline(worker.Worker):
 
         self.job_dicos = [self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.pending_count, self.job_issues]
 
-        self.last_step = "publish_end" #TODO: update this as last step evolves
+        self.last_step = "publish_ended" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
                                           filter= lambda x: 
                                              ( x['status'] == 'in progress' or (x['status'] == 'failed' and self.retry_failed)) 
@@ -210,7 +210,7 @@ class Pipeline(worker.Worker):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'publish_ended')
-
+    
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step):
         print(f"Changing to step {step} for job {job['id']} source {job['dls_json']['scope']['source']}")
