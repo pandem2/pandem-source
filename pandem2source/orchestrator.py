@@ -5,8 +5,10 @@ from . import acquisition_git
 from . import pipeline
 from . import formatreader_xml
 from . import formatreader_csv
+from . import formatreader_xls
 from . import unarchive
 from . import acquisition_git_local
+from . import acquisition_localFS
 from . import script_executor
 from . import dfreader
 from . import standardizer
@@ -45,6 +47,10 @@ class Orchestration(pykka.ThreadingActor):
         csvreader_ref = formatreader_csv.FormatReaderCSV.start('ftreader_csv', self.actor_ref, self.settings)
         self.current_actors['ftreader_csv'] = {'ref': csvreader_ref}
 
+        #launch xls format reader actor
+        xlsreader_ref = formatreader_xls.FormatReaderXLS.start('ftreader_xls', self.actor_ref, self.settings)
+        self.current_actors['ftreader_xls'] = {'ref': xlsreader_ref}
+
         #launch unarchiver actor
         unarchive_ref = unarchive.Unarchive.start('unarchiver', self.actor_ref, self.settings)
         self.current_actors['unarchiver'] = {'ref': unarchive_ref}
@@ -81,6 +87,8 @@ class Orchestration(pykka.ThreadingActor):
                     acquisition_ref = acquisition_git.AcquisitionGIT.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
                 elif label == "git-local":
                     acquisition_ref = acquisition_git_local.AcquisitionGITLocal.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+                elif label == "input-local":
+                    acquisition_ref = acquisition_localFS.AcquisitionLocalFS.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
                 else:
                     raise NotImplementedError(f"The acquisition channel {label} has not been implemented")
 

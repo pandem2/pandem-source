@@ -1,0 +1,51 @@
+{
+    "scope":{
+      "source":"cases-sheet",
+      "source_description":"Cases dataset from a local excel file sheet",
+      "tags":[],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_29_11_21.xlsx",
+        "sheet":"cases"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"NUTS2/3/country", "variable":"geo_code"},
+      {"name":"Confirmed cases", "variable":"confirmed_cases"},
+      {"name":"Recovered Cases", "variable":"recovered_cases"},
+      {"name":"Gender", "variable":"gender"},
+      {"name":"Age group", "variable":"age_group"},
+      {"name":"Cumulative cases", "variable":"cumulative_cases"},
+      {"name":"Active cases", "variable":"active_cases"},
+      {"name":"Possible cases", "variable":"possible_cases"},
+      {"name":"Probable cases", "variable":"probable_cases"},
+      {"name":"Reinfections cases", "variable":"reinfection_cases"},
+      {"name":"Population", "variable":"population"},
+      {"name":"Effective Growth Potential", "variable":"effective_growth_potential"},
+      {"name":"Imported cases", "variable":"imported_cases"},
+      {"name":"Rt", "variable":"rt_number"},
+      {"name":"Number of alerts of potential cases in humans", "variable":"alerts_of_potential_cases_in_humans"},
+      {"name":"Number of alerts of potential cases in animals", "variable":"alerts_of_potential_cases_in_animals"}
+    ]
+}

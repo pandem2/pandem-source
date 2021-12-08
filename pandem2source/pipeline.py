@@ -20,6 +20,7 @@ class Pipeline(worker.Worker):
         self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._frxml_proxy = self._orchestrator_proxy.get_actor('ftreader_xml').get().proxy()
         self._frcsv_proxy = self._orchestrator_proxy.get_actor('ftreader_csv').get().proxy()
+        self._frxls_proxy = self._orchestrator_proxy.get_actor('ftreader_xls').get().proxy()
         self._unarchive_proxy = self._orchestrator_proxy.get_actor('unarchiver').get().proxy()
         self._dfreader_proxy = self._orchestrator_proxy.get_actor('dfreader').get().proxy()
         self._standardizer_proxy = self._orchestrator_proxy.get_actor('standardizer').get().proxy()
@@ -137,6 +138,9 @@ class Pipeline(worker.Worker):
               self._frxml_proxy.read_format_start(job, file_path)
           elif file_ext == '.xml':
               self._frxml_proxy.read_format_start(job, file_path)
+          elif file_ext in ('.xls', '.xlsx'):
+              self._frxls_proxy.read_format_start(job, file_path)
+        
           else:
               raise RuntimeError('unsupported format')
 

@@ -101,6 +101,7 @@ def do_reset(args, *other):
     admin.reset_source("ICD-10-diseases-list")
     #admin.reset_source("covid19-datahub")
     admin.reset_source("covid19-variants")
+    admin.reset_source("local-file-cases")
      
 
 if __name__ == "__main__":

@@ -22,7 +22,10 @@ class Acquisition(worker.Worker):
         pass
 
     def source_path(self, dls, *args):
-        return self.pandem_path(f'files/{self.channel}', dls['scope']['source'], *args)
+        if dls['acquisition']['channel']['name']=='input-local':
+            return self.pandem_path(f'files/{self.channel}', *args)
+        else:
+            return self.pandem_path(f'files/{self.channel}', dls['scope']['source'], *args)
 
     def monitor_source(self, source_id, dls, freq): 
         print(f'here acquisition monitor_source loop: {self._actions[1]["last_exec"]}')
@@ -54,7 +57,6 @@ class Acquisition(worker.Worker):
                                     }, 
                                     'source'
                                     ).get()  
-
 
 
     def add_datasource(self, dls):
