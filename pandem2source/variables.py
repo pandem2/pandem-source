@@ -67,13 +67,13 @@ class Variables(worker.Worker):
         if partition is None:
           return 'default.json'
         else:
-          return '_'.join([key + '-' + val for key, val in tuple['attrs'].items() if key in partition]) + '.json'
+          return '_'.join([key + '-' + str(val) for key, val in tuple['attrs'].items() if key in partition]) + '.json'
 
 
     def write_variable(self, input_tuples, path, job):
         class JsonEncoder(json.JSONEncoder):
           def default(self, z):
-            if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64):
+            if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64) or isinstance(z, datetime.date):
               return (str(z))
             else:
               return super().default(z)

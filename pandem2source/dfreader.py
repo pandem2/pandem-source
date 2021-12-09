@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod, ABCMeta
 import pandas as pd
 import numpy as np
 import json
-from isoweek import Week
+import isoweek
 
 class DataframeReader(worker.Worker):
     __metaclass__ = ABCMeta
@@ -141,11 +141,13 @@ class DataframeReader(worker.Worker):
                 return value
             else:
                 return str(value)
-        elif unit == 'date' :
-            if dtype == 'date':
-                return value
+        elif unit == 'date':
+            if np.issubdtype(dtype, np.datetime64):
+                return value.date()
+            elif parse_format=='isoweek':
+                return isoweek.Week(int(value[:4]),int(value[-2:])).monday()
             else:
-              return datetime.strptime(value, format)
+                return datetime.strptime(value, parse_format).date()
 
         elif unit in ["people", "int"] :
             if dtype in ["int", "int64"]:
@@ -283,8 +285,12 @@ class DataframeReader(worker.Worker):
         return ret
     def translate_or_issue(self, tup, group, val, issues, dtype, unit, dls, job, line_number, file_name, var_name, variables):
         trans = None
+        if "date_format" in dls['acquisition']['format']:
+          format = dls['acquisition']['format']['date_format']
+        else:
+          format = None
         try:
-          trans = self.translate(val, dtype, unit)
+          trans = self.translate(val, dtype, unit, format)
         except Exception as e:
           issues.append({
             "step":job['step'],

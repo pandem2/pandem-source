@@ -54,6 +54,11 @@ def main(a):
     action="store_true", 
     help="Reset covid19-datahub datasource to system defaults", 
   )
+  reset_parser.add_argument(
+    "--ecdc-covid19-variants", 
+    action="store_true", 
+    help="Reset ecdc-covid19-variants datasource to system defaults", 
+  )
   
   reset_parser.set_defaults(func = do_reset)
 
@@ -96,11 +101,13 @@ def do_reset(args, *other):
     admin.delete_all()
   if args.variables or args.restore_factory_defaults:
     admin.reset_variables(in_home = True)
-  if args.covid19_datahub or args.restore_factory_defaults:
+  if args.covid19_datahub or args.ecdc_covid19_variants or args.restore_factory_defaults:
     admin.reset_source("nuts-eurostat")
     admin.reset_source("ICD-10-diseases-list")
+  if args.covid19_datahub or args.restore_factory_defaults:
     admin.reset_source("covid19-datahub")
-    admin.reset_source("covid19-variants")
+  if args.ecdc_covid19_variants or args.restore_factory_defaults:
+    admin.reset_source("ecdc-covid19-variants")
      
 
 if __name__ == "__main__":
