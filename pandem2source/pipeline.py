@@ -35,7 +35,7 @@ class Pipeline(worker.Worker):
 
         self.job_dicos = [self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.pending_count, self.job_issues]
 
-        self.last_step = "publish_end" #TODO: update this as last step evolves
+        self.last_step = "publish_ended" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
                                           filter= lambda x: 
                                              ( x['status'] == 'in progress' or (x['status'] == 'failed' and self.retry_failed)) 
@@ -183,6 +183,7 @@ class Pipeline(worker.Worker):
         self.job_tuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
         if self.pending_count[job["id"]] == 0:
+            self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
             if errors_number == 0:
                 self.update_job_step(job, 'read_df_ended')
@@ -199,6 +200,7 @@ class Pipeline(worker.Worker):
         self.job_stdtuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
         if self.pending_count[job["id"]] == 0:
+            self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
             if errors_number == 0:
                 self.update_job_step(job, 'standardize_ended')
@@ -214,7 +216,7 @@ class Pipeline(worker.Worker):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'publish_ended')
-
+    
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step):
         print(f"Changing to step {step} for job {job['id']} source {job['dls_json']['scope']['source']}")
@@ -249,6 +251,16 @@ class Pipeline(worker.Worker):
         job["status"] = "failed"
 
         return self._storage_proxy.write_db(job, 'job')
+
+    def write_issues(self, issues):
+        issues_codes = set([issue['issue_type'] for issue in issues])
+        for code in issues_codes:
+            issues_to_write = [issue for issue in issues if issue['issue_type']==code]
+            if len(issues_to_write)>50:
+                issues_to_write = issues_to_write[:49]
+            for issue in issues_to_write:
+                self._storage_proxy.write_db(record=issue, db_class='issue').get() 
+
   
 
     def staging_path(self, dls, *args):

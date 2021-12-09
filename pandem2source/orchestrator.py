@@ -76,7 +76,6 @@ class Orchestration(pykka.ThreadingActor):
         source_files = storage_proxy.list_files('source-definitions').get()
         # read json dls files into dicts
         dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in source_files]
-
         sources_labels = set([dls['acquisition']['channel']['name'] for dls in dls_dicts])
         
         if self.start_acquisition:
