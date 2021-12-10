@@ -80,7 +80,7 @@ class DataframeReader(worker.Worker):
                 issues[item["name"]] = issue
             elif item['variable'] in var:
                 if var[item['variable']]['unit'] == 'date':
-                    if df[item['name']].dtypes in ['date', 'object', 'str'] :
+                    if df[item['name']].dtypes in ['date', 'object', 'str', 'datetime64[ns]'] :
                         issues[item["name"]] = None
                     else :
                         message = (f"Type '{df[item['name']].dtypes}' in source file is not compatible with variable {item['variable']} with unit 'date' ")
@@ -94,8 +94,8 @@ class DataframeReader(worker.Worker):
                                 'issue_type' : "ref-not-found",
                                 'issue_severity':"warning"}
                         issues[item["name"]] = issue
-                elif var[item['variable']]['unit'] == 'people':
-                    if df[item['name']].dtypes in ['integer', 'str', "obj", "float64", "int64"] :
+                elif var[item['variable']]['unit'] in ['people', 'number', 'Qty']:
+                    if df[item['name']].dtypes in ['integer', 'str', "object", "float64", "int64", 'int'] :
                         issues[item["name"]] = None
                     else :
                         message = (f"Type '{df[item['name']].dtypes}' in source file is not compatible with variable {item['variable']} with unit 'integer' ")
@@ -112,7 +112,7 @@ class DataframeReader(worker.Worker):
 
                 elif var[item['variable']]['unit'] == None :
                     issues[item["name"]] = None
-                elif var[item['variable']]['unit'] == 'string' :
+                elif var[item['variable']]['unit'] in ['string', 'range'] :
                     issues[item["name"]] = None
             else :
                 message = (f"Variable {item['variable']} defined on source definition file is unknown")
@@ -149,13 +149,15 @@ class DataframeReader(worker.Worker):
             else:
                 return datetime.strptime(value, parse_format).date()
 
-        elif unit in ["people", "int"] :
+        elif unit in ["people", "int", "number", "qty"] :
             if dtype in ["int", "int64"]:
                 return value
             elif np.isnan(value):
                 return None
             else:
                 return int(value)
+        elif unit=='range':
+            return self.transform_range(value)
         else: 
           raise ValueError("undefined case for casting")
     
@@ -172,7 +174,6 @@ class DataframeReader(worker.Worker):
         # Checking column names and compatible types
         col_issues = self.check_df_columns(df = df, job = job, dls = dls, file_name = path, variables = variables)
         issues = list([i for i in col_issues.values() if i is not None]) 
-
         types_ok = dict((t["name"],  t["name"] in col_issues and col_issues[t["name"]] is None) for t in  dls['columns'])
         col_vars = dict((t["name"], t["variable"]) for t in  dls['columns'])
         col_types = dict((k,variables[v]["type"]) for k,v in col_vars.items() if v in variables)
@@ -237,7 +238,6 @@ class DataframeReader(worker.Worker):
                         variables = variables
                     )
                 tuples.append(tup)
-        
         ret = {"scope":dls["scope"].copy()}
         ret["scope"]["file_name"] = file_name
         # validating that globals are property instantiated
@@ -317,4 +317,12 @@ class DataframeReader(worker.Worker):
                 tup["attrs"] = {}
               if mod_var not in tup["attrs"] or tup["attrs"][mod_var] is None:
                   tup["attrs"][mod_var] = mod["value"]
+
+    def transform_range(self, value):
+      if '>' in value:
+        return int(value.strip().split('>')[1].split('y')[0]), None
+      elif '-' in value:
+        return int(value.strip().split('-')[0]), int(value.strip().split('-')[1].split('y')[0])
+      else:
+        return 0, int(value.strip().split('y')[0])
 

@@ -15,6 +15,12 @@ def reset_variables(in_package = False, in_home = True):
     if not os.path.exists(dir_path):
       os.makedirs(dir_path)
     write_json_variables(file_path)
+    # copy variables if any
+    if pkg_resources.resource_exists("pandem2source", "data/variables"):
+      for sub_path in pkg_resources.resource_listdir("pandem2source", "data/variables"):
+        var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", "variables", sub_path))
+        var_to = util.pandem_path("files", "variables", sub_path)
+        shutil.copytree(var_from, var_to, copy_function = shutil.copy)
 
 def read_variables_xls():
   path = pkg_resources.resource_filename("pandem2source", "data/list-of-variables.xlsx")

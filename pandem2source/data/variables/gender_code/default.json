@@ -1,0 +1,34 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "gender_code": "M"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "2",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "gender_code": "F"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "3",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "gender_code": "Undefined"
+            }
+        }
+    ]
+}

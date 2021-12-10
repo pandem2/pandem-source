@@ -104,7 +104,7 @@ def do_reset(args, *other):
   if args.covid19_datahub or args.ecdc_covid19_variants or args.restore_factory_defaults:
     admin.reset_source("nuts-eurostat")
     admin.reset_source("ICD-10-diseases-list")
-    admin.reset_source("local-file-cases")
+    admin.reset_source("covid19-cases-template")
   if args.covid19_datahub or args.restore_factory_defaults:
     admin.reset_source("covid19-datahub")
   if args.ecdc_covid19_variants or args.restore_factory_defaults:

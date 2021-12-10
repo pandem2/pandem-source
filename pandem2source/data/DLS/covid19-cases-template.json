@@ -34,8 +34,8 @@
       {"name":"NUTS2/3/country", "variable":"geo_code"},
       {"name":"Confirmed cases", "variable":"confirmed_cases"},
       {"name":"Recovered Cases", "variable":"recovered_cases"},
-      {"name":"Gender", "variable":"gender"},
-      {"name":"Age group", "variable":"age_group"},
+      {"name":"Gender", "variable":"gender_code"},
+      {"name":"Age group", "variable":"age_group", "action":"insert"},
       {"name":"Cumulative cases", "variable":"cumulative_cases"},
       {"name":"Active cases", "variable":"active_cases"},
       {"name":"Possible cases", "variable":"possible_cases"},
@@ -45,7 +45,7 @@
       {"name":"Effective Growth Potential", "variable":"effective_growth_potential"},
       {"name":"Imported cases", "variable":"imported_cases"},
       {"name":"Rt", "variable":"rt_number"},
-      {"name":"Number of alerts of potential cases in humans", "variable":"alerts_of_potential_cases_in_humans"},
-      {"name":"Number of alerts of potential cases in animals", "variable":"alerts_of_potential_cases_in_animals"}
+      {"name":"Number of alerts of potential cases in humans", "variable":"alerts_on_humans"},
+      {"name":"Number of alerts of potential cases in animals", "variable":"alerts_on_animals"}
     ]
 }
