@@ -1,0 +1,46 @@
+{
+    "scope":{
+      "source":"contact-tracing",
+      "source_description":"Contact tracing dataset from a local excel file sheet",
+      "tags":[],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "sheet":"Contact tracing"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"NUTS2/3/country", "variable":"geo_code"}, 
+      {"name":"Total diagnosed COVID-19 cases identified for contact tracing", "variable":"total_cases_identified_for_contact_tracing"},
+      {"name":"Total COVID-19 cases that previously had been identified as contact", "variable":"total_cases_previously_identified_as_contact"},
+      {"name":"Total diagnosed COVID-19 cases reached for contact tracing", "variable":"total_cases_reached_for_contact_tracing"},
+      {"name":"Total diagnosed COVID-19 cases reached for contact tracing within a day", "variable":"total_cases_reached_for_contact_tracing_within_a_day"},
+      {"name":"Total COVID-19 contacts identified", "variable":"total_contacts_identified"},
+      {"name":"Total COVID-19 contacts identified and reached", "variable":"total_contacts_identified_and_reached"},
+      {"name":"Total COVID-19 contacts identified and reached within day", "variable":"total_contacts_identified_and_reached_within_day"},
+      {"name":"Total COVID-19 contacts turning positive", "variable":"total_contacts_turning_positive"},
+      {"name":"Proportion of all newly diagnosed cases that are part of known transmission chains", "variable":"proportion_of_new_cases_that_are_part_of_known_transmission_chains"},
+      {"name":"Contact tracing policy", "variable":"contact_tracing_policy"}
+    ]
+}

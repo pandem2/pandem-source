@@ -1,0 +1,47 @@
+{
+    "scope":{
+      "source":"participatory-sentinel-surveilla",
+      "source_description":"Participatory sentinel surveilla dataset from a local excel file sheet",
+      "tags":[],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "sheet":"ParticipatorySentinel Surveilla"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"Country", "variable":"country_name"}, 
+      {"name":"Gender", "variable":"gender_code"},
+      {"name":"NUTS2/3", "variable":"geo_code"},
+      {"name":"Age group", "variable":"age_group"},
+      {"name":"Gender", "variable":"gender_code"},
+      {"name":"Total participants", "variable":"number_of_participants"},
+      {"name":"Participants declaring symptoms", "variable":"participants_declaring_symptoms"},
+      {"name":"ARI - ILI patients", "variable":"ari_ili_patients"},
+      {"name":"postivity for Influenza / ARI - ILI", "variable":"positivity_for_influenza_ari_ili"},
+      {"name":"postivity for covid / ARI - ILI", "variable":"posititivity_for_covid_ari_ili"},
+      {"name":"Hospitalised SARI patients", "variable":"hospitalised_sari_patients"},
+      {"name":"COVID confirmed cases in hospitalised SARI patients", "variable":"hospitalised_sari_infected_patients"}
+    ]
+}

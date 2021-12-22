@@ -1,0 +1,39 @@
+{
+    "scope":{
+      "source":"daily-voc-voi",
+      "source_description":"Daily voc-voi dataset from a local excel file sheet",
+      "tags":[],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "sheet":"Daily VOC_VOI"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date / Week", "variable":"reporting_date"}, 
+      {"name":"NUTS2/3/country", "variable":"geo_code"},
+      {"name":"N cases, Pango linage", "variable":"variant"},
+      {"name":"N cases, WHO label", "variable":"variant_who_label"},
+      {"name":"N cases", "variable":"sequenced_samples"}
+    ]
+}

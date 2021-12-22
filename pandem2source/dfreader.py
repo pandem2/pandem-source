@@ -222,7 +222,6 @@ class DataframeReader(worker.Worker):
                     variables = variables
                 )
                 for attr_col in attr_cols[col]:
-
                     self.translate_or_issue(
                         tup = tup,
                         group = "attrs",
@@ -247,9 +246,6 @@ class DataframeReader(worker.Worker):
         if "scope" in dls and "update_scope" in dls["scope"]:
           ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, issues = issues, dls = dls, job = job, file_name = file_name)
         ret["tuples"] = tuples
-        
-        
-
         self._pipeline_proxy.read_df_end(tuples = ret, issues = issues, path = path, job = job)
     
 
@@ -320,9 +316,13 @@ class DataframeReader(worker.Worker):
 
     def transform_range(self, value):
       if '>' in value:
-        return int(value.strip().split('>')[1].split('y')[0]), None
+        a = value.strip().split('>')[1].split('y')[0]
+        b = ''
       elif '-' in value:
-        return int(value.strip().split('-')[0]), int(value.strip().split('-')[1].split('y')[0])
+        a = value.strip().split('-')[0]
+        b = value.strip().split('-')[1].split('y')[0]
       else:
-        return 0, int(value.strip().split('y')[0])
+        a = 0
+        b = value.strip().split('y')[0]
+      return f'{a}-{b}'
 

@@ -1,0 +1,43 @@
+{
+    "scope":{
+      "source":"testing-sheet",
+      "source_description":"Testing dataset from a local excel file sheet",
+      "tags":[],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "sheet":"Testing"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"NUTS2/3/country", "variable":"geo_code"},
+      {"name":"Test Type (active cases)", "variable":"test_type"},
+      {"name":"Num of available tests", "variable":"available_tests"},
+      {"name":"number of test performed", "variable":"performed_tests"},
+      {"name":"Positive results", "variable":"positive_results"},
+      {"name":"Negative results", "variable":"negative_results"},
+      {"name":"Inconclusive results", "variable":"inconclusive_results"},
+      {"name":"Unknown results", "variable":"unknown_results"}
+    ]
+}

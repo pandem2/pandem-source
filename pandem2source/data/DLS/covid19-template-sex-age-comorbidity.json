@@ -1,0 +1,45 @@
+{
+    "scope":{
+      "source":"sex-age-comorbidity",
+      "source_description":"Sex, age and comorbidity dataset from a local excel file sheet",
+      "tags":[],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "sheet":"Sex Age Comorbidity"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"Country", "variable":"country_name"}, 
+      {"name":"NUTS2/3", "variable":"geo_code"},
+      {"name":"Comorbidity group", "variable":"comorbidity_code"},
+      {"name":"Age group", "variable":"age_group"},
+      {"name":"Gender", "variable":"gender_code"},
+      {"name":"Population", "variable":"population"},
+      {"name":"Confirmed cases", "variable":"confirmed_cases"},
+      {"name":"Hospitals admissions", "variable":"number_of_hospitalised_patients"},
+      {"name":"ICU admissions", "variable":"icu_patients"},
+      {"name":"deaths", "variable":"number_of_deaths"}
+    ]
+}

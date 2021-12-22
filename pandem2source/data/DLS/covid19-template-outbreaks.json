@@ -1,0 +1,41 @@
+{
+    "scope":{
+      "source":"outbreaks",
+      "source_description":"Outbreaks dataset from a local excel file sheet",
+      "tags":[],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "sheet":"Outbreaks"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"Country", "variable":"country_name"}, 
+      {"name":"NUTS2/3", "variable":"geo_code"},
+      {"name":"number of confirmed cases in the outbreak", "variable":"confirmed_cases"},
+      {"name":"Outbreak setting", "variable":"outbreak_setting", "action":"insert"},
+      {"name":"Possible country of exposure", "variable":"country_name"},
+      {"name":"Detection mode", "variable":"detection_mode"}
+    ]
+}

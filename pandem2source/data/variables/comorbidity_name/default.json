@@ -1,0 +1,181 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "ASTH"
+            },
+            "attr": {
+                "comorbidity_name": "Asthma"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "2",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "CANC"
+            },
+            "attr": {
+                "comorbidity_name": "Cancer"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "3",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "HIV"
+            },
+            "attr": {
+                "comorbidity_name": "HIV/other immune deficiency"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "4",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "KIDNEY"
+            },
+            "attr": {
+                "comorbidity_name": "Kidney-related condition"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "5",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "LIVER"
+            },
+            "attr": {
+                "comorbidity_name": "Liver-related condition"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "6",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "LUNG"
+            },
+            "attr": {
+                "comorbidity_name": "Chronic lung disease"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "7",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "NEUROCOG"
+            },
+            "attr": {
+                "comorbidity_name": "Neurocognitive disorder (including seizure)"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "8",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "NEUROMUS"
+            },
+            "attr": {
+                "comorbidity_name": "Neuromuscular disorder"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "9",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "NONE"
+            },
+            "attr": {
+                "comorbidity_name": "No underlying condition"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "10",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "O"
+            },
+            "attr": {
+                "comorbidity_name": "Other"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "11",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "OBESITY"
+            },
+            "attr": {
+                "comorbidity_name": "Obesity (BMI between 30 and 40)"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "12",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "OBESITYMORB"
+            },
+            "attr": {
+                "comorbidity_name": "Morbid obesity (BMI above 40)"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "13",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "PREG"
+            },
+            "attr": {
+                "comorbidity_name": "Pregnancy"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "14",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "UNK"
+            },
+            "attr": {
+                "comorbidity_name": "Underlying condition unknown"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "15",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "DIAB"
+            },
+            "attr": {
+                "comorbidity_name": "Diabetes"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "16",
+                "source": "pandem2",
+                "file": "",
+                "comorbidity_code": "HEART"
+            },
+            "attr": {
+                "comorbidity_name": "Chronic heart disease"
+            }
+        }
+
+    ]
+}

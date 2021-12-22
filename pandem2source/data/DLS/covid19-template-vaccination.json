@@ -1,0 +1,53 @@
+{
+    "scope":{
+      "source":"vaccination-sheet",
+      "source_description":"Vaccination dataset from a local excel file sheet",
+      "tags":[],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "sheet":"Vaccination"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"NUTS2/3/country", "variable":"geo_code"},
+      {"name":"Age group", "variable":"age_group"},
+      {"name":"Population", "variable":"population"},
+      {"name":"Vaccinated individuals with 1 dose", "variable":"one_dose_vaccinated"},
+      {"name":"Vaccinated individuals with 2 dose", "variable":"two_doses_vaccinated"},
+      {"name":"Vaccinated individuals with 3 dose", "variable":"three_doses_vaccinated"},
+      {"name":"Infected Vaccinated individuals with 1 dose", "variable":"one_dose_vaccinated_infected"},
+      {"name":"Infected Vaccinated individuals with 2 dose", "variable":"two_doses_vaccinated_infected"},
+      {"name":"Infected Vaccinated individuals with 3 dose", "variable":"three_doses_vaccinated_infected"},
+      {"name":"Vaccinated HCW with 1 dose", "variable":"one_dose_vaccinated_hcw"},
+      {"name":"Vaccinated HCW with 2 dose", "variable":"two_doses_vaccinated_hcw"},
+      {"name":"Vaccinated HCW with 3 dose", "variable":"three_doses_vaccinated_hcw"},
+      {"name":"Vaccinated people with underlying health conditions with 1 dose", "variable":"one_dose_vaccinated_uhc"},
+      {"name":"Vaccinated people with underlying health conditions with 2 dose", "variable":"two_doses_vaccinated_uhc"},
+      {"name":"Vaccinated people with underlying health conditions with 3 dose", "variable":"three_doses_vaccinated_uhc"},
+      {"name":"Vaccinated people living in long-term care facilities with 1 dose", "variable":"one_dose_vaccinated_ltcf"},
+      {"name":"Vaccinated people living in long-term care facilities with 2 dose", "variable":"two_doses_vaccinated_ltcf"},
+      {"name":"Vaccinated people living in long-term care facilities with 3 dose", "variable":"three_doses_vaccinated_ltcf"}
+    ]
+}

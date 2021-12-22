@@ -1,0 +1,48 @@
+{
+    "scope":{
+      "source":"beds-staff",
+      "source_description":"Beds-staff dataset from a local excel file sheet",
+      "tags":[],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "sheet":"Beds_staff"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"Country", "variable":"country_name"}, 
+      {"name":"nuts2/3", "variable":"geo_code"},
+      {"name":"Population", "variable":"population"},
+      {"name":"Total number of operable beds", "variable":"number_of_operable_beds"},
+      {"name":"Total number of operable ICU beds", "variable":"number_of_icu_operable_beds"},
+      {"name":"Number of beds in LCTF", "variable":"number_of_lctf_beds"},
+      {"name":"Number of nurses available", "variable":"number_of_nurses_available"},
+      {"name":"Number of physicians available", "variable":"number_of_physicians_available"},
+      {"name":"Number of HCW working at hospital level", "variable":"number_of_hcw_hospital_level"},
+      {"name":"Number of ICU specialist-anesthesiologist available", "variable":"number_of_icu_specialist_anesthesiologist_available"},
+      {"name":"PH staff", "variable":"ph_staff"},
+      {"name":"PH staff working in contact tracing", "variable":"ph_staff_working_in_contact_tracing"},
+      {"name":"Number of emergency staff", "variable":"number_of_emergency_staff"}
+    ]
+}

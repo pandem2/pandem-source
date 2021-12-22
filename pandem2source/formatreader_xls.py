@@ -12,8 +12,11 @@ class FormatReaderXLS(formatreader.FormatReader):
             sheet = dls['acquisition']['channel']['sheet']
             df = pd.read_excel(file_bytes, sheet, header=None)
             df = df.dropna(how='all').dropna(how='all', axis=1)
-            cols = df.iloc[0]
-            df  = pd.DataFrame(df.values[1:], columns=cols)
+            cols_row = 0
+            while len({'Date', 'NUTS2/3/country'}.intersection(df.iloc[cols_row]))==0:
+                cols_row += 1
+            cols = df.iloc[cols_row]
+            df  = pd.DataFrame(df.values[cols_row+1:], columns=cols)
         else:
             raise ValueError('can not read from empty bytes')
         return df

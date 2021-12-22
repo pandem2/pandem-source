@@ -38,12 +38,12 @@ def read_variables_xls():
     })
 
   for col in df.columns:
-    if col != "description":
+    if col not in ["description", "modifiers"] and not df[col].isnull().values.all():
       df[col] = df[col].str.lower().str.replace(", ", ",", regex=False).str.replace(".", "", regex=False).str.replace(" ", "_",regex=False)
-    if col in ["linked_attributes", "datasets", "partition"]:
+    if col in ["linked_attributes", "partition"]:
       df[col] = df[col].str.split(",")
-    if col == "aliases":
-      df[col] = df[col].apply(json.loads)
+    if col == "modifiers":
+      df[col] = df[col].apply(lambda x : eval(x))
   return df
 
 def write_json_variables(dest):

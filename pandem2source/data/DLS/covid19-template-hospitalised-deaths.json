@@ -1,0 +1,56 @@
+{
+    "scope":{
+      "source":"hospitalised-deaths",
+      "source_description":"Hospitalised deaths dataset from a local excel file sheet",
+      "tags":[],
+      "frequency":"daily",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"},
+        {"variable":"reporting_date"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "sheet":"Hospitalised_deaths"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"Country", "variable":"country_name"}, 
+      {"name":"nuts2/3", "variable":"geo_code"},
+      {"name":"Age group", "variable":"age_group"},
+      {"name":"Gender", "variable":"gender_code"},
+      {"name":"Population", "variable":"population"},
+      {"name":"Number of patients Hospitalized with COVID", "variable":"hospitalised_infected_patients"},
+      {"name":"Number of patients in ICU  with  COVID", "variable":"hospitalised_infected_patients_in_icu"},
+      {"name":"Number of deaths with  COVID", "variable":"deaths_infected"},
+      {"name":"Number of deaths for COVID hospitalised", "variable":"deaths_infected_hospitalised"},
+      {"name":"Number of deaths for COVID in ICU", "variable":"deaths_infected_in_icu"},
+      {"name":"Number of patients Hospitalized", "variable":"number_of_hospitalised_patients"},
+      {"name":"Average Length of Stay", "variable":"average_stay_length"},
+      {"name":"Number of patients in ICU", "variable":"icu_patients"},
+      {"name":"Average Length of Stay at ICU", "variable":"average_stay_length_at_icu"},
+      {"name":"Number of deaths", "variable":"number_of_deaths"},
+      {"name":"Number of patients with COVID in LTCF", "variable":"infected_patients_in_ltcf"},
+      {"name":"Number of deaths in LCTF", "variable":"deaths_in_lctf"},
+      {"name":"Standarise mortality by age", "variable":"standarise_mortality_by_age"},
+      {"name":"Standarise mortality by age for COVID", "variable":"standarise_mortality_by_age_infected_people"},
+      {"name":"Excess mortality", "variable":"excess_mortality"},
+      {"name":"Excess mortality LTCF", "variable":"excess_mortality_ltcf"}
+    ]
+}

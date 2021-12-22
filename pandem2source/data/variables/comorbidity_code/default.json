@@ -1,0 +1,165 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "ASTH"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "2",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "CANC"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "3",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "HIV"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "4",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "KIDNEY"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "5",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "LIVER"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "6",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "LUNG"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "7",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "NEUROCOG"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "8",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "NEUROMUS"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "9",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "NONE"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "10",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "O"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "11",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "OBESITY"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "12",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "OBESITYMORB"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "13",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "PREG"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "14",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "UNK"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "15",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "DIAB"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "16",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "comorbidity_code": "HEART"
+            }
+        }
+        
+    ]
+}

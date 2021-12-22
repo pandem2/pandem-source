@@ -18,8 +18,8 @@
     "acquisition":{
       "channel":{
         "name":"input-local",
-        "xls_file":"M.12 Upload templates_29_11_21.xlsx",
-        "sheet":"cases"
+        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "sheet":"Cases"
       },
       "format": {
         "name":"xls",
@@ -36,7 +36,6 @@
       {"name":"Recovered Cases", "variable":"recovered_cases"},
       {"name":"Gender", "variable":"gender_code"},
       {"name":"Age group", "variable":"age_group", "action":"insert"},
-      {"name":"Cumulative cases", "variable":"cumulative_cases"},
       {"name":"Active cases", "variable":"active_cases"},
       {"name":"Possible cases", "variable":"possible_cases"},
       {"name":"Probable cases", "variable":"probable_cases"},
@@ -46,6 +45,6 @@
       {"name":"Imported cases", "variable":"imported_cases"},
       {"name":"Rt", "variable":"rt_number"},
       {"name":"Number of alerts of potential cases in humans", "variable":"alerts_on_humans"},
-      {"name":"Number of alerts of potential cases in animals", "variable":"alerts_on_animals"}
+      {"name":"Number of alerts cases of potential cases in animals", "variable":"alerts_on_animals"}
     ]
 }

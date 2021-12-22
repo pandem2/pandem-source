@@ -16,20 +16,44 @@ class Variables(worker.Worker):
         self._storage_proxy=self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._pipeline_proxy=self._orchestrator_proxy.get_actor('pipeline').get().proxy()
 
+    # def get_variables(self): 
+    #     dic_variables = dict()
+    #     var_list=self._storage_proxy.read_file('variables/variables.json').get()
+    #     for var in var_list: 
+    #         dic_variables[var['variable']]=var.copy()
+    #         if 'aliases' in var :
+    #             for alias in var['aliases']:
+    #                 alias_var=var.copy()
+    #                 #if "alias" in alias:
+    #                 #  alias_var['variable']=alias['alias']
+    #                 if "modifiers" in alias:
+    #                   alias_var['modifiers']=alias['modifiers']
+    #                 if "alias" in alias:
+    #                   dic_variables[alias['alias']]=alias_var
+    #     return dic_variables
+    
     def get_variables(self): 
         dic_variables = dict()
         var_list=self._storage_proxy.read_file('variables/variables.json').get()
         for var in var_list: 
-            dic_variables[var['variable']]=var.copy()
-            if 'aliases' in var :
-                for alias in var['aliases']:
-                    alias_var=var.copy()
-                    #if "alias" in alias:
-                    #  alias_var['variable']=alias['alias']
-                    if "modifiers" in alias:
-                      alias_var['modifiers']=alias['modifiers']
-                    if "alias" in alias:
-                      dic_variables[alias['alias']]=alias_var
+            if not var["base_variable"]:            
+                base_dict = var.copy()
+                base_dict["aliases"] = []
+                base_dict.pop("modifiers")
+                base_dict.pop("base_variable")
+                aliases = [{"alias":v['variable'], 
+                            "variable": v['base_variable'],
+                            "modifiers": v['modifiers']}
+                            for v in var_list if v['base_variable']==var['variable']]
+                
+                base_dict["aliases"] = aliases
+                dic_variables[var['variable']] = base_dict
+                if aliases:
+                    for alias in aliases:
+                        alias_dict = base_dict.copy()
+                        if "modifiers" in alias:
+                            alias_dict['modifiers'] = alias['modifiers']
+                        dic_variables[alias['alias']] = alias_dict
         return dic_variables
 
     def get_referential(self,variable_name):
