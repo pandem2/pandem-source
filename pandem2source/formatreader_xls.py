@@ -10,10 +10,11 @@ class FormatReaderXLS(formatreader.FormatReader):
         file_bytes = self._storage_proxy.read_file(file_path).get()
         if file_bytes != '':
             sheet = dls['acquisition']['channel']['sheet']
+            col_names = [col['name'] for col in dls['columns']]
             df = pd.read_excel(file_bytes, sheet, header=None)
             df = df.dropna(how='all').dropna(how='all', axis=1)
             cols_row = 0
-            while len({'Date', 'NUTS2/3/country'}.intersection(df.iloc[cols_row]))==0:
+            while len(set(col_names).intersection(df.iloc[cols_row]))<len(col_names):
                 cols_row += 1
             cols = df.iloc[cols_row]
             df  = pd.DataFrame(df.values[cols_row+1:], columns=cols)

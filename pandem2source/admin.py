@@ -15,12 +15,20 @@ def reset_variables(in_package = False, in_home = True):
     if not os.path.exists(dir_path):
       os.makedirs(dir_path)
     write_json_variables(file_path)
-    # copy variables if any
-    if pkg_resources.resource_exists("pandem2source", "data/variables"):
-      for sub_path in pkg_resources.resource_listdir("pandem2source", "data/variables"):
-        var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", "variables", sub_path))
-        var_to = util.pandem_path("files", "variables", sub_path)
-        shutil.copytree(var_from, var_to, copy_function = shutil.copy)
+    # copy variables json files or indicators scripts if any
+    for folder in ["variables", "indicators"]:
+      if pkg_resources.resource_exists("pandem2source", f"data/{folder}"):
+        for sub_path in pkg_resources.resource_listdir("pandem2source", f"data/{folder}"):
+          var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", folder, sub_path))
+          var_to = util.pandem_path("files", folder, sub_path)
+          shutil.copytree(var_from, var_to, copy_function = shutil.copy)
+    # # copy indicators if any
+    # if pkg_resources.resource_exists("pandem2source", "data/indicators"):
+    #   for sub_path in pkg_resources.resource_listdir("pandem2source", "data/indicators"):
+    #     var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", "indicators", sub_path))
+    #     var_to = util.pandem_path("files", "indicators", sub_path)
+    #     shutil.copytree(var_from, var_to, copy_function = shutil.copy)
+
 
 def read_variables_xls():
   path = pkg_resources.resource_filename("pandem2source", "data/list-of-variables.xlsx")
@@ -38,7 +46,7 @@ def read_variables_xls():
     })
 
   for col in df.columns:
-    if col not in ["description", "modifiers"] and not df[col].isnull().values.all():
+    if col not in ["description", "modifiers", "formula"] and not df[col].isnull().values.all():
       df[col] = df[col].str.lower().str.replace(", ", ",", regex=False).str.replace(".", "", regex=False).str.replace(" ", "_",regex=False)
     if col in ["linked_attributes", "partition"]:
       df[col] = df[col].str.split(",")

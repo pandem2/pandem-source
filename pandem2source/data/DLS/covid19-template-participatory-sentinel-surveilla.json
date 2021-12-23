@@ -35,7 +35,6 @@
       {"name":"Gender", "variable":"gender_code"},
       {"name":"NUTS2/3", "variable":"geo_code"},
       {"name":"Age group", "variable":"age_group"},
-      {"name":"Gender", "variable":"gender_code"},
       {"name":"Total participants", "variable":"number_of_participants"},
       {"name":"Participants declaring symptoms", "variable":"participants_declaring_symptoms"},
       {"name":"ARI - ILI patients", "variable":"ari_ili_patients"},
