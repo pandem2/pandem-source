@@ -6,11 +6,10 @@ if(!require("COVID19")) {
     library(COVID19)
 }
 message("getting data for covid19datahub :-) ")
-# df <- covid19(country = c(
-#   "AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "DEU", "GRC", "HUN", "IRL", "ITA",
-#  "LVA", "LTU", "LUX", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE", "GBR"), level = 3
-# )
-df <- covid19(country = c("BEL"), level = 3)
+df <- covid19(country = c(
+  "AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "DEU", "GRC", "HUN", "IRL", "ITA",
+ "LVA", "LTU", "LUX", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE", "GBR"), level = 3
+)
 for(d in unique(df$date)) {
   ddf <- df %>% 
     filter(date == d)

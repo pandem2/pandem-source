@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod, ABCMeta
 from datetime import datetime, timedelta
 import time
 import re
+from collections import defaultdict
 
 class Evaluator(worker.Worker):
     __metaclass__ = ABCMeta  
@@ -55,13 +56,11 @@ class Evaluator(worker.Worker):
             if attr in self._indicators:
                 indicators_to_calculate.extend(self._indicators[attr])
         indicators_to_calculate = set(indicators_to_calculate)
+        params_values = dict()   #defaultdict(dict)
         for ind in indicators_to_calculate:
-
-
-        
-            if 'attr' in tuple.keys():
-                indicators_to_calculate.extend([self._indicators[tuple['attr']] for tuple in list_of_tuples if tuple['attr'] in self._indicators])
-        indicators_to_calculate = set(indicators_to_calculate)
+            params_values[ind]['reporting_period'] = 
+            #for param in self._parameters[ind]:
+         
 
         pass
         # It will identify the indicators to calculate by looking for parameters on the formulas using the indicators map for each variable on the list of tuples.
