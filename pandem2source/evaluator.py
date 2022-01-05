@@ -1,10 +1,21 @@
 import os
+
+from numpy import int64
 from . import worker
 from abc import ABC, abstractmethod, ABCMeta
 from datetime import datetime, timedelta
 import time
 import re
 from collections import defaultdict
+import itertools as it
+import tempfile
+import json
+import subprocess
+from copy import deepcopy
+from itertools import chain
+
+
+
 
 class Evaluator(worker.Worker):
     __metaclass__ = ABCMeta  
@@ -16,53 +27,113 @@ class Evaluator(worker.Worker):
         self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
         self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy() 
-        self._parameters, self._indicators = self.get_indicators(self._variables_proxy.get_variables().get())
+        self._dict_of_variables = self._variables_proxy.get_variables().get()
+        self._parameters, self._indicators = self.get_indicators(self._dict_of_variables)
 
-    def source_path(self, dls, *args):
-        if dls['acquisition']['channel']['name']=='input-local':
-            return self.pandem_path(f'files/{self.channel}', *args)
-        else:
-            return self.pandem_path(f'files/{self.channel}', dls['scope']['source'], *args)
 
     def get_indicators(self, dic_of_variables):
-        formulas = {var['variable']:var['formula'] for var in dic_of_variables if var['type']=='indicator' and var['formula']} #only indicators with formula not None
+        # Read the formulas of all indicators 
+        formulas = {var:var_dic['formula'] for var, var_dic in dic_of_variables.items() if var_dic['formula']} 
+        # Parse parameters from the functions/formula text and store them in parameters dict: for each indicator, returning a list for each parameters. e.g. parameters[“incidence”]=[“reporting_period”, “number_of_cases”, “population”]
         parameters = {ind:re.findall (r'([^(, )]+)(?!.*\()', formula) for ind, formula in formulas.items()}
+        # Build indicators dict that returns for each variable used on an indicator a list of indicators where this variable is used. eg. indicators[“population”]=[“Incidence”, “prevalence, …”]
         indicators = dict()
         params_set = {params[i] for ind, params in parameters.items() for i in range(len(params))}
         for param in params_set:
             ind_list = [ind for ind, params in parameters.items() if param in params]
             indicators[param] = ind_list
         return parameters, indicators
-        # It will read the formulas of all indicators
-        # It will parse the functions spliting the text and getting the variables that are used on the formula
-        # It will store two maps:
-        #     - indicators: an entry for each variable used on an indicator as a parameter and returning a list of indicators where this variable is used. eg. indicators[“population”]=[“Incidence”, “prevalence, …”]
-        #     - parameters: an entry for each indicator, returning a list for each parameters. e.g. parameters[“incidence”]=[“reporting_period”, “number_of_cases”, “population”]
-        # This function will be called on start
 
-
-
-
-
-    def calculate(self, list_of_tuples):
+    def calculate(self, list_of_tuples, path, job):
+        tuples_with_ind = deepcopy(list_of_tuples)
+        obs_attrs = dict() 
+        for tuple in list_of_tuples['tuples']:
+            if 'obs' in tuple:
+                if list(tuple['obs'])[0] in obs_attrs:
+                    obs_attrs[list(tuple['obs'])[0]] = list(set(obs_attrs[list(tuple['obs'])[0]] + list(tuple['attrs'])))
+                else:
+                    obs_attrs[list(tuple['obs'])[0]] = list(tuple['attrs'])
+        attr_set = {attr  for tuple in list_of_tuples['tuples'] for attr in list(tuple['attrs'])} 
+        attr_set_filtered = {attr for attr in attr_set if self._dict_of_variables[attr]['type']!='not_characteristic'}
+        attr_values = dict()
+        for attr in attr_set_filtered:
+            attr_values[attr] = list(set([tuple['attrs'][attr] for tuple in list_of_tuples['tuples'] if attr in tuple['attrs']]))
         indicators_to_calculate = []
-        obs_set = {tuple['obs'] for tuple in list_of_tuples and 'obs' in tuple}
-        attr_set = {tuple['attr'] for tuple in list_of_tuples and 'attr' in tuple}
-        indicators_to_calculate = []
-        for obs in obs_set:
-            if obs  in self._indicators:
-                indicators_to_calculate.extend(self._indicators[obs])
-        for attr in attr_set:
-            if attr in self._indicators:
-                indicators_to_calculate.extend(self._indicators[attr])
-        indicators_to_calculate = set(indicators_to_calculate)
-        params_values = dict()   #defaultdict(dict)
-        for ind in indicators_to_calculate:
-            params_values[ind]['reporting_period'] = 
-            #for param in self._parameters[ind]:
-         
+        if obs_attrs:
+            for ind, params in self._parameters.items(): # ? Should we suppose here that reposting period is the only attribute type parameter for an indicator
+                if len(set(params[1:]).intersection(set(obs_attrs)))== len(params)-1:
+                    indicators_to_calculate.append(ind)
+        print(f'indicators to calculate: {indicators_to_calculate}')
+        if indicators_to_calculate:
+            date_var = self._parameters[indicators_to_calculate[0]][0]# ? Why should we find date_var in parameters since it is alwayas 'reporting period
+            dates_in_tuples = list({tuple['attrs'][date_var] for tuple in list_of_tuples['tuples'] if date_var in tuple['attrs']})
+            for ind in indicators_to_calculate:
+                # read the functin code from indcators directory
+                function_path = self.pandem_path(f'files/indicators/{ind}', 'function.R')
+                with open(function_path) as f:
+                    function_code = f.read()
+                staging_dir = self.pandem_path(f'files/staging/{ind}')
+                if not os.path.exists(staging_dir):
+                    os.makedirs(staging_dir)
+                exec_file_path = os.path.join(staging_dir, 'exec.R')
+                result_path = os.path.join(staging_dir, 'result.json')
+                params = self._parameters[ind]
+                # write the R script within the exec.R file
+                execf = open(exec_file_path, 'w+')
+                for i, param in enumerate(params[1:]):
+                    param_file_path = os.path.join(staging_dir, param+'.json')
+                    execf.write(f'p{i+1} <- jsonlite::fromJSON("{param_file_path}")'+'\n')
+                execf.write(f'res <- {function_code}'+'\n')
+                execf.write(f'jsonlite::write_json(res, "{result_path}")'+'\n')
+                execf.close()
+                # find attributes related to an indicator parameters other than reporting_period and period_type
+                attrs_ind = list(set(chain.from_iterable([obs_attrs[param] for param in params[1:]])).intersection(attr_set_filtered) - {date_var, 'period_type'})
+                # retrieve the list of values combinations of attributes related to an indicator other than reporting_period
+                combinations = list(it.product(*(attr_values[attr] for attr in attrs_ind)))
+                # for each attributes values combination, build a dict where for each date in dates_in_tuples associate parameters values if any
+                for attr_comb in combinations:
+                    non_charac_attrs = dict()
+                    params_values = defaultdict(dict)
+                    for tuple in list_of_tuples['tuples']:
+                        if 'obs' in tuple:
+                            for date in dates_in_tuples:
+                                if tuple['attrs'][date_var]==date: 
+                                    for param in params[1:]:
+                                        if param in tuple['obs'] : 
+                                            if all(tuple['attrs'][attr]==val for attr,val in zip(attrs_ind, attr_comb) if attr in obs_attrs[param]):
+                                                non_charac_attrs['source'] = tuple['attrs']['source']
+                                                non_charac_attrs['file'] = tuple['attrs']['file']
+                                                non_charac_attrs['line_number'] = tuple['attrs']['line_number']
+                                                if type(tuple['obs'][param]) in [int64]:
+                                                    params_values[date][param] = int(tuple['obs'][param])
+                                                else:
+                                                    params_values[date][param] = tuple['obs'][param]
+                
 
-        pass
+                    # write params values within temporary files
+                    for i, param in enumerate(params[1:]):
+                        param_values_list = [params_values[date][param] if param in params_values[date] else 'NA' for date in params_values.keys()]
+                        param_file_path = os.path.join(staging_dir, param+'.json')
+                        with open(param_file_path, 'w+') as jsonf:
+                            jsonf.write(json.dumps(param_values_list))
+                    if params_values:
+                        subprocess.run (f'/usr/bin/Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
+                        if os.path.exists(result_path):
+                            with open(self.pandem_path(result_path)) as f:
+                                result = f.read()
+                            result = re.findall (r'([^\[," \]\n]+)', result)
+                        else:
+                            print('result file not found')
+                        for i, res in enumerate(result):
+                            date = list(params_values)[i]
+                            ind_date_tuple = {'obs': {ind:res},
+                                            'attrs':{**{'reporting_period':date, 'period_type':'date'},
+                                                     **{k:v for k,v in zip(attrs_ind, attr_comb)},
+                                                     **non_charac_attrs}
+                                            }
+                            tuples_with_ind['tuples'].append(ind_date_tuple)
+        self._pipeline_proxy.calculate_end(tuples = tuples_with_ind, path = path, job = job)
+    
         # It will identify the indicators to calculate by looking for parameters on the formulas using the indicators map for each variable on the list of tuples.
         # For each indicator to calculate it will determine the list of parameters to obtain using the parametet map.
         # The first parameter of the indicator is expected to be a date, it wil build a list of all dates (it must be present on the tuple). 

@@ -26,14 +26,6 @@ def reset_variables(in_package = False, in_home = True):
             var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", folder, sub_path))
             var_to = util.pandem_path("files", folder, sub_path)
           shutil.copytree(var_from, var_to, copy_function = shutil.copy)
-    # # copy input-local folder if any
-    # if pkg_resources.resource_exists("pandem2source", "data/input-local"):
-    #     for sub_path in pkg_resources.resource_listdir("pandem2source", "data/input-local"):
-    #       print(f'sub-path is: {sub_path}')
-    #       var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", "input-local"))
-    #       var_to = util.pandem_path("files", "input-local", sub_path)
-    #       shutil.copytree(var_from, var_to, copy_function = shutil.copy)
-
 
 
 def read_variables_xls():

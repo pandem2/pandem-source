@@ -97,7 +97,7 @@ class Variables(worker.Worker):
     def write_variable(self, input_tuples, path, job):
         class JsonEncoder(json.JSONEncoder):
           def default(self, z):
-            if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64) or isinstance(z, datetime.date):
+            if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64) or isinstance(z, datetime.date) :
               return (str(z))
             else:
               return super().default(z)
@@ -110,6 +110,7 @@ class Variables(worker.Worker):
                     var_name = list(tuple[key].keys())[0]
             if var_name is not None:
               partition_dict[var_name].append(tuple) 
+
         partition_dict_final = defaultdict(lambda: defaultdict(list))
         for var, tuple_list in partition_dict.items():
             for tuple in tuple_list:
@@ -132,12 +133,9 @@ class Variables(worker.Worker):
                         if tuple['attr'][var] not in unique_values.values():
                             unique_values[index] = tuple['attr'][var]
                     tuples_list = [tuples_list[key] for key in unique_values.keys()]
-
-               
                 file_path = util.pandem_path(var_dir, file_name)
                 if not os.path.exists(file_path):
-                    tuples_to_dump = {'tuples': tuples_list}
-                    
+                    tuples_to_dump = {'tuples': tuples_list}                   
                     with open(file_path, 'w+') as f:
                         json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
                 else:
@@ -154,7 +152,6 @@ class Variables(worker.Worker):
                             tuples_list.append(tup)            
                     with open(file_path, 'w') as f:
                         json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
-
         self._pipeline_proxy.publish_end( path = path, job = job)
                     
 

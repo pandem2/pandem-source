@@ -25,11 +25,13 @@ class Pipeline(worker.Worker):
         self._dfreader_proxy = self._orchestrator_proxy.get_actor('dfreader').get().proxy()
         self._standardizer_proxy = self._orchestrator_proxy.get_actor('standardizer').get().proxy()
         self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
-        self.job_steps = defaultdict(dict)
+        self._evaluator_proxy = self._orchestrator_proxy.get_actor('evaluator').get().proxy()
         self.decompressed_files = defaultdict(list)
+        self.job_steps = defaultdict(dict)
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
         self.job_stdtuples = defaultdict(dict)
+        self.job_caltuples = defaultdict(dict)
         self.job_issues = defaultdict(list)
         self.pending_count = {}
 
@@ -90,20 +92,27 @@ class Pipeline(worker.Worker):
             tuples = self.job_tuples[job["id"]]
             self.update_job_step(job, 'standardize_started')
             self.send_to_standardize(tuples, job)
-
+        
         # Jobs after standardize ends
         for job in self.job_steps['standardize_ended'].copy().values():
             tuples = self.job_stdtuples[job["id"]]
+            self.update_job_step(job, 'calculate_started')
+            self.send_to_calculate(tuples, job)
+        
+        # Jobs after evaluator ends
+        for job in self.job_steps['calculate_ended'].copy().values():
+            tuples = self.job_caltuples[job["id"]]
             self.update_job_step(job, 'publish_started')
             self.send_to_publish(tuples, job)
-        
+
+
         # Jobs after publish ends
         for job in self.job_steps['publish_ended'].copy().values():
             # cleaning job dicos
             for job_dico in self.job_dicos:
               if job["id"] in job_dico:
                 job_dico.pop(job["id"])
-            # TODO: delete jobs other than last 10 jobs per source
+     
     
 
     def submit_files(self, dls, paths):
@@ -118,6 +127,13 @@ class Pipeline(worker.Worker):
                      }
         job_id = self._storage_proxy.write_db(job_record, 'job').get()
         dest_files = [str(job_id)+'_'+'_'.join(path.split('files/')[1].split('/')) for path in paths]
+        
+        # if 'datahub' in dls['scope']['source']:
+        #     paths = [path for path in paths if '18322.csv' in path]
+        #     print(f' Paths list is {paths} ')
+        # dest_files = [str(job_id)+'_'+'_'.join(path.split('files/')[1].split('/')) for path in paths]
+        # paths_in_staging = [self.staging_path(dls, dest_files[0]) ]
+        
         paths_in_staging = [self.staging_path(dls, file) for file in dest_files]
         self._storage_proxy.copy_files(paths, paths_in_staging)
         job_id = self._storage_proxy.write_db({'id': job_id,
@@ -145,10 +161,7 @@ class Pipeline(worker.Worker):
               raise RuntimeError('unsupported format')
 
     def read_format_end(self, job, path, df):
-        #print(f'df head for {job["id"]} is: {df.head()}')
-        #print(f'pending_count is: {self.pending_count}')
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-
         #print(f'df head for file: {path} is : {df.head(10)}')
         self.job_df[job["id"]][path] = df
         if self.pending_count[job["id"]] == 0:
@@ -156,8 +169,7 @@ class Pipeline(worker.Worker):
 
     def send_to_unarchive(self, paths, job):
         filter_paths = job['dls_json']["acquisition"]["decompress"]["path"]
-        self.pending_count[job["id"]] = len(paths) * len(filter_paths)
-        
+        self.pending_count[job["id"]] = len(paths) * len(filter_paths) 
         for archive_path in paths:
           for filter_path in filter_paths:
             self._unarchive_proxy.unarchive(archive_path, filter_path, job)
@@ -165,7 +177,6 @@ class Pipeline(worker.Worker):
     
     def unarchive_end(self, archive_path, filter_path, bytes, job):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        
         dest_file = os.path.basename(archive_path)+'_'+('_'.join(filter_path.split('/'))) 
         path_in_staging = self.staging_path(job['dls_json'], dest_file)
         self.decompressed_files[job['id']].append(path_in_staging)
@@ -206,6 +217,17 @@ class Pipeline(worker.Worker):
                 self.update_job_step(job, 'standardize_ended')
             else:
                 self.fail_job(job)
+
+    def send_to_calculate(self, tuples, job):
+        self.pending_count[job["id"]] = len(tuples)
+        for path, ttuples in tuples.items():
+            self._evaluator_proxy.calculate(ttuples, path, job)
+
+    def calculate_end(self, tuples, path, job): 
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        self.job_caltuples[job["id"]][path] = tuples
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'calculate_ended')
 
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
