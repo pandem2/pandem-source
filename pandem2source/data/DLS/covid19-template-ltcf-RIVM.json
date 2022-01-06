@@ -1,6 +1,6 @@
 {
     "scope":{
-      "source":"hospitalised-deaths",
+      "source":"ltcf-rivm",
       "source_description":"Hospitalised deaths dataset from a local excel file sheet",
       "tags":[],
       "frequency":"daily",
@@ -18,8 +18,8 @@
     "acquisition":{
       "channel":{
         "name":"input-local",
-        "xls_file":"M.12 Upload templates_end_users.xlsx",
-        "sheet":"Hospitalised_deaths"
+        "xls_file":"M.12 Upload templates_end_users_RIVM.xlsx",
+        "sheet":"LTCF"
       },
       "format": {
         "name":"xls",
@@ -32,7 +32,7 @@
     "columns":[
       {"name":"Date", "variable":"reporting_date"}, 
       {"name":"Country", "variable":"country_name"}, 
-      {"name":"nuts2/3", "variable":"geo_code"},
+      {"name":"nuts2/3", "variable":"geo_local_code"},
       {"name":"Age group", "variable":"age_group"},
       {"name":"Gender", "variable":"gender_code"},
       {"name":"Population", "variable":"population"},

@@ -57,6 +57,7 @@ class Variables(worker.Worker):
         return dic_variables
 
     def get_referential(self,variable_name):
+        #print(f"getting {variable_name}")
         list_files=[]
         referentiel=[]
         path=os.path.join(os.getenv('PANDEM_HOME'), 'files/variables/', variable_name)
@@ -118,9 +119,9 @@ class Variables(worker.Worker):
         update_filter = []
         for filter in input_tuples['scope']['update_scope']:
             if not isinstance(filter['value'], list):
-                update_filter.append({'variable':filter['variable'], 'value':[filter['value']]})
+                update_filter.append({'variable':filter['variable'], 'value':[str(filter['value'])]})
             else:
-                update_filter.append(filter)
+                update_filter.append({'variable':filter["variable"], 'value':list([str(f) for f in filter["value"]])})
         for var, tuples_dict in partition_dict_final.items():
             var_dir = util.pandem_path('files/variables', var)
             if not os.path.exists(var_dir):

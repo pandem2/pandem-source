@@ -9,7 +9,8 @@ class AcquisitionGIT(acquisition.Acquisition):
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings, channel = "git")
 
     def new_files(self, dls, last_hash):
-        print('Im in git new files')
+        #print(f'Getting new files wih hash {last_hash}')
+        last_hash = last_hash.strip() 
         if("url" in dls['acquisition']['channel']):
           repo_name = dls['acquisition']['channel']['url'].split('/')[-1].split(".")[0]
           repo_dir = self.source_path(dls, repo_name)
@@ -49,10 +50,13 @@ class AcquisitionGIT(acquisition.Acquisition):
             if "paths" in dls['acquisition']['channel']:
               subdirs = dls['acquisition']['channel']['paths']
             else:
-              subdirs = [""]
+              subdirs = ['']
             
             for subdir in subdirs:
-                new_files_subdir = subprocess.run(['git', 'diff', '--name-only', last_hash, 'HEAD', subdir], 
+                cmd = ['git', 'diff', '--name-only', last_hash, 'HEAD']
+                if subdir != '':
+                  cmd.extend(subdir)
+                new_files_subdir = subprocess.run(cmd, 
                                             capture_output=True,
                                             text=True,
                                             cwd=repo_dir
@@ -66,7 +70,7 @@ class AcquisitionGIT(acquisition.Acquisition):
                         capture_output=True,
                         text=True,
                         cwd=repo_dir 
-        ).stdout #rstrip()   
+        ).stdout.strip()   
         print(f"{len(files_to_pipeline)} new files found for {source_dir}")
         ret = {"hash":new_commit, "files":files_to_pipeline}
         return ret

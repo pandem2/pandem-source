@@ -59,6 +59,11 @@ def main(a):
     action="store_true", 
     help="Reset ecdc-covid19-variants datasource to system defaults", 
   )
+  reset_parser.add_argument(
+    "--pandem-partners-template", 
+    action="store_true", 
+    help="Reset pandem partner templates to system defaults", 
+  )
   
   reset_parser.set_defaults(func = do_reset)
 
@@ -104,17 +109,25 @@ def do_reset(args, *other):
   if args.covid19_datahub or args.ecdc_covid19_variants or args.restore_factory_defaults:
     admin.reset_source("nuts-eurostat")
     admin.reset_source("ICD-10-diseases-list")
+  if args.pandem_partners_template or args.restore_factory_defaults:
     admin.reset_source("covid19-template-cases")
+    admin.reset_source("covid19-template-cases-RIVM")
     admin.reset_source("covid19-template-beds-staff")
     admin.reset_source("covid19-template-contact-tracing")
     admin.reset_source("covid19-template-daily-voc-voi")
+    admin.reset_source("covid19-template-daily-voc-voi-RIVM")
     admin.reset_source("covid19-template-hospitalised-deaths")
+    admin.reset_source("covid19-template-hospitalised-deaths-RIVM")
+    admin.reset_source("covid19-template-ltcf-RIVM")
     admin.reset_source("covid19-template-outbreaks")
     admin.reset_source("covid19-template-participatory-sentinel-surveilla")
     admin.reset_source("covid19-template-sex-age-comorbidity")
     admin.reset_source("covid19-template-testing")
+    admin.reset_source("covid19-template-testing-RIVM")
     admin.reset_source("covid19-template-vaccination")
     admin.reset_source("covid19-template-voc-voi")
+    admin.reset_source("covid19-template-local-regions")
+    admin.reset_source("covid19-template-local-regions-RIVM")
   if args.covid19_datahub or args.restore_factory_defaults:
     admin.reset_source("covid19-datahub")
   if args.ecdc_covid19_variants or args.restore_factory_defaults:

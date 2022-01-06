@@ -1,6 +1,6 @@
 {
     "scope":{
-      "source":"testing-sheet",
+      "source":"testing-sheet-rivm",
       "source_description":"Testing dataset from a local excel file sheet",
       "tags":[],
       "frequency":"daily",
@@ -18,7 +18,7 @@
     "acquisition":{
       "channel":{
         "name":"input-local",
-        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "xls_file":"M.12 Upload templates_end_users_RIVM.xlsx",
         "sheet":"Testing"
       },
       "format": {
@@ -31,7 +31,7 @@
     },
     "columns":[
       {"name":"Date", "variable":"reporting_date"}, 
-      {"name":"NUTS2/3/country", "variable":"geo_code"},
+      {"name":"NUTS2/3/country", "variable":"geo_local_code"},
       {"name":"Test Type (active cases)", "variable":"test_type"},
       {"name":"Num of available tests", "variable":"available_tests"},
       {"name":"number of test performed", "variable":"performed_tests"},

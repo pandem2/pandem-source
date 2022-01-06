@@ -1,7 +1,7 @@
 {
     "scope":{
-      "source":"daily-voc-voi",
-      "source_description":"Daily voc-voi dataset from a local excel file sheet",
+      "source":"local-regions-rivm",
+      "source_description":"Local regions from RIVM",
       "tags":[],
       "frequency":"daily",
       "reference_user":"",
@@ -18,8 +18,8 @@
     "acquisition":{
       "channel":{
         "name":"input-local",
-        "xls_file":"M.12 Upload templates_end_users.xlsx",
-        "sheet":"Daily VOC_VOI"
+        "xls_file":"M.12 Upload templates_end_users_RIVM.xlsx",
+        "sheet":"Local regions"
       },
       "format": {
         "name":"xls",
@@ -30,10 +30,10 @@
       }
     },
     "columns":[
-      {"name":"Date / Week", "variable":"reporting_date"}, 
-      {"name":"NUTS2/3/country", "variable":"geo_name"},
-      {"name":"N cases, Pango linage", "variable":"variant"},
-      {"name":"N cases, WHO label", "variable":"variant_who_label", "action":"insert"},
-      {"name":"N cases", "variable":"sequenced_samples"}
+      {"name":"Name", "variable":"geo_name", "action":"insert"},
+      {"name":"Code", "variable":"geo_local_code", "action":"insert"},
+      {"name":"Level", "variable":"geo_level", "action":"insert"},
+      {"name":"Parent", "variable":"geo_parent", "action":"insert"},
+      {"name":"Unique Code", "variable":"geo_code", "action":"insert"}
     ]
 }

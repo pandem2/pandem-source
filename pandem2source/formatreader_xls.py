@@ -10,13 +10,21 @@ class FormatReaderXLS(formatreader.FormatReader):
         file_bytes = self._storage_proxy.read_file(file_path).get()
         if file_bytes != '':
             sheet = dls['acquisition']['channel']['sheet']
-            col_names = [col['name'] for col in dls['columns']]
+            col_names = set([col['name'] for col in dls['columns']])
             df = pd.read_excel(file_bytes, sheet, header=None)
             df = df.dropna(how='all').dropna(how='all', axis=1)
             cols_row = 0
-            while len(set(col_names).intersection(df.iloc[cols_row]))<len(col_names):
+            best_row = 0
+            missing = col_names
+            while cols_row < len(df) and len(missing) > 0: 
+                row_missing = col_names.difference(df.iloc[cols_row])
+                if len(row_missing) < len(missing):
+                    best_row = cols_row
+                    missing = row_missing
                 cols_row += 1
-            cols = df.iloc[cols_row]
+            if len(missing) > 0:
+              raise ValueError(f"Cannot find columns {missing} on sheet {sheet}")
+            cols = df.iloc[best_row]
             df  = pd.DataFrame(df.values[cols_row+1:], columns=cols)
         else:
             raise ValueError('can not read from empty bytes')

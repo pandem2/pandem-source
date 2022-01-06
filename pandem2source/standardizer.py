@@ -26,6 +26,7 @@ class Standardizer(worker.Worker):
             OUT:        if issues not null list of issue
                         else list of tuples standardize
         """
+        #TODO: enforce that attrs on the update scope are mandatory (lines should be ignored) with a warning issue
         std_tuples={'scope':{}, 'tuples':[]}
         std_var={}
         variables=self._variables_proxy.get_variables().get()

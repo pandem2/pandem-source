@@ -210,6 +210,7 @@ class Pipeline(worker.Worker):
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
+            #print(f"publishing ${ttuples}")
             self._variables_proxy.write_variable(ttuples, path, job)
 
     def publish_end(self, path, job): 

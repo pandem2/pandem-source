@@ -94,7 +94,7 @@ class DataframeReader(worker.Worker):
                                 'issue_type' : "ref-not-found",
                                 'issue_severity':"warning"}
                         issues[item["name"]] = issue
-                elif var[item['variable']]['unit'] in ['people', 'number', 'Qty']:
+                elif self.is_numeric_unit(var[item['variable']]['unit']):
                     if df[item['name']].dtypes in ['integer', 'str', "object", "float64", "int64", 'int'] :
                         issues[item["name"]] = None
                     else :
@@ -162,7 +162,7 @@ class DataframeReader(worker.Worker):
           raise ValueError("undefined case for casting")
     
 
-    def df2tuple(self, df, path, job, dls): 
+    def df2tuple(self, df, path, job, dls):
         variables = self.get_variables()
         dls_col_list=[]
         file_name = util.absolute_to_relative(path, "files/staging/")
@@ -177,16 +177,17 @@ class DataframeReader(worker.Worker):
         types_ok = dict((t["name"],  t["name"] in col_issues and col_issues[t["name"]] is None) for t in  dls['columns'])
         col_vars = dict((t["name"], t["variable"]) for t in  dls['columns'])
         col_types = dict((k,variables[v]["type"]) for k,v in col_vars.items() if v in variables)
-        insert_cols = dict((t["name"], ("obs" if col_types[t["name"]] in ["observation", "indicator"] else "attr")) 
+        insert_cols = dict((t["name"], ("obs" if col_types[t["name"]] in ["observation", "indicator", "resource"] else "attr")) 
           for t in  dls['columns'] 
           if types_ok[t["name"]] and
-            ("action" in t and t["action"] == "insert" or col_types[t["name"]] in ["observation", "indicator"])
+            ("action" in t and t["action"] == "insert" or col_types[t["name"]] in ["observation", "indicator", "resource"])
         )
+        print(insert_cols)
         attr_cols = {}
         for col  in insert_cols.keys():
           typ = col_types[col]
-          if typ in ["observation", "indicator"]:
-            attr_cols[col] =  [k for k, v in col_types.items() if v not in  ["observation", "indicator"] and types_ok[k]]
+          if typ in ["observation", "indicator", "resource"]:
+            attr_cols[col] =  [k for k, v in col_types.items() if v not in  ["observation", "indicator", "resource"] and types_ok[k]]
           else:
             attr_cols[col] =  [k for k, v in col_vars.items() if 
               types_ok[k] and  
@@ -196,7 +197,6 @@ class DataframeReader(worker.Worker):
                   col_types[k] in ["characteristic"]
               )
             ]
-
         tuples = []
         for row in range(len(df)):
             for col, group in insert_cols.items():
@@ -244,40 +244,51 @@ class DataframeReader(worker.Worker):
         #  ret["scope"]["globals"] = self.add_values(dls["scope"]["globals"], tuples = [], issues = issues, dls = dls, job = job, file_name = file_name)
         # instantiating update scope based on existing values on tuple
         if "scope" in dls and "update_scope" in dls["scope"]:
-          ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, issues = issues, dls = dls, job = job, file_name = file_name)
+          ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, variables = variables, issues = issues, dls = dls, job = job, file_name = file_name)
+        #for t in tuples:
+        #  print(t)
         ret["tuples"] = tuples
         self._pipeline_proxy.read_df_end(tuples = ret, issues = issues, path = path, job = job)
     
 
-    def add_values(self, var_list, tuples, issues, dls, job, file_name):
+    def add_values(self, var_list, tuples, variables, issues, dls, job, file_name):
         ret = []
         for var in var_list:
-          if "variable" in var and "value" in var :
-            # all good no need to get distinct values
-            if not isinstance(var["value"], list):
-              r = var.copy()
-              r["value"] = [var["value"]]
-              ret.append(r)
-            else :
-              ret.append(var)
-          elif "variable" in var :
-            # value is midding we are going to try to get it from tuples
-            r = var.copy()
-            r["value"] = list(set(x["attrs"][var["variable"]] for x in tuples if var["variable"] in x["attrs"]))
-            ret.append(r)
+          if "variable" not in var:
+            pass
           else :
-            message = (f"Variable {var['variable']} needs to be instantiated ad per DLS but no valuer where found on dataset")
-            issue = {'step' : job['step'],
-                    'line' : 0,
-                    'source' : dls['scope']['source'],
-                    'file' : file_name,
-                    'message' : message,
-                    'raised_on' : datetime.now(),
-                    'job_id' : job['id'],
-                    'issue_type' : "cannot-instantiate",
-                    'issue_severity':"warning"
-            }
-            issues.append(issue)
+            # Getting base varabe if a derivated variabe
+            var_name = var["variable"]
+            base_var = variables[var_name]["variable"]
+            r = {"variable": base_var}
+            modifiers  = self.add_alias_context({"attrs":{}}, var_name, variables)
+            for k, v in modifiers["attrs"].items():
+              ret.append({"variable":k, "value":v})
+            
+            if "value" in var :
+              # all good no need to get distinct values just making sure the value is put as an array
+              if not isinstance(var["value"], list):
+                r["value"] = [var["value"]]
+              else :
+                r["value"] = var["value"]
+            else :
+              # value is missing we are going to try to get it from tuples
+              r["value"] = list(set(x["attrs"][base_var] for x in tuples if base_var in x["attrs"]))
+            ret.append(r)
+            
+            if len(r["value"])==0:
+              message = (f"Variable {var['variable']} needs to be instantiated ad per DLS but no values where found on dataset")
+              issue = {'step' : job['step'],
+                      'line' : 0,
+                      'source' : dls['scope']['source'],
+                      'file' : file_name,
+                      'message' : message,
+                      'raised_on' : datetime.now(),
+                      'job_id' : job['id'],
+                      'issue_type' : "cannot-instantiate",
+                      'issue_severity':"warning"
+              }
+              issues.append(issue)
         return ret
     def translate_or_issue(self, tup, group, val, issues, dtype, unit, dls, job, line_number, file_name, var_name, variables):
         trans = None
@@ -313,6 +324,7 @@ class DataframeReader(worker.Worker):
                 tup["attrs"] = {}
               if mod_var not in tup["attrs"] or tup["attrs"][mod_var] is None:
                   tup["attrs"][mod_var] = mod["value"]
+        return tup
 
     def transform_range(self, value):
       if '>' in value:
@@ -326,3 +338,11 @@ class DataframeReader(worker.Worker):
         b = value.strip().split('y')[0]
       return f'{a}-{b}'
 
+    def is_numeric_unit(self, unit):
+      if unit is None:
+        return False 
+
+      unit = unit.lower().replace(" ", "")
+      if unit in ['people', 'number', 'qty', 'days', 'people/people', 'units/time']:
+        return True
+      return False

@@ -28,16 +28,16 @@ class Acquisition(worker.Worker):
             return self.pandem_path(f'files/{self.channel}', dls['scope']['source'], *args)
 
     def monitor_source(self, source_id, dls, freq): 
-        print(f'here acquisition monitor_source loop: {source_id} {freq}')
+        #print(f'here acquisition monitor_source loop: {source_id} {freq}')
         last_hash = self._storage_proxy.read_db('source', lambda x: x['id']==source_id).get()['last_hash'].values[0]
         #Getting new files if any
-        print(f'last hash is: {last_hash}')
         nf = self.new_files(dls, last_hash)
         files_to_pipeline = nf["files"]
         #print(f'files to pipeline: {files_to_pipeline}')
         new_hash = nf["hash"]
         # If new files are found they will be send to the pipeline 
         if len(files_to_pipeline)>0:
+            print(f'New {len(files_to_pipeline)} files found last hash is: {last_hash}')
             # Sending files to the pipeline
             self._pipeline_proxy.submit_files(dls, files_to_pipeline).get()
             # Storing the new hash into the db

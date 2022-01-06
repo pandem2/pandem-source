@@ -1,9 +1,9 @@
 {
     "scope":{
-      "source":"cases-sheet",
+      "source":"cases-sheet-rivm",
       "source_description":"Cases dataset from a local excel file sheet",
       "tags":[],
-      "frequency":"daily",
+      "frequency":"every 5 seconds",
       "reference_user":"",
       "reporting_email":"",
       "globals":[
@@ -18,7 +18,7 @@
     "acquisition":{
       "channel":{
         "name":"input-local",
-        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "xls_file":"M.12 Upload templates_end_users_RIVM.xlsx",
         "sheet":"Cases"
       },
       "format": {
@@ -31,9 +31,10 @@
     },
     "columns":[
       {"name":"Date", "variable":"reporting_date"}, 
-      {"name":"NUTS2/3/country", "variable":"geo_code"},
+      {"name":"NUTS2/3/country", "variable":"geo_local_code"},
       {"name":"Confirmed cases", "variable":"confirmed_cases"},
       {"name":"Recovered Cases", "variable":"recovered_cases"},
+      {"name":"Deaths", "variable":"number_of_deaths"},
       {"name":"Gender", "variable":"gender_code"},
       {"name":"Age group", "variable":"age_group", "action":"insert"},
       {"name":"Active cases", "variable":"active_cases"},
@@ -48,3 +49,4 @@
       {"name":"Number of alerts cases of potential cases in animals", "variable":"alerts_on_animals"}
     ]
 }
+

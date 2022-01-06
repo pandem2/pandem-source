@@ -12,7 +12,6 @@ class AcquisitionGITLocal(acquisition_git.AcquisitionGIT):
         self._script_executor_proxy = self._orchestrator_proxy.get_actor('script_executor').get().proxy()
 
     def new_files(self, dls, last_hash):
-        print('Im in git_local new_files')
         script_name = dls["acquisition"]["channel"]["changed_by"]["script_name"]
         script_type = dls["acquisition"]["channel"]["changed_by"]["script_type"]
         working_dir = self.source_path(dls)
@@ -32,5 +31,5 @@ class AcquisitionGITLocal(acquisition_git.AcquisitionGIT):
         else :
             res = subprocess.run(["git", "add", "."], cwd = working_dir)
             res = subprocess.run(["git", "commit", "-m" "Committed new files"], cwd = working_dir, capture_output=True)
-            
+        
         return super().new_files(dls, last_hash)

@@ -1,9 +1,9 @@
 {
     "scope":{
-      "source":"daily-voc-voi",
+      "source":"daily-voc-voi-rivm",
       "source_description":"Daily voc-voi dataset from a local excel file sheet",
       "tags":[],
-      "frequency":"daily",
+      "frequency":"every 5 seconds",
       "reference_user":"",
       "reporting_email":"",
       "globals":[
@@ -18,7 +18,7 @@
     "acquisition":{
       "channel":{
         "name":"input-local",
-        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "xls_file":"M.12 Upload templates_end_users_RIVM.xlsx",
         "sheet":"Daily VOC_VOI"
       },
       "format": {
@@ -31,7 +31,7 @@
     },
     "columns":[
       {"name":"Date / Week", "variable":"reporting_date"}, 
-      {"name":"NUTS2/3/country", "variable":"geo_name"},
+      {"name":"NUTS2/3/country", "variable":"geo_local_code"},
       {"name":"N cases, Pango linage", "variable":"variant"},
       {"name":"N cases, WHO label", "variable":"variant_who_label", "action":"insert"},
       {"name":"N cases", "variable":"sequenced_samples"}

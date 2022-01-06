@@ -78,25 +78,25 @@ class Orchestration(pykka.ThreadingActor):
         dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in source_files]
         sources_labels = set([dls['acquisition']['channel']['name'] for dls in dls_dicts])
         
-        if self.start_acquisition:
-            for label in sources_labels:
-                if label == "url":
-                    acquisition_ref = acquisition_url.AcquisitionURL.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
-                elif label == "git":
-                    acquisition_ref = acquisition_git.AcquisitionGIT.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
-                elif label == "git-local":
-                    acquisition_ref = acquisition_git_local.AcquisitionGITLocal.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
-                elif label == "input-local":
-                    acquisition_ref = acquisition_localFS.AcquisitionLocalFS.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
-                else:
-                    raise NotImplementedError(f"The acquisition channel {label} has not been implemented")
+        for label in sources_labels:
+            if label == "url":
+                acquisition_ref = acquisition_url.AcquisitionURL.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+            elif label == "git":
+                acquisition_ref = acquisition_git.AcquisitionGIT.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+            elif label == "git-local":
+                acquisition_ref = acquisition_git_local.AcquisitionGITLocal.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+            elif label == "input-local":
+                acquisition_ref = acquisition_localFS.AcquisitionLocalFS.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+            else:
+                raise NotImplementedError(f"The acquisition channel {label} has not been implemented")
 
-                acquisition_proxy = acquisition_ref.proxy()
-                dls_label = [dls for dls in dls_dicts if dls['acquisition']['channel']['name'] == label]
-                for dls in dls_label:
-                    acquisition_proxy.add_datasource(dls)
+            acquisition_proxy = acquisition_ref.proxy()
+            dls_label = [dls for dls in dls_dicts if dls['acquisition']['channel']['name'] == label]
+            for dls in dls_label:
+                if self.start_acquisition:
+                   acquisition_proxy.add_datasource(dls)
         
-                self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label}
+            self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label}
 
 
     def get_heartbeat(self, actor_name):
