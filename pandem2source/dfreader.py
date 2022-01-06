@@ -182,7 +182,6 @@ class DataframeReader(worker.Worker):
           if types_ok[t["name"]] and
             ("action" in t and t["action"] == "insert" or col_types[t["name"]] in ["observation", "indicator", "resource"])
         )
-        print(insert_cols)
         attr_cols = {}
         for col  in insert_cols.keys():
           typ = col_types[col]

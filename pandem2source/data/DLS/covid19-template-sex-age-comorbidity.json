@@ -3,7 +3,7 @@
       "source":"sex-age-comorbidity",
       "source_description":"Sex, age and comorbidity dataset from a local excel file sheet",
       "tags":[],
-      "frequency":"daily",
+      "frequency":"every 30 seconds",
       "reference_user":"",
       "reporting_email":"",
       "globals":[

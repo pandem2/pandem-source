@@ -3,7 +3,7 @@
       "source":"local-regions",
       "source_description":"Local regions from RIVM",
       "tags":[],
-      "frequency":"daily",
+      "frequency":"every 30 seconds",
       "reference_user":"",
       "reporting_email":"",
       "globals":[

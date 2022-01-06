@@ -3,7 +3,7 @@
       "source":"participatory-sentinel-surveilla",
       "source_description":"Participatory sentinel surveilla dataset from a local excel file sheet",
       "tags":[],
-      "frequency":"daily",
+      "frequency":"every 30 seconds",
       "reference_user":"",
       "reporting_email":"",
       "globals":[
