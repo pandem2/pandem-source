@@ -64,6 +64,11 @@ def main(a):
     action="store_true", 
     help="Reset pandem partner templates to system defaults", 
   )
+  reset_parser.add_argument(
+    "--twitter", 
+    action="store_true", 
+    help="Reset pandem twitter system defaults", 
+  )
   
   reset_parser.set_defaults(func = do_reset)
 
@@ -132,6 +137,8 @@ def do_reset(args, *other):
     admin.reset_source("covid19-datahub")
   if args.ecdc_covid19_variants or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-variants")    
+  if args.twitter or args.restore_factory_defaults:
+    admin.reset_source("twitter")    
 
 if __name__ == "__main__":
   main(sys.argv[1] if len(sys.argv)>1 else None)

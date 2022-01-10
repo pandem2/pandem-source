@@ -40,7 +40,7 @@ class Worker(pykka.ThreadingActor):
 
     def actor_loop(self):
         while True:
-            time.sleep(1)
+            time.sleep(0.01)
             #print(f'last execution list is: {last_executions}')
             next_executions = [action['repeat'].next_exec() for action in self._actions]
             #print(f'next execution list is: {next_executions}')

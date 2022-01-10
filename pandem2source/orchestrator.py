@@ -9,6 +9,7 @@ from . import formatreader_xls
 from . import unarchive
 from . import acquisition_git_local
 from . import acquisition_localFS
+from . import acquisition_twitter
 from . import script_executor
 from . import dfreader
 from . import standardizer
@@ -87,6 +88,8 @@ class Orchestration(pykka.ThreadingActor):
                 acquisition_ref = acquisition_git_local.AcquisitionGITLocal.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
             elif label == "input-local":
                 acquisition_ref = acquisition_localFS.AcquisitionLocalFS.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+            elif label == "twitter":
+                acquisition_ref = acquisition_twitter.AcquisitionTwitter.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
             else:
                 raise NotImplementedError(f"The acquisition channel {label} has not been implemented")
 

@@ -2,6 +2,8 @@ import os
 import datetime
 import json
 import numpy
+import io
+import getpass
 
 def check_pandem_home():
   if os.environ.get("PANDEM_HOME") is None:
@@ -33,3 +35,18 @@ def pretty(o):
       else:
         return super().default(z)
   return json.dumps(o,cls=JsonEncoder, indent = 4)
+
+def get_or_set_secret(name):
+  secret_dir = pandem_path("secrets")
+  if not os.path.exists(secret_dir):
+    os.makedirs(name = secret_dir, mode = 0o700)
+
+  secret_path = os.path.join(secret_dir, name)
+  if not os.path.exists(secret_path):
+    p = getpass.getpass(prompt = f"Password {name} not found, please type it or put a file with its content (UTF-8) in {secret_path}")
+    with open(secret_path, 'w', encoding='utf-8') as f:
+      f.write(p)
+    os.chmod(secret_path, 0o400)
+  with io.open(secret_path, mode = "r", encoding = "utf-8") as f:
+    return f.read()
+       
