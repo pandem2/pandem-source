@@ -95,7 +95,7 @@ class DataframeReader(worker.Worker):
                                 'issue_severity':"warning"}
                         issues[item["name"]] = issue
                 elif var[item['variable']]['unit'] in ['people', 'number', 'Qty']:
-                    if df[item['name']].dtypes in ['integer', 'str', "object", "float64", "int64", 'int'] :
+                    if df[item['name']].dtypes in ['integer', 'str', "object","float", "float64", "int64", 'int'] :
                         issues[item["name"]] = None
                     else :
                         message = (f"Type '{df[item['name']].dtypes}' in source file is not compatible with variable {item['variable']} with unit 'integer' ")
@@ -150,7 +150,7 @@ class DataframeReader(worker.Worker):
                 return datetime.strptime(value, parse_format).date()
 
         elif unit in ["people", "int", "number", "qty"] :
-            if dtype in ["int", "int64"]:
+            if dtype in ["int", "int64", "object"]:
                 return value
             elif np.isnan(value):
                 return None
