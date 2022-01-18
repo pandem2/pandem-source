@@ -4,3 +4,29 @@ pandem:
     driver:
       port: 8080
       log_endpoint: 'http://localhost:8080/logs'
+    nlp:
+      models_path:  ""
+      languages:
+        en:
+          - emotion_analysis_attention
+          - sentiment_analysis_attention
+          - sug_min_attention
+      categories:
+        emotion_analysis_attention:
+          - surprise
+          - fear
+          - joy
+          - anger
+          - sadness
+          - love 
+        sentiment_analysis_attention:
+          - negative
+          - neutral
+          - positive
+        sug_min_attention:
+          - non-suggestion
+          - suggestion 
+      tensorflow_server_host:  "localhost"
+      tensorflow_server_port:  8501
+      tensorflow_server_protocol:  "http"
+      tensorflow_server_version:  "2.4.3"

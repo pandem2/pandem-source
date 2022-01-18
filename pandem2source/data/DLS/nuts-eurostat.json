@@ -17,7 +17,8 @@
     "acquisition":{
       "channel":{
         "name":"url",
-        "url": "https://data.europa.eu/euodp/repository/ec/estat/nuts/nuts.rdf"
+        "url_orig": "https://data.europa.eu/euodp/repository/ec/estat/nuts/nuts.rdf",
+        "url": "https://web.archive.org/web/20191118233613if_/http://data.europa.eu:80/euodp/repository/ec/estat/nuts/nuts.rdf"
       },
       "format": {
         "row":"/rdf:RDF/rdf:Description"

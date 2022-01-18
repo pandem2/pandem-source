@@ -21,10 +21,12 @@ class Pipeline(worker.Worker):
         self._frxml_proxy = self._orchestrator_proxy.get_actor('ftreader_xml').get().proxy()
         self._frcsv_proxy = self._orchestrator_proxy.get_actor('ftreader_csv').get().proxy()
         self._frxls_proxy = self._orchestrator_proxy.get_actor('ftreader_xls').get().proxy()
+        self._frjson_proxy = self._orchestrator_proxy.get_actor('ftreader_json').get().proxy()
         self._unarchive_proxy = self._orchestrator_proxy.get_actor('unarchiver').get().proxy()
         self._dfreader_proxy = self._orchestrator_proxy.get_actor('dfreader').get().proxy()
         self._standardizer_proxy = self._orchestrator_proxy.get_actor('standardizer').get().proxy()
         self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
+        self._nlp_proxy = self._orchestrator_proxy.get_actor('nlp_annotator').get().proxy()
         self.job_steps = defaultdict(dict)
         self.decompressed_files = defaultdict(list)
         self.job_df = defaultdict(dict)
@@ -38,7 +40,7 @@ class Pipeline(worker.Worker):
         self.last_step = "publish_ended" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
                                           filter= lambda x: 
-                                             ( x['status'] == 'in progress' or (x['status'] == 'failed' and self.retry_failed)) 
+                                             ( (x['status'] == 'in progress' or x['status'] == 'failed') and self.retry_failed) 
                                              and x['step'] != 'submitted_started' 
                                              and x['step'] != self.last_step 
                                          ).get()
@@ -94,9 +96,19 @@ class Pipeline(worker.Worker):
         # Jobs after standardize ends
         for job in self.job_steps['standardize_ended'].copy().values():
             tuples = self.job_stdtuples[job["id"]]
+            if self.job_to_annotate(job):
+                self.update_job_step(job, 'annotate_started')
+                self.send_to_annotate(tuples, job)
+            else:
+                self.update_job_step(job, 'publish_started')
+                self.send_to_publish(tuples, job)
+        
+        # Jobs after annnotate text ends
+        for job in self.job_steps['annotate_ended'].copy().values():
+            tuples = self.job_stdtuples[job["id"]]
             self.update_job_step(job, 'publish_started')
             self.send_to_publish(tuples, job)
-        
+
         # Jobs after publish ends
         for job in self.job_steps['publish_ended'].copy().values():
             # cleaning job dicos
@@ -131,18 +143,18 @@ class Pipeline(worker.Worker):
     def send_to_readformat(self, paths, job):
        self.pending_count[job["id"]] = len(paths)
        for file_path in paths:
-          file_ext = os.path.splitext(file_path)[1]
-          if file_ext == '.csv':
+          if file_path.endswith('.csv'):
               self._frcsv_proxy.read_format_start(job, file_path)
-          elif file_ext == '.rdf':
+          elif file_path.endswith('.rdf'):
               self._frxml_proxy.read_format_start(job, file_path)
-          elif file_ext == '.xml':
+          elif file_path.endswith('.xml'):
               self._frxml_proxy.read_format_start(job, file_path)
-          elif file_ext in ('.xls', '.xlsx'):
+          elif file_path.endswith(".xls") or file_path.endswith('.xlsx'):
               self._frxls_proxy.read_format_start(job, file_path)
-        
+          elif file_path.endswith('.json') or file_path.endswith('.json.gz'):
+              self._frjson_proxy.read_format_start(job, file_path)
           else:
-              raise RuntimeError('unsupported format')
+              raise RuntimeError(f'Unsupported format in {file_path}')
 
     def read_format_end(self, job, path, df):
         #print(f'df head for {job["id"]} is: {df.head()}')
@@ -206,6 +218,18 @@ class Pipeline(worker.Worker):
                 self.update_job_step(job, 'standardize_ended')
             else:
                 self.fail_job(job)
+    
+    def send_to_annotate(self, tuples, job):
+        self.pending_count[job["id"]] = len(tuples)
+        for path, ttuples in tuples.items():
+            #print(f"publishing ${ttuples}")
+            self._nlp_proxy.annotate(ttuples, path, job)
+
+    def annotate_end(self, tuples, path, job): 
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        self.job_stdtuples[job["id"]][path] = tuples
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'annotate_ended')
 
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
@@ -262,6 +286,13 @@ class Pipeline(worker.Worker):
             for issue in issues_to_write:
                 self._storage_proxy.write_db(record=issue, db_class='issue').get() 
 
+    def job_to_annotate(self, job):
+      if "columns" in job['dls_json']:
+        for col in job['dls_json']['columns']:
+          if "variable" in col and col["variable"] == "article_text":
+            return True
+      return False
+      
   
 
     def staging_path(self, dls, *args):

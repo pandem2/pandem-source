@@ -1,7 +1,7 @@
 {
     "scope":{
       "source":"twitter",
-      "source_description":"Twitter based early warning",
+      "source_description":"",
       "tags":["Social Media"],
       "frequency":"every 1 minutes",
       "reference_user":"",
@@ -19,23 +19,39 @@
         "name":"twitter",
         "endpoint":"filter",
         "version":"1.1",
-        "languages":["fr", "en", "fr"],
+        "languages":["fr", "en", "es"],
         "topics": {
-          "covid-19":{
-            "phrases":["covid-19", "covid"]
+          "COVID-19":{
+            "phrases":["covid-19", "covid"],
+            "group":"disease"
           },
-          "dengue":{ 
-            "phrases":["dengue"]
+          "Dengue fever [classical dengue]":{ 
+            "phrases":["dengue"],
+            "group":"disease"
           },
-          "ebola":{
-            "phrases":["ebola"]
+          "Ebola virus disease":{
+            "phrases":["ebola"],
+            "group":"disease"
           },
-          "vaccination":{
-            "phrases":["vaccination", "vaccines", "jabs", "vacunas"]
+          "lock-down":{
+            "phrases":["lock down", "confinamiento", "confinnement"],
+            "group":"government_measure"
           },
-          "goverment-measures":{
-            "phrases":["lock down", "school closing", "fermeture école", "cerrar clases", "cierran clases", "cierre de clases", "vaccination program", "programa de vacunacion",
-                        "vaccination program", "programme vaccination", "mask wearing", "FFP2", "mascarillas", "masques"]
+          "school-closing":{
+            "phrases":["school closing", "fermeture école", "cerrar clases", "cierran clases", "cierre de clases"],
+            "group":"government_measure"
+          },
+          "vaccination": {
+            "phrases":["vaccination", "vacuna", "vacunas", "vaccins", "jabs", "jab"],
+            "group":"government_measure"
+          },
+          "masks":{
+            "phrases":["wear masks", "FFP2", "mascarillas", "porter masque"],
+            "group":"government_measure"
+          },
+          "tests":{
+            "phrases":["PCR", "antígenos", "antigène", "antigene", "antigénique", "antigen"],
+            "group":"government_measure"
           }
         },
         "excluded_phrases":["something-noisy"],
@@ -43,24 +59,18 @@
       },
       "format": {
         "name":"json",
-        "new_line_ended":false,
-        "encoding":"UTF-8"
+        "new_line_ended":true,
+        "encoding":"UTF-8",
+        "row":"*"
       }
     },
     "columns":[
-      {"name":"Date", "variable":"reporting_date"}, 
-      {"name":"Country", "variable":"country_name"}, 
-      {"name":"nuts2/3", "variable":"geo_code"},
-      {"name":"Population", "variable":"population"},
-      {"name":"Total number of operable beds", "variable":"number_of_operable_beds"},
-      {"name":"Total number of operable ICU beds", "variable":"number_of_icu_operable_beds"},
-      {"name":"Number of beds in LCTF", "variable":"number_of_lctf_beds"},
-      {"name":"Number of nurses available", "variable":"number_of_nurses_available"},
-      {"name":"Number of physicians available", "variable":"number_of_physicians_available"},
-      {"name":"Number of HCW working at hospital level", "variable":"number_of_hcw_hospital_level"},
-      {"name":"Number of ICU specialist-anesthesiologist available", "variable":"number_of_icu_specialist_anesthesiologist_available"},
-      {"name":"PH staff", "variable":"ph_staff"},
-      {"name":"PH staff working in contact tracing", "variable":"ph_staff_working_in_contact_tracing"},
-      {"name":"Number of emergency staff", "variable":"number_of_emergency_staff"}
+      {"name":"id", "variable":"article_id", "path":"@id"},
+      {"name":"created_at", "variable":"article_created_at", "path":"@created_at"},
+      {"name":"topic_disease", "variable":"pathogen_name", "path":"@topic_disease/*"},
+      {"name":"topic_government_measure", "variable":"topic", "path":"@topic_government_measure/*"},
+      {"name":"text", "variable":"article_text", "path":"@text"},
+      {"name":"reporting_time", "variable":"reporting_time", "path":"@reporting_time"},
+      {"name":"lang", "variable":"article_language", "path":"@lang"}
     ]
 }

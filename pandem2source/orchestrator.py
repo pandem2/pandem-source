@@ -6,11 +6,13 @@ from . import pipeline
 from . import formatreader_xml
 from . import formatreader_csv
 from . import formatreader_xls
+from . import formatreader_json
 from . import unarchive
 from . import acquisition_git_local
 from . import acquisition_localFS
 from . import acquisition_twitter
 from . import script_executor
+from . import nlp_annotator
 from . import dfreader
 from . import standardizer
 from . import variables
@@ -36,7 +38,7 @@ class Orchestration(pykka.ThreadingActor):
         self.current_actors['storage'] = {'ref': storage_ref}
 
         # Launching passive actors
-        # launch dataframe reader acor
+        # launch dataframe reader actor
         dfreader_ref = dfreader.DataframeReader.start('dfreader', self.actor_ref, storage_ref, self.settings)
         self.current_actors['dfreader'] = {'ref': dfreader_ref}
         
@@ -52,6 +54,10 @@ class Orchestration(pykka.ThreadingActor):
         xlsreader_ref = formatreader_xls.FormatReaderXLS.start('ftreader_xls', self.actor_ref, self.settings)
         self.current_actors['ftreader_xls'] = {'ref': xlsreader_ref}
 
+        #launch json format reader actor
+        jsonreader_ref = formatreader_json.FormatReaderJSON.start('ftreader_json', self.actor_ref, self.settings)
+        self.current_actors['ftreader_json'] = {'ref': jsonreader_ref}
+        
         #launch unarchiver actor
         unarchive_ref = unarchive.Unarchive.start('unarchiver', self.actor_ref, self.settings)
         self.current_actors['unarchiver'] = {'ref': unarchive_ref}
@@ -64,6 +70,10 @@ class Orchestration(pykka.ThreadingActor):
         script_executor_ref = script_executor.ScriptExecutor.start('script_executor', self.actor_ref, self.settings)
         self.current_actors['script_executor'] = {'ref': script_executor_ref}
 
+        # launch nlp annotator actor
+        nlp_annotator_ref = nlp_annotator.NLPAnnotator.start('nlp_annotator', self.actor_ref, self.settings)
+        self.current_actors['nlp_annotator'] = {'ref': nlp_annotator_ref}
+        
         # launch standardizer actor
         standardizer_ref = standardizer.Standardizer.start('standardizer', self.actor_ref, self.settings)
         self.current_actors['standardizer'] = {'ref': standardizer_ref}

@@ -2,6 +2,7 @@ import sys, os
 import yaml
 import argparse
 import logging
+import shutil
 from . import util 
 from .orchestrator import Orchestration
 from . import admin
@@ -101,14 +102,25 @@ def do_start(args, *other):
  
   pkg_dir, this_filename = os.path.split(__file__)
   defaults = os.path.join(pkg_dir, "data/defaults.yml") 
-  with open(defaults, "r") as f:
-      settings = yaml.safe_load(f)
+  config = util.pandem_path("settings.yml")
+  if not os.path.exists(config):
+    shutil.copy(defaults, config)
+
+  with open(config, "r") as f:
+    settings = yaml.safe_load(f)
+  
+  if os.environ.get("PANDEM_NLP") is not None:
+    settings["pandem"]["source"]["nlp"]["models_path"] = os.environ.get("PANDEM_NLP")
+  else:
+    while "models_path" not in settings["pandem"]["source"]["nlp"] or settings["pandem"]["source"]["nlp"]["models_path"] == "": 
+      settings["pandem"]["source"]["nlp"]["models_path"] = input(f"Please specify the location of nlp components for text classification \n\n ** tip: Next time you can set the environmens variable PANDEM_NLP \n  or set the value in pandem->source->nlp->models_path on {config}\n  you can download the models from here: https://drive.google.com/file/d/1mSl2X4DQQZKf1sHeJaKDZOM6ydi4nVEK/view?usp=sharing\n")
   orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed)
   return orchestrator_ref.proxy()
   
 def do_reset(args, *other):
   if args.restore_factory_defaults:
     admin.delete_all()
+    admin.reset_default_input()
   if args.variables or args.restore_factory_defaults:
     admin.reset_variables(in_home = True)
   if args.covid19_datahub or args.ecdc_covid19_variants or args.restore_factory_defaults:
