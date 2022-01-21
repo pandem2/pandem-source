@@ -150,7 +150,7 @@ class DataframeReader(worker.Worker):
                 return datetime.strptime(value, parse_format).date()
 
         elif unit in ["people", "int", "number", "qty"] :
-            if dtype in ["int", "int64", "object"]:
+            if dtype in ["int", "int64"]: #, "object"
                 return value
             elif np.isnan(value):
                 return None

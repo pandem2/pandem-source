@@ -11,8 +11,8 @@
         {"variable":"pathogen_name", "value":"COVID-19"}
       ],
       "update_scope":[
-        {"variable":"source"},
-        {"variable":"reporting_date"}
+        {"variable":"source", "value":["sex-age-comorbidity"]},
+        {"variable":"reporting_date", "value": []}
       ]
     },
     "acquisition":{

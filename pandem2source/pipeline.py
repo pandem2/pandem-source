@@ -31,11 +31,14 @@ class Pipeline(worker.Worker):
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
         self.job_stdtuples = defaultdict(dict)
-        self.job_caltuples = defaultdict(dict)
+        self.job_precaltuples = defaultdict(dict)
+        self.job_precalinds = defaultdict(dict)
+        self.job_indicators = defaultdict(dict)
+        
         self.job_issues = defaultdict(list)
         self.pending_count = {}
 
-        self.job_dicos = [self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.pending_count, self.job_issues]
+        self.job_dicos = [self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.job_precaltuples, self.job_precalinds, self.job_indicators, self.pending_count, self.job_issues]
 
         self.last_step = "publish_ended" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
@@ -63,7 +66,6 @@ class Pipeline(worker.Worker):
     def process_jobs(self):
         # This function will process active jobs asynchronoulsy.
         # Based on current status an action will be performed and the status will be updated
-        
         # Jobs after submit that has just been submitted 
         # they will go to decompress or to format read
         for job in self.job_steps['submitted_ended'].copy().values():
@@ -96,18 +98,30 @@ class Pipeline(worker.Worker):
         # Jobs after standardize ends
         for job in self.job_steps['standardize_ended'].copy().values():
             tuples = self.job_stdtuples[job["id"]]
-            self.update_job_step(job, 'calculate_started')
-            self.send_to_calculate(tuples, job)
+            self.update_job_step(job, 'precalculate_started')
+            self.send_to_precalculate(tuples, job)
         
-        # Jobs after evaluator ends
-        for job in self.job_steps['calculate_ended'].copy().values():
-            tuples = self.job_caltuples[job["id"]]
-            self.update_job_step(job, 'publish_started')
-            self.send_to_publish(tuples, job)
+        # Jobs after precalculate ends
+        for job in self.job_steps['precalculate_ended'].copy().values():
+            tuples = self.job_precaltuples[job["id"]]  
+            self.update_job_step(job, 'publish_facts_started')
+            self.send_to_publish_facts(tuples, job)
 
+        # Jobs after publish facts ends
+        for job in self.job_steps['publish_facts_ended'].copy().values():
+            indicators_to_calculate = self.job_precalinds[job["id"]]    
+            self.update_job_step(job, 'calculate_started')
+            self.send_to_calculate(indicators_to_calculate, job)
+                   
+
+         # Jobs after calculate ends
+        for job in self.job_steps['calculate_ended'].copy().values():
+            indicators_tuples = self.job_indicators[job["id"]]
+            self.update_job_step(job, 'publish_indicators_started')
+            self.send_to_publish_indicators(indicators_tuples, job)
 
         # Jobs after publish ends
-        for job in self.job_steps['publish_ended'].copy().values():
+        for job in self.job_steps['publish_indicators_ended'].copy().values():
             # cleaning job dicos
             for job_dico in self.job_dicos:
               if job["id"] in job_dico:
@@ -217,27 +231,51 @@ class Pipeline(worker.Worker):
                 self.update_job_step(job, 'standardize_ended')
             else:
                 self.fail_job(job)
-
-    def send_to_calculate(self, tuples, job):
+    
+    def send_to_precalculate(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
-            self._evaluator_proxy.calculate(ttuples, path, job)
+            self._evaluator_proxy.pre_calculate(ttuples, path, job)
 
-    def calculate_end(self, tuples, path, job): 
+    def precalculate_end(self, indicators_to_calculate, tuples, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        self.job_caltuples[job["id"]][path] = tuples
+        self.job_precaltuples[job["id"]][path] = tuples
+        self.job_precalinds[job["id"]][path] = indicators_to_calculate
         if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'calculate_ended')
+            self.update_job_step(job, 'precalculate_ended')
 
-    def send_to_publish(self, tuples, job):
+    def send_to_publish_facts(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
             self._variables_proxy.write_variable(ttuples, path, job)
-
-    def publish_end(self, path, job): 
+    
+    def publish_facts_end(self, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'publish_ended')
+            self.update_job_step(job, 'publish_facts_ended')
+
+
+    def send_to_calculate(self, indicators_to_calculate, job): 
+        self.pending_count[job["id"]] = len(indicators_to_calculate)
+        for path, indicators_to_cal in indicators_to_calculate.items():
+            self._evaluator_proxy.calculate(indicators_to_cal, path, job) 
+    
+
+    def calculate_end(self, ind_tuples, path, job): 
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        self.job_indicators[job["id"]][path] = ind_tuples
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'calculate_ended')
+
+    def send_to_publish_indicators(self, indicators_tuples, job):
+        self.pending_count[job["id"]] = len(indicators_tuples)
+        for path, ind_tuples in indicators_tuples.items():
+            self._variables_proxy.write_variable(ind_tuples, path, job)
+
+    def publish_indicators_end(self, path, job):
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'publish_indicators_ended')
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step):
