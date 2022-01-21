@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import json
 import isoweek
+import logging as l
 
 class DataframeReader(worker.Worker):
     __metaclass__ = ABCMeta
@@ -95,7 +96,7 @@ class DataframeReader(worker.Worker):
                                 'issue_severity':"warning"}
                         issues[item["name"]] = issue
                 elif self.is_numeric_unit(var[item['variable']]['unit']):
-                    if df[item['name']].dtypes in ['integer', 'str', "object", "float64", "int64", 'int'] :
+                    if df[item['name']].dtypes in ['integer', 'str', "object", "float", "float64", "int64", 'int'] :
                         issues[item["name"]] = None
                     else :
                         message = (f"Type '{df[item['name']].dtypes}' in source file is not compatible with variable {item['variable']} with unit 'integer' ")
@@ -133,7 +134,6 @@ class DataframeReader(worker.Worker):
     def translate(self, value, dtype, unit, parse_format = None):   # parameters to pass after : df, dls, file_name
 
         """Convert the format of dataframe column if expected unit is different"""
-
         if pd.isna(value):
             return None
         if unit is None or unit in ["str"] :
@@ -143,11 +143,13 @@ class DataframeReader(worker.Worker):
                 return str(value)
         elif unit == 'date':
             if np.issubdtype(dtype, np.datetime64):
-                return value.date()
+                return value
+            elif parse_format is None:
+                raise AssertionError("You have to provide a format to parse a date on Data source definition, on ['acquisition']['format']['date_format']")
             elif parse_format=='isoweek':
                 return isoweek.Week(int(value[:4]),int(value[-2:])).monday()
             else:
-                return datetime.strptime(value, parse_format).date()
+                return datetime.strptime(value, parse_format)
 
         elif unit in ["people", "int", "number", "qty"] :
             if dtype in ["int", "int64"]:
@@ -166,7 +168,12 @@ class DataframeReader(worker.Worker):
         variables = self.get_variables()
         dls_col_list=[]
         file_name = util.absolute_to_relative(path, "files/staging/")
-      
+        
+        # calling custom df transformer if defined
+        custom_trans = util.get_custom(["sources", dls["scope"]["source"].replace("-", "_").replace(" ", "_")],"df_transform")
+        if custom_trans is not None:
+          df = custom_trans(df)
+
         # adding column line number if it does not exists
         if 'line_number' not in df.columns :
             df['line_number'] = range(1, len(df)+1) 
@@ -193,7 +200,7 @@ class DataframeReader(worker.Worker):
               (
                 (variables[col_vars[col]]["linked_attributes"] is not None and  
                 v in variables[col_vars[col]]["linked_attributes"]) or
-                  col_types[k] in ["characteristic"]
+                  col_types[k] in ["characteristic", "not_characteristic", "private"]
               )
             ]
         tuples = []
@@ -244,7 +251,7 @@ class DataframeReader(worker.Worker):
         # instantiating update scope based on existing values on tuple
         if "scope" in dls and "update_scope" in dls["scope"]:
           ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, variables = variables, issues = issues, dls = dls, job = job, file_name = file_name)
-        #for t in tuples:
+        #for t in issues[0:50]:
         #  print(t)
         ret["tuples"] = tuples
         self._pipeline_proxy.read_df_end(tuples = ret, issues = issues, path = path, job = job)
@@ -297,6 +304,18 @@ class DataframeReader(worker.Worker):
           format = None
         try:
           trans = self.translate(val, dtype, unit, format)
+        except AssertionError as e:
+          issues.append({
+            "step":job['step'],
+            "line":line_number,
+            "source":dls['scope']['source'],
+            "file":file_name,
+            "message":f"Cannot cast value {val} into unit {unit} \n {e}",
+            "raised_on":datetime.now(),
+            "job_id":job['id'],
+            "issue_type":"cannot-cast",
+            'issue_severity':"error"
+          })
         except Exception as e:
           issues.append({
             "step":job['step'],
@@ -345,3 +364,5 @@ class DataframeReader(worker.Worker):
       if unit in ['people', 'number', 'qty', 'days', 'people/people', 'units/time']:
         return True
       return False
+
+

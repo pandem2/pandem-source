@@ -6,6 +6,7 @@ import json
 import datetime
 import numpy
 from collections import defaultdict
+from .util import JsonEncoder
 
 class Variables(worker.Worker):
     def __init__(self, name, orchestrator_ref, settings): 
@@ -96,12 +97,6 @@ class Variables(worker.Worker):
 
 
     def write_variable(self, input_tuples, path, job):
-        class JsonEncoder(json.JSONEncoder):
-          def default(self, z):
-            if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64) or isinstance(z, datetime.date):
-              return (str(z))
-            else:
-              return super().default(z)
         variables = self.get_variables()
         partition_dict = defaultdict(list)
         for tuple in input_tuples['tuples']:

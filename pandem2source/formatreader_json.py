@@ -37,7 +37,6 @@ class FormatReaderJSON(formatreader.FormatReader):
             rows.append(t)
 
         df = pd.DataFrame(rows, columns = cols)
-        print(df)
         return df
 
     def apply_index(self, items, index):

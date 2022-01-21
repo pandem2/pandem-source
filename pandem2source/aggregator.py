@@ -2,37 +2,118 @@ import time
 from . import worker
 from abc import ABC, abstractmethod, ABCMeta
 import logging as l
+import numpy as np
+import copy
+import json
+from .util import JsonEncoder
 
 class Aggregator(worker.Worker):
-    __metaclass__ = ABCMeta  
-    def __init__(self, name, orchestrator_ref, settings): 
-        super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)    
+  __metaclass__ = ABCMeta  
+  def __init__(self, name, orchestrator_ref, settings): 
+      super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)    
 
-    def on_start(self):
-        super().on_start()
-        self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
-        self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
-        self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
+  def on_start(self):
+      super().on_start()
+      self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
+      self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
+      self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
 
-    def aggregate(self, list_of_tuples, path, job):
-      # This method will aggregates all provided tuples based on well known variables
-      # CASE 1: 
-      # - article_id is the observation and will be grouped as an array
-      # - text is ignored
-      # - other characteristics are grouped
-      # - non characteristics are aggregated as max 
-        to_annotate = [ t for t in list_of_tuples['tuples'] if "attrs" in t and "article_text" in t["attrs"] and "article_language" in t["attrs"] and t["attrs"]["article_language"]==lang ]
-        if len(to_annotate) > 0:
-          for m in categories.keys():
-            if m in self._model_languages[lang]: 
-              texts = [t["attrs"]["article_text"] for t in to_annotate]
-              data = json.dumps({"instances": [[t] for t in texts]})
-              result = requests.post(f"{endpoints[m]}:predict", data = data, headers = {'content-type': "application/json"}).content
-              annotations = json.loads(result)["predictions"]
-              for t, pred in zip(to_annotate, annotations):
-                best = functools.reduce(lambda a, b: a if a[1]>b[1] else b, enumerate(pred))[0]
-                t["attrs"][f"article_cat_{m}"] = categories[m][best]
-      
-      self._pipeline_proxy.annotate_end(list_of_tuples, path = path, job = job)
+  def aggregate(self, list_of_tuples, path, job):
+    variables = self._variables_proxy.get_variables().get()
+    cumm = {}
+    untouched = []
+    geos = {var["variable"] for var in variables.values() if var["type"] == "geo_referential"}
+    geo_parents = {var["linked_attributes"][0]:var["variable"] for var in variables.values() if var["type"] == "characteristic" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos}
 
+    var_asc = {code:self.rel_ascendants(self.descendants(code, parent)) for code, parent in geo_parents.items()}
 
+    for t in list_of_tuples['tuples']:
+      aggr_func =  self.tuple_aggregate_function(t, variables)
+      if aggr_func is None:
+        untouched.append(t)
+      else:
+        (aggr_key, tt) = self.pairs_to_aggregate(t, var_asc, variables)
+        if not aggr_key in cumm:
+          cumm[aggr_key] = tt
+        else:
+          var_name = list(t["obs"].keys())[0]
+          cumm[aggr_key]["obs"][var_name] = aggf_func(cumm[aggr_key]["obs"][var_name], tt["obs"][var_name])
+        
+    result = list_of_tuples.copy()
+    result['tuples'] = untouched + [*cumm.values()]
+
+    self._pipeline_proxy.aggregate_end(result, path = path, job = job)
+
+  def descendants(self, code, parent):
+    codes = self._variables_proxy.get_referential(code).get()
+    if codes is None:
+      return None
+    rel = {t['attr'][code]:t['attrs'][parent] if parent in t['attrs'] else None for t in codes}
+    return self.rel_descendants(rel) 
+
+  def rel_descendants(self, rel, desc = {}):
+    if len(desc) == 0:
+      desc = {c:{c} for c, p in rel.items()}
+    added = True
+    while added:
+      added = False
+      for e, dd in desc.items():
+        for c, p in rel.items():
+          if p in dd and c not in desc[e]:
+            desc[e].add(c)
+            added = True
+    return desc
+
+  def rel_ascendants(self, descendants):
+    if descendants is None:
+      return None
+    asc = {}
+    for code, descs in descendants.items():
+      for desc in descs:
+        if not desc in asc:
+          asc[desc] = {code}
+        else:
+          asc[desc].add(code)
+    return asc
+
+  def aggregate_function(self, unit):
+    if unit is None:
+      return lambda values: None 
+
+    unit = unit.lower().replace(" ", "")
+    if unit in ['people', 'number', 'qty', 'days']:
+        return np.sum
+    elif unit in ['comma_list']:
+      return ','.join
+    else:
+      return lambda values: None 
+   
+
+  def tuple_aggregate_function(self, t, variables):
+    if ("obs" in t 
+      and len(t["obs"].keys()) > 0 
+      and list(t["obs"].keys())[0] in variables 
+      and "unit" in variables[list(t["obs"].keys())[0]] ):
+        return self.aggregate_function(variables[list(t["obs"].keys())[0]]["unit"])
+    else:
+        return None
+
+  def pairs_to_aggregate(self, t, var_asc, variables):
+    if not "attrs" in t or len(t["attrs"].keys()) == 0:
+      yield ('', t)
+    else:
+      keys = [attr for attr in t["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential"]]
+      keys.sort()
+      # adding identity aggregation 
+      yield (json.dumps({list(t["obs"].keys())[0]:[(key,t["attrs"][key]) for key in keys]}, cls=JsonEncoder), t)
+
+      # adding descendants aggregation
+      for code, ascendants in var_asc:
+        if code in t["attrs"]:
+          for asc in ascendants:
+            c = copy.deepcopy(t)
+            c["attrs"][code] = asc
+            keys = [attr for attr in c["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential"]]
+            keys.sort()
+            if(code != asc): # we have to remove the idenntity since it was already added
+              yield (json.dumps({list(t["obs"].keys())[0]:[(key,c["attrs"][key]) for key in keys]}, cls=JsonEncoder), c)

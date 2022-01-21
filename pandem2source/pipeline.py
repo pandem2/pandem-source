@@ -8,6 +8,7 @@ from collections import defaultdict
 from . import worker
 from . import util
 from abc import ABC, abstractmethod, ABCMeta
+import logging as l
 
 class Pipeline(worker.Worker):
     __metaclass__ = ABCMeta  
@@ -27,15 +28,18 @@ class Pipeline(worker.Worker):
         self._standardizer_proxy = self._orchestrator_proxy.get_actor('standardizer').get().proxy()
         self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
         self._nlp_proxy = self._orchestrator_proxy.get_actor('nlp_annotator').get().proxy()
+        self._aggregate_proxy = self._orchestrator_proxy.get_actor('aggregator').get().proxy()
+
         self.job_steps = defaultdict(dict)
         self.decompressed_files = defaultdict(list)
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
         self.job_stdtuples = defaultdict(dict)
+        self.job_aggrtuples = defaultdict(dict)
         self.job_issues = defaultdict(list)
         self.pending_count = {}
 
-        self.job_dicos = [self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.pending_count, self.job_issues]
+        self.job_dicos = [self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.pending_count, self.job_issues, self.job_aggrtuples]
 
         self.last_step = "publish_ended" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
@@ -44,6 +48,7 @@ class Pipeline(worker.Worker):
                                              and x['step'] != 'submitted_started' 
                                              and x['step'] != self.last_step 
                                          ).get()
+
         if jobs is not None :
             jobs = jobs.to_dict(orient = 'records')
 
@@ -92,6 +97,7 @@ class Pipeline(worker.Worker):
             tuples = self.job_tuples[job["id"]]
             self.update_job_step(job, 'standardize_started')
             self.send_to_standardize(tuples, job)
+            self.job_tuples.clear()
 
         # Jobs after standardize ends
         for job in self.job_steps['standardize_ended'].copy().values():
@@ -100,14 +106,22 @@ class Pipeline(worker.Worker):
                 self.update_job_step(job, 'annotate_started')
                 self.send_to_annotate(tuples, job)
             else:
-                self.update_job_step(job, 'publish_started')
-                self.send_to_publish(tuples, job)
-        
+                self.update_job_step(job, 'aggregate_started')
+                self.send_to_aggregate(tuples, job)
+
         # Jobs after annnotate text ends
         for job in self.job_steps['annotate_ended'].copy().values():
             tuples = self.job_stdtuples[job["id"]]
+            self.update_job_step(job, 'aggregate_started')
+            self.send_to_aggregate(tuples, job)
+        
+        # Jobs after aggregate ends
+        for job in self.job_steps['aggregate_ended'].copy().values():
+            tuples = self.job_aggrtuples[job["id"]]
             self.update_job_step(job, 'publish_started')
             self.send_to_publish(tuples, job)
+            self.job_stdtuples.clear()
+        
 
         # Jobs after publish ends
         for job in self.job_steps['publish_ended'].copy().values():
@@ -222,19 +236,28 @@ class Pipeline(worker.Worker):
     def send_to_annotate(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
-            #print(f"publishing ${ttuples}")
             self._nlp_proxy.annotate(ttuples, path, job)
 
-    def annotate_end(self, tuples, path, job): 
+    def annotate_end(self, tuples, path, job):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_stdtuples[job["id"]][path] = tuples
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'annotate_ended')
 
+    def send_to_aggregate(self, tuples, job):
+        self.pending_count[job["id"]] = len(tuples)
+        for path, ttuples in tuples.items():
+            self._aggregate_proxy.aggregate(ttuples, path, job)
+
+    def aggregate_end(self, tuples, path, job): 
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        self.job_aggrtuples[job["id"]][path] = tuples
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'aggregate_ended')
+    
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
-            #print(f"publishing ${ttuples}")
             self._variables_proxy.write_variable(ttuples, path, job)
 
     def publish_end(self, path, job): 
@@ -244,13 +267,13 @@ class Pipeline(worker.Worker):
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step):
-        print(f"Changing to step {step} for job {job['id']} source {job['dls_json']['scope']['source']}")
+        l.debug(f"Changing to step {step} for job {job['id']} source {job['dls_json']['scope']['source']}")
         # removing job from current step dict
         if job["step"] in self.job_steps and job["id"]:
           if job["id"] in self.job_steps[job["step"]]:
             self.job_steps[job["step"]].pop(job["id"])
           else:
-            print(f"Warning: could not find id {job['id']} in job_steps {job['step']}") 
+            l.warning(f"Warning: could not find id {job['id']} in job_steps {job['step']}") 
         # changing the job step 
         job["step"] = step
 
@@ -264,14 +287,14 @@ class Pipeline(worker.Worker):
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def fail_job(self, job):
-        print(f"Changing status of job {job['id']} to 'failed' for {job['dls_json']['scope']['source']}")
-        print(util.pretty(self.job_issues[job["id"]]))
+        l.warning(f"Changing status of job {job['id']} to 'failed' for {job['dls_json']['scope']['source']}")
+        l.info(util.pretty(self.job_issues[job["id"]]))
         # removing job from current step dict
         if job["step"] in self.job_steps and job["id"]:
           if job["id"] in self.job_steps[job["step"]]:
             self.job_steps[job["step"]].pop(job["id"])
           else:
-            print(f"Warning: could not find id {job['id']} in job_steps {job['step']}") 
+            l.warning(f"Warning: could not find id {job['id']} in job_steps {job['step']}") 
         # changing the job status 
         job["status"] = "failed"
 

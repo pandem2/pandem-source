@@ -6,6 +6,7 @@ from . import worker
 from . import util
 from datetime import datetime, timedelta
 import copy
+import logging as l
 
 
 class Standardizer(worker.Worker):
@@ -26,7 +27,6 @@ class Standardizer(worker.Worker):
             OUT:        if issues not null list of issue
                         else list of tuples standardize
         """
-        #TODO: enforce that attrs on the update scope are mandatory (lines should be ignored) with a warning issue
         std_tuples={'scope':{}, 'tuples':[]}
         std_var={}
         variables=self._variables_proxy.get_variables().get()
@@ -38,7 +38,7 @@ class Standardizer(worker.Worker):
         refs_values={}
         ignore_check = set(c["variable"] for c in dls["columns"] if "action" in c and c["action"] == "insert")
         type_translate=['referential_alias']
-        type_validate=['referential', 'referential_alias']
+        type_validate=['referential', 'geo_referential', 'referential_alias']
         for i in range(-2, len(tuples['tuples'])):
             std_var = {}
             #retrieves the globals variable
@@ -110,7 +110,7 @@ class Standardizer(worker.Worker):
 
     def delay_standardize(self, tuples, path, job, dls, var_name, source_name):
         # Delaying standardisation for one minute
-        print(f"1 minute delay on standardisation for job {job['id']} for source {source_name} since variable {var_name} has not yet been published")
+        l.info(f"1 minute delay on standardisation for job {job['id']} for source {source_name} since variable {var_name} has not yet been published")
         self.register_action(
           repeat = worker.Repeat(timedelta(minutes = 1), last_exec = datetime.now()),  
           action = lambda: self._self_proxy.standardize(tuples = tuples, path = path, job = job, dls = dls),

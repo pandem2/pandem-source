@@ -15,6 +15,7 @@ from . import script_executor
 from . import nlp_annotator
 from . import dfreader
 from . import standardizer
+from . import aggregator
 from . import variables
 import datetime
 import os
@@ -78,6 +79,10 @@ class Orchestration(pykka.ThreadingActor):
         standardizer_ref = standardizer.Standardizer.start('standardizer', self.actor_ref, self.settings)
         self.current_actors['standardizer'] = {'ref': standardizer_ref}
 
+        # launch aggregator actor
+        aggregator_ref = aggregator.Aggregator.start('aggregator', self.actor_ref, self.settings)
+        self.current_actors['aggregator'] = {'ref': aggregator_ref}
+        
         # launch variables actor
         variables_ref = variables.Variables.start('variables', self.actor_ref, self.settings)
         self.current_actors['variables'] = {'ref': variables_ref}

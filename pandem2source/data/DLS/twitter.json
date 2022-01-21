@@ -61,7 +61,8 @@
         "name":"json",
         "new_line_ended":true,
         "encoding":"UTF-8",
-        "row":"*"
+        "row":"*",
+        "date_format":"%Y-%m-%d %H:%M:%S"
       }
     },
     "columns":[
@@ -71,6 +72,7 @@
       {"name":"topic_government_measure", "variable":"topic", "path":"@topic_government_measure/*"},
       {"name":"text", "variable":"article_text", "path":"@text"},
       {"name":"reporting_time", "variable":"reporting_time", "path":"@reporting_time"},
-      {"name":"lang", "variable":"article_language", "path":"@lang"}
+      {"name":"lang", "variable":"article_language", "path":"@lang"},
+      {"name":"article_count", "variable":"article_count", "path":"@article_count"}
     ]
 }

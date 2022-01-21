@@ -6,6 +6,7 @@ import shutil
 from . import util 
 from .orchestrator import Orchestration
 from . import admin
+
 def main(a):
   #conf = config()
   # Base argument parser
@@ -31,7 +32,13 @@ def main(a):
   start_parser.add_argument(
     "--retry-failed", 
     action="store_true", 
-    help="Whether to retry failed jobs", 
+    help="Whether to retry failed jobs" 
+  )
+  
+  start_parser.add_argument(
+    "-l",
+    "--limit-collection", 
+    help="Comma separated list of sources for limiting the collection" 
   )
   
   start_parser.set_defaults(func = do_start)
@@ -87,7 +94,7 @@ def main(a):
 # handlers
 def do_start_dev(debug = True, no_acquire = False, retry_failed = False):
   from types import SimpleNamespace
-  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed}))
+  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None}))
 
 # handlers
 def do_start(args, *other):
@@ -108,19 +115,40 @@ def do_start(args, *other):
 
   with open(config, "r") as f:
     settings = yaml.safe_load(f)
-  
+  # Adding python scripts on pandem_home to the system path
+  sys.path.insert(1, util.pandem_path("files", "scripts", "py"))
+
   if os.environ.get("PANDEM_NLP") is not None:
     settings["pandem"]["source"]["nlp"]["models_path"] = os.environ.get("PANDEM_NLP")
   else:
     while "models_path" not in settings["pandem"]["source"]["nlp"] or settings["pandem"]["source"]["nlp"]["models_path"] == "": 
-      settings["pandem"]["source"]["nlp"]["models_path"] = input(f"Please specify the location of nlp components for text classification \n\n ** tip: Next time you can set the environmens variable PANDEM_NLP \n  or set the value in pandem->source->nlp->models_path on {config}\n  you can download the models from here: https://drive.google.com/file/d/1mSl2X4DQQZKf1sHeJaKDZOM6ydi4nVEK/view?usp=sharing\n")
-  orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed)
-  return orchestrator_ref.proxy()
+      settings["pandem"]["source"]["nlp"]["models_path"] = input(f"""
+        Please specify the location of nlp components for text classification
+
+        ** tip: Next time you can set the environmens variable PANDEM_NLP 
+        or set the value in pandem->source->nlp->models_path on {config}
+        you can download the models from here: https://drive.google.com/file/d/1mSl2X4DQQZKf1sHeJaKDZOM6ydi4nVEK/view?usp=sharing
+        """)
+  if args.limit_collection is not None:
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed)
+    orch = orchestrator_ref.proxy()
+    storage_proxy = orch.get_actor("storage").get().proxy()
+    dls_files = storage_proxy.list_files('source-definitions').get()
+    dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in dls_files]
+    
+    for source_name in args.limit_collection.split(","):
+      dls = list(filter(lambda dls: dls['scope']['source'] == source_name, dls_dicts))[0]
+      acquisition_proxy = orch.get_actor(f"acquisition_{dls['acquisition']['channel']['name']}").get().proxy()
+      acquisition_proxy.add_datasource(dls)
+  else:
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed)
+    orch = orchestrator_ref.proxy()
+  return orch
   
 def do_reset(args, *other):
   if args.restore_factory_defaults:
     admin.delete_all()
-    admin.reset_default_input()
+    admin.reset_default_folders("input-local", "dfcustom", "scripts")
   if args.variables or args.restore_factory_defaults:
     admin.reset_variables(in_home = True)
   if args.covid19_datahub or args.ecdc_covid19_variants or args.restore_factory_defaults:

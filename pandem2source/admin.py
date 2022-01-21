@@ -14,37 +14,19 @@ def reset_variables(in_package = False, in_home = True):
     file_path = util.pandem_path("files", "variables", "variables.json")
     if not os.path.exists(dir_path):
       os.makedirs(dir_path)
+    reset_default_folders("variables", "indicators")
+    # copy variables json fils and indicators
     write_json_variables(file_path)
-    # copy variables json files, indicators scripts or input-local folder if any
-    for folder in ["variables", "indicators"]:
-      if pkg_resources.resource_exists("pandem2source", f"data/{folder}"):
-        for sub_path in pkg_resources.resource_listdir("pandem2source", f"data/{folder}"):
-          if folder=="input-local":
-            var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", folder))
-            var_to = util.pandem_path("files", folder)
-          else:
-            var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", folder, sub_path))
-            var_to = util.pandem_path("files", folder, sub_path)
-          if os.path.exists(var_to):
-            shutil.rmtree(var_to)
-          shutil.copytree(var_from, var_to, copy_function = shutil.copy)
 
-def reset_default_input():
-  # copy variables json files, indicators scripts or input-local folder if any
-  for folder in ["input-local"]:
+def reset_default_folders(*folders):
+  # copy default data from data folder
+  for folder in folders:
     if pkg_resources.resource_exists("pandem2source", f"data/{folder}"):
-      for sub_path in pkg_resources.resource_listdir("pandem2source", f"data/{folder}"):
-        if folder=="input-local":
-          var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", folder))
-          var_to = util.pandem_path("files", folder)
-        else:
-          var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", folder, sub_path))
-          var_to = util.pandem_path("files", folder, sub_path)
-        if os.path.exists(var_to):
-          shutil.rmtree(var_to)
-        shutil.copytree(var_from, var_to, copy_function = shutil.copy)
-
-
+      var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", folder))
+      var_to = util.pandem_path("files", folder)
+      if os.path.exists(var_to):
+        shutil.rmtree(var_to)
+      shutil.copytree(var_from, var_to, copy_function = shutil.copy)
 
 def read_variables_xls():
   path = pkg_resources.resource_filename("pandem2source", "data/list-of-variables.xlsx")

@@ -180,7 +180,8 @@ class AcquisitionTwitter(acquisition.Acquisition):
             "created_at":str(status.created_at),
             "lang":status.lang,
             "text":text,
-            "reporting_time": reporting_date
+            "reporting_time": reporting_date,
+            "article_count": 1
           }
           
           for t in self.matching_topics(text):

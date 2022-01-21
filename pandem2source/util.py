@@ -49,4 +49,24 @@ def get_or_set_secret(name):
     os.chmod(secret_path, 0o400)
   with io.open(secret_path, mode = "r", encoding = "utf-8") as f:
     return f.read()
-       
+
+def get_custom(path, function):
+  if type(path) == str:
+    path = [path]
+  script_path = pandem_path(*(["files", "scripts", "py"] + path))
+  if not os.path.exists(script_path+".py"):
+    return None
+  else :
+    exec(f"import {'.'.join(path)}")
+    if not eval(f"hasattr({'.'.join(path)}, '{function}')"):
+      return None
+    else:
+      return eval(f"{'.'.join(path)}.{function}")
+
+class JsonEncoder(json.JSONEncoder):
+  def default(self, z):
+    if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64) or isinstance(z, datetime.date):
+      return (str(z))
+    else:
+      return super().default(z)
+
