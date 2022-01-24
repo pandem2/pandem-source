@@ -257,12 +257,34 @@ class Pipeline(worker.Worker):
 
     def send_to_calculate(self, indicators_to_calculate, job): 
         self.pending_count[job["id"]] = len(indicators_to_calculate)
-        for path, indicators_to_cal in indicators_to_calculate.items():
-            self._evaluator_proxy.calculate(indicators_to_cal, path, job) 
+        first_path = list(indicators_to_calculate)[0]
+        first_path_dict = indicators_to_calculate[first_path]
+        self._evaluator_proxy.calculate(first_path_dict, first_path, job)
+        if len(indicators_to_calculate.keys()) > 0:
+            for path in list(indicators_to_calculate)[1:]:
+                indicators_to_cal = indicators_to_calculate[path]
+                for ind in indicators_to_cal.copy():
+                    if ind != 'update_scope':
+                        ind_map = indicators_to_cal[ind]
+                        if ind in first_path_dict:
+                            if all (comb_values in first_path_dict[ind]['comb_values'] for comb_values in indicators_to_cal[ind]['comb_values']):
+                                indicators_to_cal.pop(ind)
+                            else:
+                                attr_comb = ind_map['comb_values'][:]
+                                for i, comb_values in enumerate(attr_comb):
+                                    if comb_values in first_path_dict[ind]['comb_values']:
+                                        ind_map['comb_values'].pop(i)
+                                    else:
+                                        first_path_dict[ind]['comb_values'].append(comb_values)
+                        if not ind_map['comb_values']:
+                            indicators_to_cal.pop(ind)
+                self._evaluator_proxy.calculate(indicators_to_cal, path, job)
+
     
 
     def calculate_end(self, ind_tuples, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        print(f' The pending count is : {self.pending_count[job["id"]]}')
         self.job_indicators[job["id"]][path] = ind_tuples
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'calculate_ended')

@@ -13,6 +13,7 @@ import json
 import subprocess
 from copy import deepcopy
 from itertools import chain
+import logging as l
 
 
 
@@ -126,6 +127,7 @@ class Evaluator(worker.Worker):
                 indicators_to_calculate[ind]['comb_values'] = combinations
                 indicators_to_calculate[ind]['obs_attrs'] = obs_attrs[ind]
             indicators_to_calculate['update_scope'] = list_of_tuples['scope']['update_scope']
+        l.debug(f'indicators to calculate for source: {job["source"]} are: {indicators_to_calculate}')
         self._pipeline_proxy.precalculate_end(indicators_to_calculate, tuples=list_of_tuples, path=path, job=job)
 
 
@@ -133,6 +135,8 @@ class Evaluator(worker.Worker):
         date_var = 'reporting_period'
         indicators = {"tuples": [],
                       "scope": {}}
+        if 'datahub' in job['source']:
+            print(f' Path : {path} is now processed')
 
         if indicators_to_cal:
             indicators["scope"]['update_scope'] = indicators_to_cal['update_scope']
@@ -179,7 +183,7 @@ class Evaluator(worker.Worker):
                         for date in sorted_ind_dates:
                             for obs in ind_map['base_vars']:
                                 obs_val = [tuple['obs'][obs] for  tuple in ind_tuples[obs] if tuple['attrs'][date_var]==date][0]
-                                if type(obs_val) in [int64]:
+                                if type(obs_val) in [int64, str]:
                                     params_values[date][obs] = int(obs_val)
                                 else:
                                     params_values[date][obs] = obs_val
@@ -210,4 +214,4 @@ class Evaluator(worker.Worker):
                                 indicators['tuples'].append(ind_date_tuple)
                     
 
-        self._pipeline_proxy.calculate_end(indicators, path = path, job = job)
+        self._pipeline_proxy.calculate_end(indicators, path = path, job = job).get()
