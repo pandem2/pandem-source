@@ -38,7 +38,6 @@ class Aggregator(worker.Worker):
           else:
             var_name = list(t["obs"].keys())[0]
             cumm[aggr_key]["obs"][var_name] = aggr_func([cumm[aggr_key]["obs"][var_name], tt["obs"][var_name]])
-        #breakpoint()
 
     result = list_of_tuples.copy()
     result['tuples'] = untouched + [*cumm.values()]
@@ -103,18 +102,19 @@ class Aggregator(worker.Worker):
     if not "attrs" in t or len(t["attrs"].keys()) == 0:
       yield ('', t)
     else:
-      keys = [attr for attr in t["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential"]]
+      keys = [attr for attr in t["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential", "geo_referential"]]
       keys.sort()
       # adding identity aggregation 
       yield (json.dumps({list(t["obs"].keys())[0]:[(key,t["attrs"][key]) for key in keys]}, cls=JsonEncoder), t)
 
-      # adding descendants aggregation
-      for code, ascendants in var_asc.items():
-        if code in t["attrs"]:
-          for asc in ascendants:
+      # adding ascendants aggregation
+      for code_var, ascendants in var_asc.items():
+        if code_var in t["attrs"] and t["attrs"][code_var] in ascendants:
+          code =  t["attrs"][code_var]
+          for asc in ascendants[code]:
             c = copy.deepcopy(t)
-            c["attrs"][code] = asc
-            keys = [attr for attr in c["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential"]]
+            c["attrs"][code_var] = asc
+            keys = [attr for attr in c["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential", "geo_referential"]]
             keys.sort()
             if(code != asc): # we have to remove the idenntity since it was already added
               yield (json.dumps({list(t["obs"].keys())[0]:[(key,c["attrs"][key]) for key in keys]}, cls=JsonEncoder), c)

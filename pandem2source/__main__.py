@@ -36,6 +36,15 @@ def main(a):
   )
   
   start_parser.add_argument(
+    "-r",
+    "--restart-job", 
+    type=int, 
+    required = False,
+    default = 0,
+    help="Job id to re-run if its data is still stored" 
+  )
+  
+  start_parser.add_argument(
     "-l",
     "--limit-collection", 
     help="Comma separated list of sources for limiting the collection" 
@@ -92,9 +101,9 @@ def main(a):
     args.func(args, parser)
 
 # handlers
-def do_start_dev(debug = True, no_acquire = False, retry_failed = False):
+def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart_job = 0):
   from types import SimpleNamespace
-  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None}))
+  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None, "restart_job":restart_job}))
 
 # handlers
 def do_start(args, *other):
@@ -129,8 +138,11 @@ def do_start(args, *other):
         or set the value in pandem->source->nlp->models_path on {config}
         you can download the models from here: https://drive.google.com/file/d/1mSl2X4DQQZKf1sHeJaKDZOM6ydi4nVEK/view?usp=sharing
         """)
-  if args.limit_collection is not None:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed)
+  if args.restart_job > 0:
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = None, restart_job = args.restart_job)
+    orch = orchestrator_ref.proxy()
+  elif args.limit_collection is not None:
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed, restart_job = args.restart_job)
     orch = orchestrator_ref.proxy()
     storage_proxy = orch.get_actor("storage").get().proxy()
     dls_files = storage_proxy.list_files('source-definitions').get()

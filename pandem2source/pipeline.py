@@ -12,9 +12,10 @@ import logging as l
 
 class Pipeline(worker.Worker):
     __metaclass__ = ABCMeta  
-    def __init__(self, name, orchestrator_ref, settings, retry_failed = False): 
+    def __init__(self, name, orchestrator_ref, settings, retry_failed = False, restart_job = 0): 
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)
         self.retry_failed = retry_failed
+        self.restart_job = restart_job
 
     def on_start(self):
         super().on_start()
@@ -44,9 +45,10 @@ class Pipeline(worker.Worker):
         self.last_step = "publish_ended" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
                                           filter= lambda x: 
-                                             ( (x['status'] == 'in progress' or x['status'] == 'failed') and self.retry_failed) 
-                                             and x['step'] != 'submitted_started' 
-                                             and x['step'] != self.last_step 
+                                             (  ( (x['status'] == 'in progress' or x['status'] == 'failed') and self.retry_failed) 
+                                                 and x['step'] != 'submitted_started' 
+                                                 and x['step'] != self.last_step
+                                              ) or x["id"] == self.restart_job
                                          ).get()
 
         if jobs is not None :

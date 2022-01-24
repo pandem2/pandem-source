@@ -11,7 +11,7 @@
       ],
       "update_scope":[
         {"variable":"source"},
-        {"variable":"reporting_date"}
+        {"variable":"reporting_time"}
       ]
     },
     "acquisition":{

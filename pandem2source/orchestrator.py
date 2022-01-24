@@ -24,12 +24,13 @@ from itertools import chain
 
 class Orchestration(pykka.ThreadingActor):
 
-    def __init__(self, settings, start_acquisition = True, retry_failed = False):
+    def __init__(self, settings, start_acquisition = True, retry_failed = False, restart_job = 0):
         super(Orchestration, self).__init__()
         self.settings = settings
         self.current_actors = dict()
         self.start_acquisition = start_acquisition
         self.retry_failed = retry_failed
+        self.restart_job = restart_job
 
 
     def on_start(self):
@@ -64,7 +65,7 @@ class Orchestration(pykka.ThreadingActor):
         self.current_actors['unarchiver'] = {'ref': unarchive_ref}
 
         # launch pipeline actor
-        pipeline_ref = pipeline.Pipeline.start('pipeline', self.actor_ref, self.settings, self.retry_failed)
+        pipeline_ref = pipeline.Pipeline.start('pipeline', self.actor_ref, self.settings, self.retry_failed, self.restart_job)
         self.current_actors['pipeline'] = {'ref': pipeline_ref}
 
         # launch script executor reader

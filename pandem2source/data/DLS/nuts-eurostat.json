@@ -9,8 +9,7 @@
       "globals":[
       ],
       "update_scope":[
-        {"variable":"source"},
-        {"variable":"reporting_date"}
+        {"variable":"source"}
         
       ]
     },
