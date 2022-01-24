@@ -8,6 +8,7 @@ import logging as l
 import functools
 import requests
 import json
+import re
 
 class NLPAnnotator(worker.Worker):
     __metaclass__ = ABCMeta  
@@ -29,20 +30,61 @@ class NLPAnnotator(worker.Worker):
 
     def annotate(self, list_of_tuples, path, job):
       self.launch_server_if_needed()
+
+      # gathering information about nlp categories
       endpoints = self.model_endpoints()
       categories = {m:self._model_categories[m] for m in endpoints.keys() if (m in self._model_categories) }
+      
+      #gatherint information for geo annotation
+      variables = self._variables_proxy.get_variables().get()
+      geos = {var["variable"] for var in variables.values() if var["type"] == "geo_referential"}
+      alias_vars = {
+        var["variable"]:var["linked_attributes"][0] 
+        for var in variables.values() 
+        if var["type"] == "referential_alias" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos
+      }
+      aliases = {}
+      for alias_var, code_var in alias_vars.items():
+        alias_values = self._variables_proxy.read_variable(alias_var, {}).get()
+        if alias_values is not None:
+          alias_map = {t["attr"][alias_var].lower():t["attrs"][code_var] for t in alias_values if "attr" in t and "attrs" in t and alias_var in t["attr"] and code_var in t["attrs"]} 
+          if code_var not in aliases:
+            aliases[code_var] = alias_map
+          else :
+            aliases[code_var].update(alias_map)
+      
+      alias_regex = {code_var:re.compile('|'.join([f"\\b{re.escape(alias)}\\b" for alias in aliases[code_var]])) for code_var in aliases}
+
+      text_field = "article_text"
+      lang_field = "article_language"
+
       for lang in self._model_languages:
-        to_annotate = [ t for t in list_of_tuples['tuples'] if "attrs" in t and "article_text" in t["attrs"] and "article_language" in t["attrs"] and t["attrs"]["article_language"]==lang ]
+        to_annotate = [ t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang ]
         if len(to_annotate) > 0:
+          # Annotating using tensorflow categories
           for m in categories.keys():
             if m in self._model_languages[lang]: 
-              texts = [t["attrs"]["article_text"] for t in to_annotate]
+              texts = [t["attrs"][text_field] for t in to_annotate]
               data = json.dumps({"instances": [[t] for t in texts]})
               result = requests.post(f"{endpoints[m]}:predict", data = data, headers = {'content-type': "application/json"}).content
               annotations = json.loads(result)["predictions"]
               for t, pred in zip(to_annotate, annotations):
                 best = functools.reduce(lambda a, b: a if a[1]>b[1] else b, enumerate(pred))[0]
                 t["attrs"][f"article_cat_{m}"] = categories[m][best]
+      
+      # Annotating geographically using extra simplistic approach
+      to_annotate = [ t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"]]
+      for geo_var, regex in alias_regex.items():
+        texts = [t["attrs"][text_field] for t in to_annotate]
+        for t in to_annotate:
+          if not geo_var in t["attrs"]:
+            text = t["attrs"][text_field].lower()
+            match = re.search(alias_regex[geo_var], text)
+            if match is not None:
+              matched_alias = match.group()
+              t["attrs"][geo_var] = aliases[geo_var][matched_alias]
+
+
       
       self._pipeline_proxy.annotate_end(list_of_tuples, path = path, job = job)
 
