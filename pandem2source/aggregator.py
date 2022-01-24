@@ -26,19 +26,20 @@ class Aggregator(worker.Worker):
     geo_parents = {var["linked_attributes"][0]:var["variable"] for var in variables.values() if var["type"] == "characteristic" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos}
 
     var_asc = {code:self.rel_ascendants(self.descendants(code, parent)) for code, parent in geo_parents.items()}
-
+    
     for t in list_of_tuples['tuples']:
       aggr_func =  self.tuple_aggregate_function(t, variables)
       if aggr_func is None:
         untouched.append(t)
       else:
-        (aggr_key, tt) = self.pairs_to_aggregate(t, var_asc, variables)
-        if not aggr_key in cumm:
-          cumm[aggr_key] = tt
-        else:
-          var_name = list(t["obs"].keys())[0]
-          cumm[aggr_key]["obs"][var_name] = aggf_func(cumm[aggr_key]["obs"][var_name], tt["obs"][var_name])
-        
+        for aggr_key, tt in self.pairs_to_aggregate(t, var_asc, variables):
+          if not aggr_key in cumm:
+            cumm[aggr_key] = tt
+          else:
+            var_name = list(t["obs"].keys())[0]
+            cumm[aggr_key]["obs"][var_name] = aggr_func([cumm[aggr_key]["obs"][var_name], tt["obs"][var_name]])
+        #breakpoint()
+
     result = list_of_tuples.copy()
     result['tuples'] = untouched + [*cumm.values()]
 
@@ -108,7 +109,7 @@ class Aggregator(worker.Worker):
       yield (json.dumps({list(t["obs"].keys())[0]:[(key,t["attrs"][key]) for key in keys]}, cls=JsonEncoder), t)
 
       # adding descendants aggregation
-      for code, ascendants in var_asc:
+      for code, ascendants in var_asc.items():
         if code in t["attrs"]:
           for asc in ascendants:
             c = copy.deepcopy(t)

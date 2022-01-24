@@ -95,11 +95,21 @@ class Variables(worker.Worker):
         else:
           return '_'.join([key + '-' + str(val) for key, val in tuple['attrs'].items() if key in partition]) + '.json'
 
-
+    def remove_private(self, tuples, variables):
+        private_attrs = {k for k, v in variables.items() if v["type"] == "private"}
+        for t in tuples:
+          if "attrs" in t:
+            if t["attrs"].keys().isdisjoint(private_attrs):
+              yield t
+            else:
+              tt = t.copy()
+              tt["attrs"] = {k:v for k,v in t["attrs"].items() if k not in private_attrs}
+              yield tt
+ 
     def write_variable(self, input_tuples, path, job):
         variables = self.get_variables()
         partition_dict = defaultdict(list)
-        for tuple in input_tuples['tuples']:
+        for tuple in self.remove_private(input_tuples['tuples'], variables):
             var_name = None
             for key, var in tuple.items():
                 if key != "attrs" and len(tuple[key].keys()) > 0:
@@ -123,6 +133,8 @@ class Variables(worker.Worker):
                 os.makedirs(var_dir)
             for file_name, tuples_list in tuples_dict.items():
                 if 'attr' in tuples_list[0]:
+                    # this is for avoiding having duplicates on referentials (attr instead of obs)
+                    # TODO: Improve this using the variable type
                     unique_values = {}
                     for index, tuple in enumerate(tuples_list):
                         if tuple['attr'][var] not in unique_values.values():

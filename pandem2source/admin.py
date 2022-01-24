@@ -14,7 +14,6 @@ def reset_variables(in_package = False, in_home = True):
     file_path = util.pandem_path("files", "variables", "variables.json")
     if not os.path.exists(dir_path):
       os.makedirs(dir_path)
-    reset_default_folders("variables", "indicators")
     # copy variables json fils and indicators
     write_json_variables(file_path)
 

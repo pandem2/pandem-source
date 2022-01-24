@@ -106,6 +106,7 @@ class Standardizer(worker.Worker):
 
         std_tuples['scope']['update_scope']=tuples['scope']['update_scope']
         #print("\n".join(util.pretty(std_tuples).split("\n")[0:100]))
+        print(f"STD ENDED for {job['id']}")
         self._pipeline_proxy.standardize_end(tuples = std_tuples, issues = list_issues, path = path, job = job)
 
     def delay_standardize(self, tuples, path, job, dls, var_name, source_name):

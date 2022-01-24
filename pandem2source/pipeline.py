@@ -97,7 +97,6 @@ class Pipeline(worker.Worker):
             tuples = self.job_tuples[job["id"]]
             self.update_job_step(job, 'standardize_started')
             self.send_to_standardize(tuples, job)
-            self.job_tuples.clear()
 
         # Jobs after standardize ends
         for job in self.job_steps['standardize_ended'].copy().values():
@@ -120,7 +119,6 @@ class Pipeline(worker.Worker):
             tuples = self.job_aggrtuples[job["id"]]
             self.update_job_step(job, 'publish_started')
             self.send_to_publish(tuples, job)
-            self.job_stdtuples.clear()
         
 
         # Jobs after publish ends

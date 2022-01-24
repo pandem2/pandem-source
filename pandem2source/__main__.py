@@ -148,7 +148,7 @@ def do_start(args, *other):
 def do_reset(args, *other):
   if args.restore_factory_defaults:
     admin.delete_all()
-    admin.reset_default_folders("input-local", "dfcustom", "scripts")
+    admin.reset_default_folders("input-local", "dfcustom", "scripts", "variables", "indicators")
   if args.variables or args.restore_factory_defaults:
     admin.reset_variables(in_home = True)
   if args.covid19_datahub or args.ecdc_covid19_variants or args.restore_factory_defaults:
