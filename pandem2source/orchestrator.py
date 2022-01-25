@@ -17,6 +17,7 @@ from . import dfreader
 from . import standardizer
 from . import aggregator
 from . import variables
+from . import evaluator
 import datetime
 import os
 import pandas as pd
@@ -87,6 +88,10 @@ class Orchestration(pykka.ThreadingActor):
         # launch variables actor
         variables_ref = variables.Variables.start('variables', self.actor_ref, self.settings)
         self.current_actors['variables'] = {'ref': variables_ref}
+
+         # launch evaluator actor
+        evaluator_ref = evaluator.Evaluator.start('evaluator', self.actor_ref, self.settings)
+        self.current_actors['evaluator'] = {'ref': evaluator_ref}
 
         # Launching acquisition actors (active actors)
         # List source definition files within 'source-definitions' through storage actor to get 

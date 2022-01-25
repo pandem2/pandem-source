@@ -1,6 +1,6 @@
 {
     "scope":{
-      "source":"vaccination-sheet",
+      "source":"vaccination",
       "source_description":"Vaccination dataset from a local excel file sheet",
       "tags":[],
       "frequency":"every 30 seconds",

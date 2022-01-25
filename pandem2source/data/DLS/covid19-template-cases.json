@@ -1,6 +1,6 @@
 {
     "scope":{
-      "source":"cases-sheet",
+      "source":"cases",
       "source_description":"Cases dataset from a local excel file sheet",
       "tags":[],
       "frequency":"every 30 seconds",
@@ -11,8 +11,8 @@
         {"variable":"pathogen_name", "value":"COVID-19"}
       ],
       "update_scope":[
-        {"variable":"source"},
-        {"variable":"reporting_date"}
+        {"variable":"source", "value":["cases"]},
+        {"variable":"reporting_date", "value": []}
       ]
     },
     "acquisition":{

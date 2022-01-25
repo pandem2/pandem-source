@@ -1,6 +1,6 @@
 {
     "scope":{
-      "source":"testing-sheet",
+      "source":"testing",
       "source_description":"Testing dataset from a local excel file sheet",
       "tags":[],
       "frequency":"every 30 seconds",

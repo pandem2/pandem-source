@@ -30,19 +30,29 @@ class Pipeline(worker.Worker):
         self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
         self._nlp_proxy = self._orchestrator_proxy.get_actor('nlp_annotator').get().proxy()
         self._aggregate_proxy = self._orchestrator_proxy.get_actor('aggregator').get().proxy()
+        self._evaluator_proxy = self._orchestrator_proxy.get_actor('evaluator').get().proxy()
 
         self.job_steps = defaultdict(dict)
         self.decompressed_files = defaultdict(list)
+        self.job_steps = defaultdict(dict)
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
         self.job_stdtuples = defaultdict(dict)
         self.job_aggrtuples = defaultdict(dict)
+        self.job_precaltuples = defaultdict(dict)
+        self.job_precalinds = defaultdict(dict)
+        self.job_indicators = defaultdict(dict)
         self.job_issues = defaultdict(list)
         self.pending_count = {}
 
-        self.job_dicos = [self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.pending_count, self.job_issues, self.job_aggrtuples]
+        
 
-        self.last_step = "publish_ended" #TODO: update this as last step evolves
+        self.job_dicos = [
+          self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.job_aggrtuples, self.job_precaltuples, 
+          self.job_precalinds, self.job_indicators, self.pending_count, self.job_issues
+        ]
+
+        self.last_step = "publish_indicators_ended" #TODO: update this as last step evolves
         jobs = self._storage_proxy.read_db('job',
                                           filter= lambda x: 
                                              (  ( (x['status'] == 'in progress' or x['status'] == 'failed') and self.retry_failed) 
@@ -70,7 +80,6 @@ class Pipeline(worker.Worker):
     def process_jobs(self):
         # This function will process active jobs asynchronoulsy.
         # Based on current status an action will be performed and the status will be updated
-        
         # Jobs after submit that has just been submitted 
         # they will go to decompress or to format read
         for job in self.job_steps['submitted_ended'].copy().values():
@@ -99,7 +108,7 @@ class Pipeline(worker.Worker):
             tuples = self.job_tuples[job["id"]]
             self.update_job_step(job, 'standardize_started')
             self.send_to_standardize(tuples, job)
-
+        
         # Jobs after standardize ends
         for job in self.job_steps['standardize_ended'].copy().values():
             tuples = self.job_stdtuples[job["id"]]
@@ -119,17 +128,35 @@ class Pipeline(worker.Worker):
         # Jobs after aggregate ends
         for job in self.job_steps['aggregate_ended'].copy().values():
             tuples = self.job_aggrtuples[job["id"]]
-            self.update_job_step(job, 'publish_started')
-            self.send_to_publish(tuples, job)
+            self.update_job_step(job, 'precalculate_started')
+            self.send_to_precalculate(tuples, job)
         
+        # Jobs after precalculate ends
+        for job in self.job_steps['precalculate_ended'].copy().values():
+            tuples = self.job_precaltuples[job["id"]]  
+            self.update_job_step(job, 'publish_facts_started')
+            self.send_to_publish_facts(tuples, job)
+
+        # Jobs after publish facts ends
+        for job in self.job_steps['publish_facts_ended'].copy().values():
+            indicators_to_calculate = self.job_precalinds[job["id"]]    
+            self.update_job_step(job, 'calculate_started')
+            self.send_to_calculate(indicators_to_calculate, job)
+                   
+
+         # Jobs after calculate ends
+        for job in self.job_steps['calculate_ended'].copy().values():
+            indicators_tuples = self.job_indicators[job["id"]]
+            self.update_job_step(job, 'publish_indicators_started')
+            self.send_to_publish_indicators(indicators_tuples, job)
 
         # Jobs after publish ends
-        for job in self.job_steps['publish_ended'].copy().values():
+        for job in self.job_steps['publish_indicators_ended'].copy().values():
             # cleaning job dicos
             for job_dico in self.job_dicos:
               if job["id"] in job_dico:
                 job_dico.pop(job["id"])
-            # TODO: delete jobs other than last 10 jobs per source
+     
     
 
     def submit_files(self, dls, paths):
@@ -144,6 +171,13 @@ class Pipeline(worker.Worker):
                      }
         job_id = self._storage_proxy.write_db(job_record, 'job').get()
         dest_files = [str(job_id)+'_'+'_'.join(path.split('files/')[1].split('/')) for path in paths]
+        
+        # if 'datahub' in dls['scope']['source']:
+        #     paths = [path for path in paths if '18322.csv' in path]
+        #     print(f' Paths list is {paths} ')
+        # dest_files = [str(job_id)+'_'+'_'.join(path.split('files/')[1].split('/')) for path in paths]
+        # paths_in_staging = [self.staging_path(dls, dest_files[0]) ]
+        
         paths_in_staging = [self.staging_path(dls, file) for file in dest_files]
         self._storage_proxy.copy_files(paths, paths_in_staging)
         job_id = self._storage_proxy.write_db({'id': job_id,
@@ -171,10 +205,7 @@ class Pipeline(worker.Worker):
               raise RuntimeError(f'Unsupported format in {file_path}')
 
     def read_format_end(self, job, path, df):
-        #print(f'df head for {job["id"]} is: {df.head()}')
-        #print(f'pending_count is: {self.pending_count}')
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-
         #print(f'df head for file: {path} is : {df.head(10)}')
         self.job_df[job["id"]][path] = df
         if self.pending_count[job["id"]] == 0:
@@ -182,8 +213,7 @@ class Pipeline(worker.Worker):
 
     def send_to_unarchive(self, paths, job):
         filter_paths = job['dls_json']["acquisition"]["decompress"]["path"]
-        self.pending_count[job["id"]] = len(paths) * len(filter_paths)
-        
+        self.pending_count[job["id"]] = len(paths) * len(filter_paths) 
         for archive_path in paths:
           for filter_path in filter_paths:
             self._unarchive_proxy.unarchive(archive_path, filter_path, job)
@@ -191,7 +221,6 @@ class Pipeline(worker.Worker):
     
     def unarchive_end(self, archive_path, filter_path, bytes, job):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        
         dest_file = os.path.basename(archive_path)+'_'+('_'.join(filter_path.split('/'))) 
         path_in_staging = self.staging_path(job['dls_json'], dest_file)
         self.decompressed_files[job['id']].append(path_in_staging)
@@ -255,15 +284,72 @@ class Pipeline(worker.Worker):
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'aggregate_ended')
     
-    def send_to_publish(self, tuples, job):
+    def send_to_precalculate(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
-            self._variables_proxy.write_variable(ttuples, path, job)
+            self._evaluator_proxy.pre_calculate(ttuples, path, job)
 
-    def publish_end(self, path, job): 
+    def precalculate_end(self, indicators_to_calculate, tuples, path, job): 
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        self.job_precaltuples[job["id"]][path] = tuples
+        self.job_precalinds[job["id"]][path] = indicators_to_calculate
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'precalculate_ended')
+
+    def send_to_publish_facts(self, tuples, job):
+        self.pending_count[job["id"]] = len(tuples)
+        for path, ttuples in tuples.items():
+            self._variables_proxy.write_variable(ttuples, "raw", path, job)
+    
+    def publish_facts_end(self, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'publish_ended')
+            self.update_job_step(job, 'publish_facts_ended')
+
+
+    def send_to_calculate(self, indicators_to_calculate, job): 
+        self.pending_count[job["id"]] = len(indicators_to_calculate)
+        first_path = list(indicators_to_calculate)[0]
+        first_path_dict = indicators_to_calculate[first_path]
+        self._evaluator_proxy.calculate(first_path_dict, first_path, job)
+        if len(indicators_to_calculate.keys()) > 0:
+            for path in list(indicators_to_calculate)[1:]:
+                indicators_to_cal = indicators_to_calculate[path]
+                for ind in indicators_to_cal.copy():
+                    if ind != 'update_scope':
+                        ind_map = indicators_to_cal[ind]
+                        if ind in first_path_dict:
+                            if all (comb_values in first_path_dict[ind]['comb_values'] for comb_values in indicators_to_cal[ind]['comb_values']):
+                                indicators_to_cal.pop(ind)
+                            else:
+                                attr_comb = ind_map['comb_values'][:]
+                                for i, comb_values in enumerate(attr_comb):
+                                    if comb_values in first_path_dict[ind]['comb_values']:
+                                        ind_map['comb_values'].pop(i)
+                                    else:
+                                        first_path_dict[ind]['comb_values'].append(comb_values)
+                        if not ind_map['comb_values']:
+                            indicators_to_cal.pop(ind)
+                self._evaluator_proxy.calculate(indicators_to_cal, path, job)
+
+    
+
+    def calculate_end(self, ind_tuples, path, job): 
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        print(f' The pending count is : {self.pending_count[job["id"]]}')
+        self.job_indicators[job["id"]][path] = ind_tuples
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'calculate_ended')
+
+    def send_to_publish_indicators(self, indicators_tuples, job):
+        self.pending_count[job["id"]] = len(indicators_tuples)
+        for path, ind_tuples in indicators_tuples.items():
+            self._variables_proxy.write_variable(ind_tuples, "ind", path, job)
+
+    def publish_indicators_end(self, path, job):
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        if self.pending_count[job["id"]] == 0:
+            self.update_job_step(job, 'publish_indicators_ended')
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step):
