@@ -57,7 +57,9 @@ class Evaluator(worker.Worker):
 
         # end = False
         # while not end:
-        
+        # obs_to_check = dict (var_name, 0) with all variable names present on list_of_tuples['tuples']['obs']
+        # while len(obs_to_check) > 0:
+        #   obs_var, step = obs_to_check.pop()
         for tuple in list_of_tuples['tuples']:
             if 'obs' in tuple:
                 for ind, params in self._parameters.items():
@@ -73,6 +75,8 @@ class Evaluator(worker.Worker):
                             obs_attrs[ind][obs_var] = list(set(obs_attrs[ind][obs_var] + list(tuple['attrs'])))
                         else:
                             obs_attrs[ind][obs_var] = list(tuple['attrs'])
+                        #if ind not in obs_to_check:
+                        #  obs_to_check.append((ind, step + 1))
                     elif obs_var in base_vars:
                         i = base_vars.index(obs_var)+1
                         if all(tuple['attrs'][modif['variable']]==modif['value'] for modif in self._dict_of_variables[params[i]]['modifiers'] if modif['variable'] in tuple['attrs']):
@@ -83,6 +87,8 @@ class Evaluator(worker.Worker):
                                 obs_attrs[ind][obs_var] = list(set(obs_attrs[ind][obs_var] + list(tuple['attrs'])))
                             else:
                                 obs_attrs[ind][obs_var] = list(tuple['attrs'])                 
+                        #if ind not in obs_to_check:
+                        #  obs_to_check.append((ind, step + 1))
         indicators_to_calculate = defaultdict(dict)
         dls_variables = [col['variable'] for col in job['dls_json']['columns']]
         
@@ -90,8 +96,11 @@ class Evaluator(worker.Worker):
             for ind, params in self._parameters.items(): 
                 base_vars = [self._dict_of_variables[param]['variable'] for param in params[1:]]
                 if ind not in dls_variables or not ind_values_in_tuples[ind]:
+                    #TODO: check if the param variables have been published for one of the sources sharin a tag with this one
                     if len(set(base_vars).intersection(set(ind_tuples[ind]['vars'])))== len(params)-1:
                         indicators_to_calculate[ind]['base_vars'] = base_vars    
+        # while end
+
         attrs_ind = []
         combinations = []
         if indicators_to_calculate:
@@ -169,6 +178,8 @@ class Evaluator(worker.Worker):
                             #     obs_filter.pop(attr)
                             #     obs_filter[attr_alias] = attr_alias_val
                         ind_tuples[obs] = self._variables_proxy.read_variable(obs, obs_filter).get()
+                        #TODO if no lines returned then search at TAG level
+                        #TODO if no lines found at tag level either skip combinations
                         dates_in_tuples[obs] = [tuple['attrs'][date_var] for tuple in ind_tuples[obs]]
                     
                     ind_dates = set.intersection(*[set(dates_in_tuples[obs]) for obs in dates_in_tuples.keys()])
@@ -184,6 +195,7 @@ class Evaluator(worker.Worker):
                                 for obs in ind_map['base_vars']:
                                     ind_tuples[obs] = self._variables_proxy.read_variable(obs, filter).get()
                                     dates_in_tuples[obs] = [tuple['attrs'][date_var] for tuple in ind_tuples[obs]]
+
                                 ind_dates = set.intersection(*[set(dates_in_tuples[obs]) for obs in dates_in_tuples.keys()])
                                 sorted_ind_dates = sorted(list(ind_dates))                    
                     if sorted_ind_dates:
