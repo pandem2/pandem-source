@@ -54,6 +54,10 @@ class Evaluator(worker.Worker):
         ind_values_in_tuples = dict()
         for ind, params in self._parameters.items():
             ind_values_in_tuples[ind] = []
+
+        # end = False
+        # while not end:
+        
         for tuple in list_of_tuples['tuples']:
             if 'obs' in tuple:
                 for ind, params in self._parameters.items():
@@ -62,7 +66,7 @@ class Evaluator(worker.Worker):
                         ind_values_in_tuples[ind].append(tuple['obs'][obs_var])
                     base_vars = [self._dict_of_variables[param]['variable'] for param in params[1:]]
                     if obs_var in params[1:]:
-                        ind_tuples[ind]['tuples'].append(tuple)
+                        ind_tuples[ind]['tuples'].append(tuple) 
                         ind_tuples[ind]['vars'].append(obs_var)
                         ind_tuples[ind]['attrs'].extend(list(tuple['attrs']))
                         if obs_var in obs_attrs[ind]:
@@ -81,6 +85,7 @@ class Evaluator(worker.Worker):
                                 obs_attrs[ind][obs_var] = list(tuple['attrs'])                 
         indicators_to_calculate = defaultdict(dict)
         dls_variables = [col['variable'] for col in job['dls_json']['columns']]
+        
         if ind_tuples:
             for ind, params in self._parameters.items(): 
                 base_vars = [self._dict_of_variables[param]['variable'] for param in params[1:]]

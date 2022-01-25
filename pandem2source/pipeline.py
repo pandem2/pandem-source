@@ -141,6 +141,9 @@ class Pipeline(worker.Worker):
         for job in self.job_steps['publish_facts_ended'].copy().values():
             indicators_to_calculate = self.job_precalinds[job["id"]]    
             self.update_job_step(job, 'calculate_started')
+            # Limit indicators to calculate for those on 
+            # step = self.job_precalstep[job['id']]
+            # indicators_to_calculate = self.job_precalinds[job['id']]['steps'][step]
             self.send_to_calculate(indicators_to_calculate, job)
                    
 
@@ -152,7 +155,14 @@ class Pipeline(worker.Worker):
 
         # Jobs after publish ends
         for job in self.job_steps['publish_indicators_ended'].copy().values():
-            # cleaning job dicos
+            # step = self.job_precalstep[job['id']] + 1
+            # total_steps  = len(self.job_precalinds[job['id']]['steps'])
+            # if step < total_steps:
+            #   self.job_precalstep[job['id']] = step
+            #   indicators_to_calculate = self.job_precalinds[job['id']]['steps'][step]
+            #   self.send_to_calculate(indicators_to_calculate, job)
+            # else :
+            #   cleaning job dicos
             for job_dico in self.job_dicos:
               if job["id"] in job_dico:
                 job_dico.pop(job["id"])
@@ -293,6 +303,7 @@ class Pipeline(worker.Worker):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_precaltuples[job["id"]][path] = tuples
         self.job_precalinds[job["id"]][path] = indicators_to_calculate
+        self.job_precalstep[job["id"]][path] = 0
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'precalculate_ended')
 
