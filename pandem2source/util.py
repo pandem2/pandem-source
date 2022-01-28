@@ -53,6 +53,7 @@ def get_or_set_secret(name):
 def get_custom(path, function):
   if type(path) == str:
     path = [path]
+  path = [*( p.replace('-', '_') for p in path )]
   script_path = pandem_path(*(["files", "scripts", "py"] + path))
   if not os.path.exists(script_path+".py"):
     return None

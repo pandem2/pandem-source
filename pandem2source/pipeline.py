@@ -200,16 +200,17 @@ class Pipeline(worker.Worker):
 
     def send_to_readformat(self, paths, job):
        self.pending_count[job["id"]] = len(paths)
+       dls = job["dls_json"]
+       format_name = dls["acquisition"]["format"]["name"].lower() if "format" in dls["acquisition"] and "name" in dls["acquisition"]["format"] else None
+
        for file_path in paths:
-          if file_path.endswith('.csv'):
+          if format_name == "csv" or file_path.endswith('.csv'):
               self._frcsv_proxy.read_format_start(job, file_path)
-          elif file_path.endswith('.rdf'):
+          elif format_name == "xml" or file_path.endswith('.rdf') or file_path.endswith('.xml'):
               self._frxml_proxy.read_format_start(job, file_path)
-          elif file_path.endswith('.xml'):
-              self._frxml_proxy.read_format_start(job, file_path)
-          elif file_path.endswith(".xls") or file_path.endswith('.xlsx'):
+          elif format_name == "xls" or file_path.endswith(".xls") or file_path.endswith('.xlsx'):
               self._frxls_proxy.read_format_start(job, file_path)
-          elif file_path.endswith('.json') or file_path.endswith('.json.gz'):
+          elif format_name == "json" or file_path.endswith('.json') or file_path.endswith('.json.gz'):
               self._frjson_proxy.read_format_start(job, file_path)
           else:
               raise RuntimeError(f'Unsupported format in {file_path}')
@@ -250,7 +251,8 @@ class Pipeline(worker.Worker):
         if self.pending_count[job["id"]] == 0:
             self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
-            if errors_number == 0:
+            warning_number = sum(issue['issue_severity']=='warning' for issue in self.job_issues[job["id"]])
+            if errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
                 self.update_job_step(job, 'read_df_ended')
             else:
                 self.fail_job(job)
@@ -267,7 +269,8 @@ class Pipeline(worker.Worker):
         if self.pending_count[job["id"]] == 0:
             self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
-            if errors_number == 0:
+            warning_number = sum(issue['issue_severity']=='warning' for issue in self.job_issues[job["id"]])
+            if errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
                 self.update_job_step(job, 'standardize_ended')
             else:
                 self.fail_job(job)
@@ -303,7 +306,6 @@ class Pipeline(worker.Worker):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_precaltuples[job["id"]][path] = tuples
         self.job_precalinds[job["id"]][path] = indicators_to_calculate
-        self.job_precalstep[job["id"]][path] = 0
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'precalculate_ended')
 

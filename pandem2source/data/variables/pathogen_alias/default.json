@@ -1,0 +1,26 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "pathogen_code": "U07.1"
+            },
+            "attr": {
+                "pathogen_alias": "covid.ecdc"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "2",
+                "source": "pandem2",
+                "file": "",
+                "pathogen_code": "J09"
+            },
+            "attr": {
+                "pathogen_alias": "ili.ecdc"
+            }
+        }
+    ]
+}

@@ -3,6 +3,7 @@ from . import worker
 from abc import ABC, abstractmethod, ABCMeta
 from datetime import datetime, timedelta
 import time
+import logging as l
 
 class Acquisition(worker.Worker):
     __metaclass__ = ABCMeta  
@@ -37,7 +38,7 @@ class Acquisition(worker.Worker):
         new_hash = nf["hash"]
         # If new files are found they will be send to the pipeline 
         if len(files_to_pipeline)>0:
-            print(f'New {len(files_to_pipeline)} files found last hash is: {last_hash}')
+            l.info(f'New {len(files_to_pipeline)} hash changed from {last_hash} to {new_hash}')
             # Sending files to the pipeline
             self._pipeline_proxy.submit_files(dls, files_to_pipeline).get()
             # Storing the new hash into the db

@@ -54,8 +54,8 @@ class DataframeReader(worker.Worker):
 
         
         for item in dls_col_list:
-            if "name" not in item or "variable" not in item: 
-              message=("DLS file not conform, 'columns' must contain a list of objects containint elements 'name' and 'variable'")
+            if "name" not in item: 
+              message=("DLS file not conform, 'columns' must contain a list of objects containint elements 'name'")
               issue={ 'step': job['step'],                       
                     'line' : 0,                        
                     'source' : dls['scope']['source'],
@@ -79,9 +79,9 @@ class DataframeReader(worker.Worker):
                         'issue_type' : "col-not-found",
                         'issue_severity':"error"}                       
                 issues[item["name"]] = issue
-            elif item['variable'] in var:
+            elif 'variable' in item and item['variable'] in var:
                 if var[item['variable']]['unit'] == 'date':
-                    if df[item['name']].dtypes in ['date', 'object', 'str', 'datetime64[ns]'] :
+                    if df[item['name']].dtypes in ['date', 'object', 'str', 'datetime64[ns]', 'int', 'int64'] :
                         issues[item["name"]] = None
                     else :
                         message = (f"Type '{df[item['name']].dtypes}' in source file is not compatible with variable {item['variable']} with unit 'date' ")
@@ -115,7 +115,7 @@ class DataframeReader(worker.Worker):
                     issues[item["name"]] = None
                 elif var[item['variable']]['unit'] in ['string', 'range'] :
                     issues[item["name"]] = None
-            else :
+            elif "variable" in item:
                 message = (f"Variable {item['variable']} defined on source definition file is unknown")
                 issue = {'step' : job['step'],
                         'line' : 0,
@@ -131,8 +131,7 @@ class DataframeReader(worker.Worker):
         return issues
 
 
-    def translate(self, value, dtype, unit, parse_format = None):   # parameters to pass after : df, dls, file_name
-
+    def translate(self, value, dtype, unit, format = {}):   # parameters to pass after : df, dls, file_name
         """Convert the format of dataframe column if expected unit is different"""
         if pd.isna(value):
             return None
@@ -144,20 +143,28 @@ class DataframeReader(worker.Worker):
         elif unit == 'date':
             if np.issubdtype(dtype, np.datetime64):
                 return value
-            elif parse_format is None:
+            elif format.get("date_format") is None:
                 raise AssertionError("You have to provide a format to parse a date on Data source definition, on ['acquisition']['format']['date_format']")
-            elif parse_format=='isoweek':
-                return isoweek.Week(int(value[:4]),int(value[-2:])).monday()
+            elif format.get("date_format") =='isoweek':
+                if dtype in ["int", "int64", "float", "float64"]:
+                  return isoweek.Week(int(int(value)/100),int(value)%100).monday()
+                else:
+                  return isoweek.Week(int(value[:4]),int(value[-2:])).monday()
             else:
-                return datetime.strptime(value, parse_format)
-
-        elif unit in ["people", "int", "number", "qty"] :
-            if dtype in ["int", "int64"]: #, "object"
-                return value
-            elif np.isnan(value):
+                return datetime.strptime(value, format.get('date_format'))
+        elif self.is_numeric_unit(unit) :
+            if dtype in ["int", "int64", "float", "float64"]: #, "object"
+              if np.isnan(value):
                 return None
+              else:
+                return value
             else:
-                return int(value)
+                value = str(value)
+                if "thousands_separator" in format and format["thousands_separator"]!=".":
+                  value = value.replace(format["thousands_separator"], "") 
+                if "decimal_separator" in format and format["decimal_separator"]!=".":
+                  value = value.replace(format["decimal_separator"], ".") 
+                return float(value)
         elif unit=='range':
             return self.transform_range(value)
         else: 
@@ -168,25 +175,18 @@ class DataframeReader(worker.Worker):
         variables = self.get_variables()
         dls_col_list=[]
         file_name = util.absolute_to_relative(path, "files/staging/")
-        
-        # calling custom df transformer if defined
-        custom_trans = util.get_custom(["sources", dls["scope"]["source"].replace("-", "_").replace(" ", "_")],"df_transform")
-        if custom_trans is not None:
-          df = custom_trans(df)
-
-        # adding column line number if it does not exists
-        if 'line_number' not in df.columns :
-            df['line_number'] = range(1, len(df)+1) 
 
         # Checking column names and compatible types
         col_issues = self.check_df_columns(df = df, job = job, dls = dls, file_name = path, variables = variables)
         issues = list([i for i in col_issues.values() if i is not None]) 
         types_ok = dict((t["name"],  t["name"] in col_issues and col_issues[t["name"]] is None) for t in  dls['columns'])
-        col_vars = dict((t["name"], t["variable"]) for t in  dls['columns'])
+        col_vars = dict((t["name"], t["variable"]) for t in  dls['columns'] if 'variable' in t)
+        formats = {v:self.format_for(v, dls, variables) for v in col_vars.values()}
         col_types = dict((k,variables[v]["type"]) for k,v in col_vars.items() if v in variables)
         insert_cols = dict((t["name"], ("obs" if col_types[t["name"]] in ["observation", "indicator", "resource"] else "attr")) 
           for t in  dls['columns'] 
           if types_ok[t["name"]] and
+            'variable' in t and
             ("action" in t and t["action"] == "insert" or col_types[t["name"]] in ["observation", "indicator", "resource"])
         )
         attr_cols = {}
@@ -217,6 +217,7 @@ class DataframeReader(worker.Worker):
                     tup = tup,
                     group = group,
                     val = df[col][row], 
+                    format = formats[col_vars[col]],
                     issues = issues, 
                     dtype = df[col].dtypes, 
                     unit = variables[col_vars[col]]["unit"], 
@@ -232,6 +233,7 @@ class DataframeReader(worker.Worker):
                         tup = tup,
                         group = "attrs",
                         val = df[attr_col][row], 
+                        format = formats[col_vars[attr_col]],
                         issues = issues, 
                         dtype = df[attr_col].dtypes, 
                         unit = variables[col_vars[attr_col]]["unit"], 
@@ -245,6 +247,7 @@ class DataframeReader(worker.Worker):
                 tuples.append(tup)
         ret = {"scope":dls["scope"].copy()}
         ret["scope"]["file_name"] = file_name
+
         # validating that globals are property instantiated
         #if "scope" in dls and "globals" in dls["scope"] : 
         #  ret["scope"]["globals"] = self.add_values(dls["scope"]["globals"], tuples = [], issues = issues, dls = dls, job = job, file_name = file_name)
@@ -296,12 +299,8 @@ class DataframeReader(worker.Worker):
               }
               issues.append(issue)
         return ret
-    def translate_or_issue(self, tup, group, val, issues, dtype, unit, dls, job, line_number, file_name, var_name, variables):
+    def translate_or_issue(self, tup, group, val, format, issues, dtype, unit, dls, job, line_number, file_name, var_name, variables):
         trans = None
-        if "date_format" in dls['acquisition']['format']:
-          format = dls['acquisition']['format']['date_format']
-        else:
-          format = None
         try:
           trans = self.translate(val, dtype, unit, format)
         except AssertionError as e:
@@ -310,7 +309,7 @@ class DataframeReader(worker.Worker):
             "line":line_number,
             "source":dls['scope']['source'],
             "file":file_name,
-            "message":f"Cannot cast value {val} into unit {unit} \n {e}",
+            "message":f"Cannot cast value {val} into unit {unit} as {dtype}\n {e}",
             "raised_on":datetime.now(),
             "job_id":job['id'],
             "issue_type":"cannot-cast",
@@ -322,7 +321,7 @@ class DataframeReader(worker.Worker):
             "line":line_number,
             "source":dls['scope']['source'],
             "file":file_name,
-            "message":f"Cannot cast value {val} into unit {unit} \n {e}",
+            "message":f"Cannot cast value {val} into unit {unit} as {dtype}\n {e}",
             "raised_on":datetime.now(),
             "job_id":job['id'],
             "issue_type":"cannot-cast",
@@ -365,4 +364,12 @@ class DataframeReader(worker.Worker):
         return True
       return False
 
-
+    def format_for(self, var_name, dls, variables):
+      col_def = list([col for col in dls["columns"] if "variable" in col and col["variable"]==var_name])
+      format = {}
+      for attr in ["decimal_sign", "thousands_separator", "date_format"]:
+        if len(col_def) > 0 and attr in col_def[0]:
+          format[attr] = col_def[0][attr]
+        elif "acquisition" in dls and "format" in dls["acquisition"] and attr in dls["acquisition"]["format"]: 
+          format[attr] =  dls["acquisition"]["format"][attr]
+      return format

@@ -1,47 +1,56 @@
 import os
 import requests
+import hashlib
 from . import acquisition
-
+from urllib.parse import urlparse
+from urllib.parse import parse_qsl
 
 class AcquisitionURL(acquisition.Acquisition):
     def __init__(self, name, orchestrator_ref, settings): 
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings, channel = "url")
         
     def new_files(self, dls, last_hash):
-        url = dls['acquisition']['channel']['url']
+        urls = dls['acquisition']['channel']['url']
+        if type(urls) == str:
+          urls = [urls]
+        hashes = last_hash.split("|")
+        pairs = [(urls[i], (hashes[i] if i<len(hashes) else '')) for i in range(0, len(urls))]
         source_dir = self.source_path(dls)
-        file_path = self.source_path(dls, '_'.join(url.replace(":","_").split('//')[1:]).replace('/', "_"))
-        r = requests.get(url)
-        current_etag = r.headers.get('ETag')
+        current_hash = []
         files_to_pipeline = []
-        if not os.path.exists(file_path) or last_hash == "":
-            with open (file_path,'wb') as cont:
-                cont.write(r.content)
-            files_to_pipeline.extend([file_path])
-        # the file already exists and we know the last etag 
-        elif current_etag != last_hash:
-            with open (file_path,'wb') as cont:
-                cont.write(r.content)
-            files_to_pipeline.extend([file_path])   
-        return {"hash":current_etag, "files":files_to_pipeline}           
+        for url, last_hash in pairs:
+            # getting the file name
+            parts = urlparse(url)
+            if 'file_name' not in dls['acquisition']['channel']:
+              dest_name = parts.path.replace("/", "_")
+            elif type(dls['acquisition']['chanel']['file_name'])==str :
+              dest_name = dls['acquisition']['channel']['file_name']
+            else:
+              dest_name = ''
+              for p in dls['acquisition']['channel']['file_name']:
+                if p.starswith("query."):
+                  for par, val in parse_qsl(parts.query):
+                    if p == f"query.{par}":
+                      dest_name = f"{dest_name}_{par}-{val}"
+                elif p == "netloc":
+                  dest_name = f"{dest_name}_{parts.netloc.replace('/', '_')}"
+                elif p == "path":
+                  dest_name = f"{dest_name}_{parts.path.replace('/', '_')}"
+              if dest_name == '':
+                dest_name = parts.path.replace("/", "_")
+
+            file_path = self.source_path(dls, dest_name)
+            r = requests.get(url)
+            current_hash.append(r.headers.get('ETag') if r.headers.get('Etag') is not None else hashlib.sha1(r.content).hexdigest())
+            if not os.path.exists(file_path) or last_hash == "":
+                with open (file_path,'wb') as cont:
+                    cont.write(r.content)
+                files_to_pipeline.extend([file_path])
+            # the file already exists and we know the last etag 
+            elif current_hash[-1] != last_hash:
+                with open (file_path,'wb') as cont:
+                    cont.write(r.content)
+                files_to_pipeline.extend([file_path])   
+        return {"hash":"|".join(current_hash), "files":files_to_pipeline} 
 
 
-def download_if_new(url, dest):
-  dest_hash = os.path.join(dest, ".hash")
-  
-  if os.path.exists(dest_hash): 
-    with open(dest_hash, 'r') as file:
-      last_hash = file.read()
-  else:
-    last_hash = None
-  
-  r = requests.get(url)
-  new_hash = r.headers.get('ETag')
-
-  if not os.path.exists(dest) or las_hash is None or last_hash != new_hash:
-    with open (file_path,'wb') as cont:
-      cont.write(r.content)
-    if new_hash is not None:
-      with open (file_path,'w') as h:
-        h.write(new_hash)
-    

@@ -90,7 +90,7 @@ class Evaluator(worker.Worker):
                         #if ind not in obs_to_check:
                         #  obs_to_check.append((ind, step + 1))
         indicators_to_calculate = defaultdict(dict)
-        dls_variables = [col['variable'] for col in job['dls_json']['columns']]
+        dls_variables = [col['variable'] for col in job['dls_json']['columns'] if 'variable' in col]
         
         if ind_tuples:
             for ind, params in self._parameters.items(): 
@@ -223,17 +223,17 @@ class Evaluator(worker.Worker):
                                 with open(self.pandem_path(result_path)) as f:
                                     result = f.read()
                                 result = re.findall (r'([^\[," \]\n]+)', result)
-                            else:
-                                print('result file not found')
-                            for i, res in enumerate(result):
-                                date = sorted_ind_dates[i]
-                                l.warning("take out period type from here!!")
-                                ind_date_tuple = {'obs': {ind:res},
-                                                'attrs':{**{date_var:date, 'period_type':'date'},
-                                                            **{k:v for k,v in zip(ind_map['attrs'], attr_comb)}
-                                                            }
-                                                }
+                                for i, res in enumerate(result):
+                                    date = sorted_ind_dates[i]
+                                    l.warning("take out period type from here!!")
+                                    ind_date_tuple = {'obs': {ind:res},
+                                                    'attrs':{**{date_var:date, 'period_type':'date'},
+                                                                **{k:v for k,v in zip(ind_map['attrs'], attr_comb)}
+                                                                }
+                                                    }
                                 indicators['tuples'].append(ind_date_tuple)
+                            else:
+                                l.warning('result file not found')
                     
 
         self._pipeline_proxy.calculate_end(indicators, path = path, job = job).get()

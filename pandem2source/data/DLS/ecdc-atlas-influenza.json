@@ -1,0 +1,49 @@
+{
+    "scope":{
+      "source":"ecdc-atlas-influenza",
+      "source_description":"This source extracts Influenza data from the ECDC Surveillance Atlas of Infectious Diseases (https://www.ecdc.europa.eu/en/surveillance-atlas-infectious-diseases). The ECDC Atlas is a tool that interacts with the latest available data about a number of infectious diseases. The interface allows users to interact and manipulate the data to produce a variety of tables and. The information contained in the dataset provided through ATLAS is made available by ECDC collating data from the Member States collected through The European Surveillance System (TESSy). ",
+      "tags":["ecdc", "Influenza"],
+      "frequency":"daily",
+      "reference_user":"surveillance@ecdc.europa.eu",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"pathogen_name", "value":"Influenza due to certain identified influenza viruses"}
+      ],
+      "update_scope":[
+        {"variable":"source"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"url",
+        "url": "http://atlas.ecdc.europa.eu/public/AtlasService/rest/GetMeasuresResultsExportFile?healthTopicId=29&datasetId=27&measureIds=&measureTypes=I,Q&timeCodes=&geoCodes=AT,BE,BG,CZ,DE,DK,EE,EL,ES,EU31_UKX,FR,HU,IE,LT,LU,LV,NL,NO,PL,PT,RO,SE,SI,SK,IT,FI,IS,MT,HR,CY&geoLevel=1&timeUnit=Week&isPivotByTimePeriod=false&measurePopulation=",
+        "file_name":[
+          "query.healthTopicId", 
+          "query.datasetId",
+          "netloc"
+        ]
+      },
+      "format": {
+        "name":"csv",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"isoweek",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"HealthTopic"},
+      {"name":"Population"},
+      {"name":"Indicator"},
+      {"name":"Unit"},
+      {"name":"Time", "variable":"reporting_week"},
+      {"name":"RegionCode", "variable":"geo_code"},
+      {"name":"RegionName"},
+      {"name":"NumValue", "variable":"confirmed_cases"},
+      {"name":"TxtValue"}
+    ]
+    ,"filter":[
+      {"type":"in", "column":"Population", "values":["Influenza virus detections sentinel"]},
+      {"type":"in", "column":"Indicator", "values":["Positive specimens"]}
+    ]
+}
