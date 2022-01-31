@@ -72,6 +72,16 @@ def main(a):
     help="Reset covid19-datahub datasource to system defaults", 
   )
   reset_parser.add_argument(
+    "--ecdc-atlas", 
+    action="store_true", 
+    help="Reset ecdc-atlas datasource to system defaults", 
+  )
+  reset_parser.add_argument(
+    "--influenzanet", 
+    action="store_true", 
+    help="Reset influenza net datasource to system defaults", 
+  )
+  reset_parser.add_argument(
     "--ecdc-covid19-variants", 
     action="store_true", 
     help="Reset ecdc-covid19-variants datasource to system defaults", 
@@ -189,6 +199,10 @@ def do_reset(args, *other):
     admin.reset_source("covid19-datahub")
   if args.ecdc_covid19_variants or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-variants")    
+  if args.ecdc_atlas or args.restore_factory_defaults:
+    admin.reset_source("ecdc-atlas-influenza")    
+  if args.influenzanet or args.restore_factory_defaults:
+    admin.reset_source("influenza-net")    
   if args.twitter or args.restore_factory_defaults:
     admin.reset_source("twitter")    
 

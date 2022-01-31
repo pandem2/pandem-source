@@ -17,22 +17,6 @@ class Variables(worker.Worker):
         self._storage_proxy=self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._pipeline_proxy=self._orchestrator_proxy.get_actor('pipeline').get().proxy()
 
-    # def get_variables(self): 
-    #     dic_variables = dict()
-    #     var_list=self._storage_proxy.read_file('variables/variables.json').get()
-    #     for var in var_list: 
-    #         dic_variables[var['variable']]=var.copy()
-    #         if 'aliases' in var :
-    #             for alias in var['aliases']:
-    #                 alias_var=var.copy()
-    #                 #if "alias" in alias:
-    #                 #  alias_var['variable']=alias['alias']
-    #                 if "modifiers" in alias:
-    #                   alias_var['modifiers']=alias['modifiers']
-    #                 if "alias" in alias:
-    #                   dic_variables[alias['alias']]=alias_var
-    #     return dic_variables
-    
     def get_variables(self): 
         dic_variables = dict()
         var_list=self._storage_proxy.read_file('variables/variables.json').get()
@@ -103,58 +87,6 @@ class Variables(worker.Worker):
         else: 
             return None
 
-    def write_tag_var(self, update_scope, job):
-        class JsonEncoder(json.JSONEncoder):
-          def default(self, z):
-            if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64) or isinstance(z, datetime.date) :
-              return (str(z))
-            else:
-              return super().default(z)
-        tags = job['dls_json']['scope']['tags']
-        source = job['dls_json']['scope']['source']
-        for i, filter in enumerate(update_scope):
-            if filter['variable'] not in ['source', 'tag']:
-                update_scope.pop(i)
-
-        tag_tuples = {'scope': {'update_scope':update_scope},
-                      'tuples': []}
-        var_name = 'tagsource'
-        if tags:
-            for tag in tags:
-                tag_tuples['tuples'].append({'attr':{'tagsource': tag+'_'+source},
-                                             'attrs':{'tag':tag, 'source': source}})
-        update_filter = []
-        for filter in update_scope:
-            if not isinstance(filter['value'], list):
-                update_filter.append({'variable':filter['variable'], 'value':[filter['value']]})
-            else:
-                update_filter.append(filter)
-      
-        var_dir = util.pandem_path('files/variables', var_name)
-        if not os.path.exists(var_dir):
-            os.makedirs(var_dir)
-        file_path = util.pandem_path(var_dir, 'default.json')
-        if not os.path.exists(file_path):
-            tuples_to_dump = {'tuples': tag_tuples['tuples']}                   
-            with open(file_path, 'w+') as f:
-                json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
-        else:
-            with open(file_path, 'r') as f:
-                last_tuples = json.load(f)
-            tuples_list = []
-            for tagsource in tag_tuples['tuples']:
-                if tagsource not in last_tuples['tuples']:
-                    tuples_list.append(tagsource)
-            tuples_to_dump = {'tuples': tuples_list}
-            for tup in last_tuples['tuples']:
-                cond_count = len(update_filter)
-                for filt in update_filter: 
-                    if filt['variable'] in tup['attrs'].keys() and tup['attrs'][filt['variable']] in filt['value']:
-                        cond_count = cond_count - 1
-                if cond_count > 0:
-                    tuples_list.append(tup)            
-            with open(file_path, 'w') as f:
-                json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
     
 
     
@@ -178,10 +110,10 @@ class Variables(worker.Worker):
     def write_variable(self, input_tuples, obs_type, path, job):
         variables = self.get_variables()
         partition_dict = defaultdict(list)
-        if input_tuples['tuples']:
-            if obs_type=='raw':
-                self.write_tag_var(input_tuples['scope']['update_scope'], job)
+        if obs_type=='raw':
+            self.write_variable(self.tag_source_var(job["dls_json"]), 'tag_source', path, job)
 
+        if input_tuples['tuples']:
             for tuple in self.remove_private(input_tuples['tuples'], variables):
                 var_name = None
                 for key, var in tuple.items():
@@ -238,14 +170,27 @@ class Variables(worker.Worker):
                             json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
             if obs_type=='raw':
                 self._pipeline_proxy.publish_facts_end( path = path, job = job)
+            elif obs_type == 'tag_source':
+                pass
             else:
                 self._pipeline_proxy.publish_indicators_end( path = path, job = job)
 
-        else:
+        elif obs_type != 'tag_source':
             self._pipeline_proxy.publish_indicators_end( path = path, job = job)
 
         
                     
+    def tag_source_var(self, dls):
+       tags = dls['scope']['tags'] if 'tags' in dls['scope'] else []
+       source = dls['scope']['source']
+       return {
+         'scope':{
+           'update_scope':[
+             {'variable':'source', 'value':source}
+           ]
+         },
+         'tuples':[*({'attr':{'tag_source': tag+'_'+source}, 'attrs':{'tag':tag, 'source': source}} for tag in tags)]
+       }
 
 
 

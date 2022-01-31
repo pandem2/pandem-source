@@ -41,7 +41,6 @@ class Aggregator(worker.Worker):
 
     result = list_of_tuples.copy()
     result['tuples'] = untouched + [*cumm.values()]
-
     self._pipeline_proxy.aggregate_end(result, path = path, job = job)
 
   def descendants(self, code, parent):

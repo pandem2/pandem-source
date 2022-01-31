@@ -41,7 +41,6 @@ class Pipeline(worker.Worker):
         self.job_aggrtuples = defaultdict(dict)
         self.job_precaltuples = defaultdict(dict)
         self.job_precalinds = defaultdict(dict)
-        self.job_update = defaultdict(dict)
         self.job_indicators = defaultdict(dict)
         self.job_issues = defaultdict(list)
         self.pending_count = {}
@@ -146,9 +145,8 @@ class Pipeline(worker.Worker):
             step = self.job_precalstep[job['id']]
             # print(f'for job {job["source"]}, step is: {step}')
             # print(f'for job {job["source"]}, job_precalinds is: {self.job_precalinds[job["id"]]}')
-            indicators_to_calculate = {path:(ind_to_cal['steps'][step[path]] if ind_to_cal['steps'] else ind_to_cal['steps']) for path, ind_to_cal in self.job_precalinds[job['id']].items()}
-            update_scope = self.job_update[job["id"]]
-            self.send_to_calculate(indicators_to_calculate, update_scope, job)
+            indicators_to_calculate = { path:(ind_to_cal['steps'][step[path]] if ind_to_cal['steps'] else ind_to_cal['steps']) for path, ind_to_cal in self.job_precalinds[job['id']].items()}
+            self.send_to_calculate(indicators_to_calculate, job)
                    
 
          # Jobs after calculate ends
@@ -203,16 +201,17 @@ class Pipeline(worker.Worker):
 
     def send_to_readformat(self, paths, job):
        self.pending_count[job["id"]] = len(paths)
+       dls = job["dls_json"]
+       format_name = dls["acquisition"]["format"]["name"].lower() if "format" in dls["acquisition"] and "name" in dls["acquisition"]["format"] else None
+
        for file_path in paths:
-          if file_path.endswith('.csv'):
+          if format_name == "csv" or file_path.endswith('.csv'):
               self._frcsv_proxy.read_format_start(job, file_path)
-          elif file_path.endswith('.rdf'):
+          elif format_name == "xml" or file_path.endswith('.rdf') or file_path.endswith('.xml'):
               self._frxml_proxy.read_format_start(job, file_path)
-          elif file_path.endswith('.xml'):
-              self._frxml_proxy.read_format_start(job, file_path)
-          elif file_path.endswith(".xls") or file_path.endswith('.xlsx'):
+          elif format_name == "xls" or file_path.endswith(".xls") or file_path.endswith('.xlsx'):
               self._frxls_proxy.read_format_start(job, file_path)
-          elif file_path.endswith('.json') or file_path.endswith('.json.gz'):
+          elif format_name == "json" or file_path.endswith('.json') or file_path.endswith('.json.gz'):
               self._frjson_proxy.read_format_start(job, file_path)
           else:
               raise RuntimeError(f'Unsupported format in {file_path}')
@@ -253,7 +252,8 @@ class Pipeline(worker.Worker):
         if self.pending_count[job["id"]] == 0:
             self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
-            if errors_number == 0:
+            warning_number = sum(issue['issue_severity']=='warning' for issue in self.job_issues[job["id"]])
+            if errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
                 self.update_job_step(job, 'read_df_ended')
             else:
                 self.fail_job(job)
@@ -270,7 +270,8 @@ class Pipeline(worker.Worker):
         if self.pending_count[job["id"]] == 0:
             self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
-            if errors_number == 0:
+            warning_number = sum(issue['issue_severity']=='warning' for issue in self.job_issues[job["id"]])
+            if errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
                 self.update_job_step(job, 'standardize_ended')
             else:
                 self.fail_job(job)
@@ -302,12 +303,12 @@ class Pipeline(worker.Worker):
         for path, ttuples in tuples.items():
             self._evaluator_proxy.pre_calculate(ttuples, path, job)
 
-    def precalculate_end(self, indicators_to_calculate, update_scope, tuples, path, job): 
+    def precalculate_end(self, indicators_to_calculate, tuples, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_precaltuples[job["id"]][path] = tuples
         self.job_precalinds[job["id"]][path] = indicators_to_calculate
-        self.job_update[job["id"]][path] = update_scope
         self.job_precalstep[job["id"]][path] = 0
+
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'precalculate_ended')
 
@@ -322,16 +323,14 @@ class Pipeline(worker.Worker):
             self.update_job_step(job, 'publish_facts_ended')
 
 
-    def send_to_calculate(self, indicators_to_calculate, update_scope, job): 
+    def send_to_calculate(self, indicators_to_calculate, job): 
         self.pending_count[job["id"]] = len(indicators_to_calculate)
         first_path = list(indicators_to_calculate)[0]
         first_path_dict = indicators_to_calculate[first_path]
-        first_path_update = update_scope[first_path]
         self._evaluator_proxy.calculate(first_path_dict, first_path_update, first_path, job)
         if len(indicators_to_calculate.keys()) > 0:
             for path in list(indicators_to_calculate)[1:]:
                 indicators_to_cal = indicators_to_calculate[path]
-                update = update_scope[path]
                 for ind in indicators_to_cal.copy():
                     if ind != 'update_scope':
                         ind_map = indicators_to_cal[ind]
