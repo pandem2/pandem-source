@@ -31,7 +31,7 @@
     },
     "columns":[
       {"name":"date", "variable":"reporting_date"},
-      {"name":"confirmed", "variable":"confirmed_cases"},
+      {"name":"confirmed", "variable":"cumulative_confirmed_cases"},
       {"name":"recovered", "variable":"recovered_cases"},
       {"name":"deaths", "variable":"number_of_deaths"},
       {"name":"tests", "variable":"performed_tests"},

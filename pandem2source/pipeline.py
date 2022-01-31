@@ -34,13 +34,14 @@ class Pipeline(worker.Worker):
 
         self.job_steps = defaultdict(dict)
         self.decompressed_files = defaultdict(list)
-        self.job_steps = defaultdict(dict)
+        self.job_precalstep = defaultdict(dict)
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
         self.job_stdtuples = defaultdict(dict)
         self.job_aggrtuples = defaultdict(dict)
         self.job_precaltuples = defaultdict(dict)
         self.job_precalinds = defaultdict(dict)
+        self.job_update = defaultdict(dict)
         self.job_indicators = defaultdict(dict)
         self.job_issues = defaultdict(list)
         self.pending_count = {}
@@ -139,12 +140,15 @@ class Pipeline(worker.Worker):
 
         # Jobs after publish facts ends
         for job in self.job_steps['publish_facts_ended'].copy().values():
-            indicators_to_calculate = self.job_precalinds[job["id"]]    
+            #indicators_to_calculate = self.job_precalinds[job["id"]]    
             self.update_job_step(job, 'calculate_started')
-            # Limit indicators to calculate for those on 
-            # step = self.job_precalstep[job['id']]
-            # indicators_to_calculate = self.job_precalinds[job['id']]['steps'][step]
-            self.send_to_calculate(indicators_to_calculate, job)
+            # Limit indicators to calculate for those on current step 
+            step = self.job_precalstep[job['id']]
+            # print(f'for job {job["source"]}, step is: {step}')
+            # print(f'for job {job["source"]}, job_precalinds is: {self.job_precalinds[job["id"]]}')
+            indicators_to_calculate = {path:(ind_to_cal['steps'][step[path]] if ind_to_cal['steps'] else ind_to_cal['steps']) for path, ind_to_cal in self.job_precalinds[job['id']].items()}
+            update_scope = self.job_update[job["id"]]
+            self.send_to_calculate(indicators_to_calculate, update_scope, job)
                    
 
          # Jobs after calculate ends
@@ -155,17 +159,16 @@ class Pipeline(worker.Worker):
 
         # Jobs after publish ends
         for job in self.job_steps['publish_indicators_ended'].copy().values():
-            # step = self.job_precalstep[job['id']] + 1
-            # total_steps  = len(self.job_precalinds[job['id']]['steps'])
-            # if step < total_steps:
-            #   self.job_precalstep[job['id']] = step
-            #   indicators_to_calculate = self.job_precalinds[job['id']]['steps'][step]
-            #   self.send_to_calculate(indicators_to_calculate, job)
-            # else :
-            #   cleaning job dicos
-            for job_dico in self.job_dicos:
-              if job["id"] in job_dico:
-                job_dico.pop(job["id"])
+            step = self.job_precalstep[job['id']] + 1
+            total_steps  = len(self.job_precalinds[job['id']]['steps'])
+            if step < total_steps:
+              self.job_precalstep[job['id']] = step
+              indicators_to_calculate = {path: ind_to_cal['steps'][step] for path, ind_to_cal in self.job_precalinds[job['id']].items()}
+              self.send_to_calculate(indicators_to_calculate, job)
+            else :
+              for job_dico in self.job_dicos:
+                  if job["id"] in job_dico:
+                    job_dico.pop(job["id"])
      
     
 
@@ -299,10 +302,11 @@ class Pipeline(worker.Worker):
         for path, ttuples in tuples.items():
             self._evaluator_proxy.pre_calculate(ttuples, path, job)
 
-    def precalculate_end(self, indicators_to_calculate, tuples, path, job): 
+    def precalculate_end(self, indicators_to_calculate, update_scope, tuples, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_precaltuples[job["id"]][path] = tuples
         self.job_precalinds[job["id"]][path] = indicators_to_calculate
+        self.job_update[job["id"]][path] = update_scope
         self.job_precalstep[job["id"]][path] = 0
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'precalculate_ended')
@@ -318,14 +322,16 @@ class Pipeline(worker.Worker):
             self.update_job_step(job, 'publish_facts_ended')
 
 
-    def send_to_calculate(self, indicators_to_calculate, job): 
+    def send_to_calculate(self, indicators_to_calculate, update_scope, job): 
         self.pending_count[job["id"]] = len(indicators_to_calculate)
         first_path = list(indicators_to_calculate)[0]
         first_path_dict = indicators_to_calculate[first_path]
-        self._evaluator_proxy.calculate(first_path_dict, first_path, job)
+        first_path_update = update_scope[first_path]
+        self._evaluator_proxy.calculate(first_path_dict, first_path_update, first_path, job)
         if len(indicators_to_calculate.keys()) > 0:
             for path in list(indicators_to_calculate)[1:]:
                 indicators_to_cal = indicators_to_calculate[path]
+                update = update_scope[path]
                 for ind in indicators_to_cal.copy():
                     if ind != 'update_scope':
                         ind_map = indicators_to_cal[ind]
@@ -341,13 +347,13 @@ class Pipeline(worker.Worker):
                                         first_path_dict[ind]['comb_values'].append(comb_values)
                         if not ind_map['comb_values']:
                             indicators_to_cal.pop(ind)
-                self._evaluator_proxy.calculate(indicators_to_cal, path, job)
+                self._evaluator_proxy.calculate(indicators_to_cal, update, path, job)
 
     
 
     def calculate_end(self, ind_tuples, path, job): 
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        print(f' The pending count is : {self.pending_count[job["id"]]}')
+        #print(f' The pending count is : {self.pending_count[job["id"]]}')
         self.job_indicators[job["id"]][path] = ind_tuples
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'calculate_ended')
