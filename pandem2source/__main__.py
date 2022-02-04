@@ -137,17 +137,17 @@ def do_start(args, *other):
   # Adding python scripts on pandem_home to the system path
   sys.path.insert(1, util.pandem_path("files", "scripts", "py"))
 
-  if os.environ.get("PANDEM_NLP") is not None:
-    settings["pandem"]["source"]["nlp"]["models_path"] = os.environ.get("PANDEM_NLP")
-  else:
-    while "models_path" not in settings["pandem"]["source"]["nlp"] or settings["pandem"]["source"]["nlp"]["models_path"] == "": 
-      settings["pandem"]["source"]["nlp"]["models_path"] = input(f"""
-        Please specify the location of nlp components for text classification
+  # if os.environ.get("PANDEM_NLP") is not None:
+  #   settings["pandem"]["source"]["nlp"]["models_path"] = os.environ.get("PANDEM_NLP")
+  # else:
+  #   while "models_path" not in settings["pandem"]["source"]["nlp"] or settings["pandem"]["source"]["nlp"]["models_path"] == "": 
+  #     settings["pandem"]["source"]["nlp"]["models_path"] = input(f"""
+  #       Please specify the location of nlp components for text classification
 
-        ** tip: Next time you can set the environmens variable PANDEM_NLP 
-        or set the value in pandem->source->nlp->models_path on {config}
-        you can download the models from here: https://drive.google.com/file/d/1mSl2X4DQQZKf1sHeJaKDZOM6ydi4nVEK/view?usp=sharing
-        """)
+  #       ** tip: Next time you can set the environmens variable PANDEM_NLP 
+  #       or set the value in pandem->source->nlp->models_path on {config}
+  #       you can download the models from here: https://drive.google.com/file/d/1mSl2X4DQQZKf1sHeJaKDZOM6ydi4nVEK/view?usp=sharing
+  #       """)
   if args.restart_job > 0:
     orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = None, restart_job = args.restart_job)
     orch = orchestrator_ref.proxy()

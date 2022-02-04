@@ -26,9 +26,15 @@ class NLPAnnotator(worker.Worker):
         self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
         self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
-        self._models = self.get_models()
+        #self._models = self.get_models()
+        self._models = None
 
     def annotate(self, list_of_tuples, path, job):
+
+      if self._models is None:
+          self._models = self.get_models()
+
+
       self.launch_server_if_needed()
 
       # gathering information about nlp categories

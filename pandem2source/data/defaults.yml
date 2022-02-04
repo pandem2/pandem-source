@@ -4,6 +4,8 @@ pandem:
     driver:
       port: 8080
       log_endpoint: 'http://localhost:8080/logs'
+    api:
+      port: 8000
     nlp:
       models_path:  ""
       languages:
