@@ -108,8 +108,8 @@ class SourcesHandler(tornado.web.RequestHandler):
                             } 
                             for i in range(1, len(df_sources)+1)]
             if df_jobs is not None:
-                for source in sources_list:
-                    if source['name'] in df_jobs['source']:
+                for source in sources_list: 
+                    if source['name'] in df_jobs['source'].values:
                         source['last job status'] = df_jobs[df_jobs['source']==source['name']]['status'].iloc[-1]
                         source['last job step'] = df_jobs[df_jobs['source']==source['name']]['step'].iloc[-1]
 
