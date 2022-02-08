@@ -29,220 +29,262 @@ class Evaluator(worker.Worker):
         self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
         self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy() 
         self._dict_of_variables = self._variables_proxy.get_variables().get()
-        self._parameters, self._indicators = self.get_indicators(self._dict_of_variables)
-        print(f' The indicators map is: {self._parameters}')
+        self._indicators, self._modifiers, self._parameters, self._scripts, self._params_set = self.get_indicators(self._dict_of_variables)
 
-
-    def get_indicators(self, dic_of_variables):
+    def get_indicators(self, var_dic):
         # Read the formulas of all indicators 
-        formulas = {var:var_dic['formula'] for var, var_dic in dic_of_variables.items() if var_dic['formula']} 
+        formulas = {var:var_dic['formula'] for var, var_dic in var_dic.items() if var_dic['formula']} 
         # Parse parameters from the functions/formula text and store them in parameters dict: for each indicator, returning a list for each parameters. e.g. parameters[“incidence”]=[“reporting_period”, “number_of_cases”, “population”]
         parameters = {ind:re.findall (r'([^(, )]+)(?!.*\()', formula) for ind, formula in formulas.items()}
+        modifiers = {ind:({m["variable"]:m["value"] for m in var_dic[ind]["modifiers"]}) if "modifiers" in var_dic[ind] else {} for ind in var_dic}
         # Build indicators dict that returns for each variable used on an indicator a list of indicators where this variable is used. eg. indicators[“population”]=[“Incidence”, “prevalence, …”]
+        scripts = {ind:re.search(r'^.*?(?=\()', formula).group() for ind, formula in formulas.items()}
         indicators = dict()
         params_set = {params[i] for ind, params in parameters.items() for i in range(len(params))}
         for param in params_set:
             ind_list = [ind for ind, params in parameters.items() if param in params]
             indicators[param] = ind_list
-        return parameters, indicators
 
- 
-    def pre_calculate(self, list_of_tuples, path, job):
-        date_var = 'reporting_period'
-        ind_tuples = defaultdict(lambda: defaultdict(list))
-        obs_attrs = defaultdict(dict)
-        ind_values_in_tuples = dict()
-        for ind, params in self._parameters.items():
-            ind_values_in_tuples[ind] = []
-        var_names = list({list(tuple['obs'])[0] for tuple in list_of_tuples if 'obs' in tuple})
-        obs_to_check = {0:[(var_name, 0) for var_name in var_names]}
-        indicators_to_cal = defaultdict(dict)
-        dls_variables = [col['variable'] for col in job['dls_json']['columns']]
+        return indicators, modifiers, parameters, scripts, params_set
+
+    #def get_obs_name(self, obs, attrs):
+    #    if self._dict_of_variables[obs]["aliases"] is None or len(self._dict_of_variables[obs]["aliases"]) == 0 or self._dict_of_variable[obs]["variable"] != obs:
+    #      return obs
+    #    else:
+    #      for alias in self._dict_of_variables[obs]["aliases"]:
+    #        if all(modifier["variable"] in attrs and attrs[modifier["variable"]] == modifier["value"] for modifier in alias["modifiers"]):
+    #          return alias["alias"]
+    #    return obs
+    #          
+
+    def modifiers_in_key(self, var_name, tuple_key):
+      var_dic = self._dict_of_variables
+      if "modifiers" in var_dic[var_name]:
+        for mod in modifiers:
+          mod_found = False
+          for var, value in tuple_key.items():
+            if var == mod["variable"]:
+              mod_found = True
+              if value != mod["value"]:
+                return False
+              break
+          if not mod_found:
+            return False
+      return True
+
+    def plan_calculate(self, list_of_tuples, path, job):
+        var_dic = self._dict_of_variables
+        modifiers = self._modifiers
+        params_set = self._params_set
+        parameters = self._parameters
+        obs_keys = {}
+        for t in list_of_tuples:
+          if "obs" in t and "attrs" in t: 
+            var_name = next(iter(t["obs"].keys()))  
+            if var_name in params_set or var_name in parameters.keys():
+              if var_name not in obs_keys:
+                obs_keys[var_name] = {
+                  "comb":set(),
+                  "dates":set()
+                }
+              date_attrs = set(vn for vn in t["attrs"].keys() if var_dic[vn]['type'] == 'date' and t["attrs"][vn] is not None)
+              sorted_attrs = list(sorted(vn for vn in t["attrs"].keys() if var_dic[vn]['type'] not in ['not_characteristic', 'date'] and t["attrs"][vn] is not None))
+              if len(sorted_attrs) > 0 and len(date_attrs)>0:
+                obs_keys[var_name]["comb"].add(tuple((vn, t["attrs"][vn]) for vn in sorted_attrs))
+                obs_keys[var_name]["dates"].add(tuple((vn, t["attrs"][vn]) for vn in date_attrs))
+
+        var_obs = {}
+
+        indicators_to_cal = {}
         step = 0
-        while len(obs_to_check[step]) > 0:
-            obs_var = obs_to_check[step].pop()
-            if step==0:
-                for tuple in list_of_tuples['tuples']:
-                    if 'obs' in tuple and obs_var == list(tuple['obs'])[0]:
-                        for ind, params in self._parameters.items():
-                            if obs_var == ind : 
-                                ind_values_in_tuples[ind].append(tuple['obs'][obs_var])
-                            base_vars = [self._dict_of_variables[param]['variable'] for param in params[1:]]
-                            if obs_var in params[1:]:
-                                ind_tuples[ind]['tuples'].append(tuple) 
-                                ind_tuples[ind]['vars'].append(obs_var)
-                                ind_tuples[ind]['attrs'].extend(list(tuple['attrs']))
-                                if obs_var in obs_attrs[ind]:
-                                    obs_attrs[ind][obs_var] = list(set(obs_attrs[ind][obs_var] + list(tuple['attrs'])))
-                                else:
-                                    obs_attrs[ind][obs_var] = list(tuple['attrs'])
-                            elif obs_var in base_vars:
-                                i = base_vars.index(obs_var)+1
-                                if all(tuple['attrs'][modif['variable']]==modif['value'] for modif in self._dict_of_variables[params[i]]['modifiers'] if modif['variable'] in tuple['attrs']):
-                                    ind_tuples[ind]['tuples'].append(tuple)
-                                    ind_tuples[ind]['vars'].append(obs_var)
-                                    ind_tuples[ind]['attrs'].extend(list(tuple['attrs']))
-                                    if obs_var in obs_attrs[ind]:
-                                        obs_attrs[ind][obs_var] = list(set(obs_attrs[ind][obs_var] + list(tuple['attrs'])))
+        stop = False
+        while not stop:
+            stop = True
+            for ind, params in parameters.items():
+                # not trying a varibale being already present
+                if not ind in obs_keys:
+                    # testing the tuples than satisfy the provided parameters
+                    mod = modifiers[ind]
+                    date_par = next(p for p in params if var_dic[p]['type'] == 'date')
+                    base_date = var_dic[date_par]['variable']
+                    no_date_pars = [p for p in params if p != date_par]
+                    attr_pars =  [p for p in no_date_pars if var_dic[p]['type'] not in {'observation', 'indicator', 'resource'}]
+                    obs_pars =  list([p for p in params if var_dic[p]['type'] in {'observation', 'indicator', 'resource'}])
+                    base_pars =  list([var_dic[p]["variable"] for p in obs_pars])
+                    #if ind == "rt_number" and "NL" in path:
+                    #  breakpoint()
+                    # in order to test this indicator we need to find at least the first observation on the current values
+                    if len(obs_pars) > 0 and  base_pars[0] in obs_keys:
+                      main_obs = obs_pars[0]
+                      main_base = base_pars[0]
+                      # We need to identify all tuples present on all obs_pars that respect the attr pars  
+                      comb = list(obs_keys[main_base]["comb"])
+                      dates = obs_keys[main_base]["dates"]
+                      date_filter = {base_date: {v for date_comb in dates for k, v in date_comb if k == base_date}}
+                      #date_filter.update(mofifiers[date_par])
+                      # we can proceed the date_par has been found
+                      if len(date_filter[base_date]) > 0:
+                        # Iterating over all obs_par in formula
+                        for i in range(0, len(obs_pars)):
+                            obs_to_test = obs_pars[i]
+                            base_to_test = base_pars[i]
+                            # if the current obs base variable is not on obs key we have to look for it on published data
+                            if len(comb) > 0 and base_to_test not in obs_keys:
+                               pub_comb = self._variables_proxy.lookup([base_to_test], comb, job['dls_json']['scope']['source'], date_filter, include_source = False, include_tag = True).get()
+                               obs_keys[base_to_test] = {
+                                 "comb":set(pub_comb.keys()),
+                                 "dates":dates
+                               }
+                            # iterating over current possible combinations
+                            j = 0
+                            while j < len(comb):
+                                # the current combination should exists on obs_keys for the current parameter base observation
+                                # tuple must contain the attrs_pars unless the current observation overrides it with a modifier
+                                attr_pars_ok = True
+                                key = comb[j]
+                                for attr_par in attr_pars:
+                                  ignore_attr = attr_par in modifiers[obs_to_test]
+                                  if not ignore_attr and not any(k == attr_par for k, v in key):
+                                    attr_pars_ok = False
+                                    break
+                                if attr_pars_ok:
+                                  # checking that tuple contains the modifiers of the current observation unless is null
+                                  attrs_obs_ok = True
+                                  for obs_mod_var, obs_mod_value in modifiers[obs_to_test].items():
+                                    if obs_mod_value is not None:
+                                      if not any(k == obs_mod_var and v == obs_mod_value for k, v in key):
+                                        attrs_obs_ok = False
+                                        break
+                                  if attrs_obs_ok:
+                                    # checking if the current combination exists for the expected base variable
+                                    if base_to_test in obs_keys and key in obs_keys[base_to_test]["comb"]:
+                                      j = j + 1
                                     else:
-                                        obs_attrs[ind][obs_var] = list(tuple['attrs'])                 
-                                   
-            else:
-                for ind, params in self._parameters.items():
-                    base_vars = [self._dict_of_variables[param]['variable'] for param in params[1:]]
-                    if obs_var in params[1:] :
-                        if obs_var in indicators_to_cal[step-1]:
-                            ind_tuples[ind]['tuples'].extend(ind_tuples[obs_var]['tuples'])
-                            ind_tuples[ind]['attrs'].extend(ind_tuples[obs_var]['attrs'])
-                            ind_tuples[ind]['vars'].append(obs_var)
-                            ind_tuples[ind]['attrs'].extend(list(tuple['attrs']))
-                            if obs_var in obs_attrs[ind]:
-                                obs_attrs[ind][obs_var] = list(set(obs_attrs[ind][obs_var] + list(tuple['attrs'])))
-                            else:
-                                obs_attrs[ind][obs_var] = list(tuple['attrs'])                 
-                        #if ind not in obs_to_check:
-                        #  obs_to_check.append((ind, step + 1))
-        indicators_to_calculate = defaultdict(dict)
-        dls_variables = [col['variable'] for col in job['dls_json']['columns'] if 'variable' in col]
-        
-        if ind_tuples:
-            for ind, params in self._parameters.items(): 
-                base_vars = [self._dict_of_variables[param]['variable'] for param in params[1:]]
-                if ind not in dls_variables or not ind_values_in_tuples[ind]:
-                    #TODO: check if the param variables have been published for one of the sources sharin a tag with this one
-                    if len(set(base_vars).intersection(set(ind_tuples[ind]['vars'])))== len(params)-1:
-                        indicators_to_calculate[ind]['base_vars'] = base_vars    
-        # while end
-
-        attrs_ind = []
-        combinations = []
-        if indicators_to_calculate:
-            for ind in indicators_to_calculate.keys():
-                attr_set = {attr  for tuple in ind_tuples[ind]['tuples'] for attr in list(tuple['attrs'])} 
-                attr_set_filtered = {attr for attr in attr_set if self._dict_of_variables[attr]['type']!='not_characteristic'}
-                params = self._parameters[ind]
-                # read the functin code from indcators directory
-                function_path = self.pandem_path(f'files/indicators/{ind}', 'function.R')
-                with open(function_path) as f:
-                    function_code = f.readlines()
-                staging_dir = self.pandem_path(f'files/staging/{ind}')
-                if not os.path.exists(staging_dir):
-                    os.makedirs(staging_dir)
-                exec_file_path = os.path.join(staging_dir, 'exec.R')
-                result_path = os.path.join(staging_dir, 'result.json')
-                # write the R script within the exec.R file
-                base_vars = indicators_to_calculate[ind]['base_vars']
-                execf = open(exec_file_path, 'w+')
-                for i, param in enumerate(base_vars):
-                    param_file_path = os.path.join(staging_dir, param+'.json')
-                    execf.write(f'p{i+1} <- jsonlite::fromJSON("{param_file_path}")'+'\n')
-                if len (function_code)>1:
-                    for code_line in function_code[:-1]:
-                        execf.write(code_line)
-                execf.write(f'res <- {function_code[-1]}'+'\n')
-                execf.write(f'jsonlite::write_json(res, "{result_path}")'+'\n')
-                execf.close()
-                # retrieve attributes values for tuples related to an indicator
-                attr_values = dict()
-                for attr in attr_set_filtered:
-                    attr_values[attr] = list(set([tuple['attrs'][attr] for tuple in ind_tuples[ind]['tuples'] if attr in tuple['attrs']]))
-                # find attributes related to an indicator parameters other than reporting_period and period_type
-                attrs_ind = list(set(ind_tuples[ind]['attrs']).intersection(attr_set_filtered) - {date_var, 'period_type'})
-                # retrieve the list of values combinations of attributes related to an indicator other than reporting_period
-                combinations = list(it.product(*(attr_values[attr] for attr in attrs_ind)))
-                indicators_to_calculate[ind]['attrs'] = attrs_ind
-                indicators_to_calculate[ind]['comb_values'] = combinations
-                indicators_to_calculate[ind]['obs_attrs'] = obs_attrs[ind]
-            indicators_to_calculate['update_scope'] = list_of_tuples['scope']['update_scope']
-        l.debug(f'indicators to calculate for source: {job["source"]} are: {indicators_to_calculate}')
-        self._pipeline_proxy.precalculate_end(indicators_to_calculate, update_scope, tuples=list_of_tuples, path=path, job=job)
-
-
-    def calculate(self, indicators_to_cal, update_scope,path, job):
-        l.warning("delete path since it is ignored on this step")
-        date_var = 'reporting_period'
-        indicators = {"tuples": [],
-                      "scope": {}}
-        if indicators_to_cal:
-            indicators["scope"]['update_scope'] = update_scope
-            l.warning("put tuples on a different attribure 'tuples'")
-            for ind, ind_map in indicators_to_cal.items():
-                for attr_comb in ind_map['comb_values']:
-                    ind_tuples = dict()
-                    dates_in_tuples =dict()
-                    filter = dict(zip(ind_map['attrs'], attr_comb))
-                    filter['source'] = job['source']
-                    for obs in ind_map['base_vars']:
-                        obs_filter = {k:v for k,v in filter.items() if k in ind_map['obs_attrs'][obs]}
-                        
-                        for attr in ind_map['obs_attrs'][obs]:
-                            # TODO temporary solution until standardisation modified
-                            if attr in ['geo_name', 'country_name']:
-                                l.warning("FIX stadardisation and remove me")
-                                obs_filter.pop(attr)
-                            # replace referential_aliases by linked_attributes here (look at dict of variables) 
-                            # if self._dict_of_variables[attr]['type']=='referential_alias':
-                            #     attr_alias = self._dict_of_variables[attr]['linked_attributes'][0]
-                            #     attr_alias_val = [tuple['attrs'][attr_alias] for tuple in  self._variables_proxy.get_referential(attr).get() if tuple['attr'][attr]==filter[attr].upper()][0]
-                            #     obs_filter.pop(attr)
-                            #     obs_filter[attr_alias] = attr_alias_val
-                        ind_tuples[obs] = self._variables_proxy.read_variable(obs, obs_filter).get()
-                        #TODO if no lines returned then search at TAG level
-                        #TODO if no lines found at tag level either skip combinations
-                        dates_in_tuples[obs] = [tuple['attrs'][date_var] for tuple in ind_tuples[obs]]
-                    
-                    ind_dates = set.intersection(*[set(dates_in_tuples[obs]) for obs in dates_in_tuples.keys()])
-                    sorted_ind_dates = sorted(list(ind_dates))
-                    if not sorted_ind_dates:
-                        source_tags = job['dls_json']['scope']['tags']
-                        if source_tags:
-                            tagsource = self._variables_proxy.get_referential('tagsource').get()
-                            
-                            extended_sources = set([tuple['attrs']['source'] for tuple in tagsource if tuple['attrs']['tag'] in source_tags])
-                            if len(extended_sources)>1:
-                                filter['source'] = list(extended_sources)
-                                for obs in ind_map['base_vars']:
-                                    ind_tuples[obs] = self._variables_proxy.read_variable(obs, filter).get()
-                                    dates_in_tuples[obs] = [tuple['attrs'][date_var] for tuple in ind_tuples[obs]]
-
-                                ind_dates = set.intersection(*[set(dates_in_tuples[obs]) for obs in dates_in_tuples.keys()])
-                                sorted_ind_dates = sorted(list(ind_dates))                    
-                    if sorted_ind_dates:
-                        params_values = defaultdict(dict)
-                        for date in sorted_ind_dates:
-                            for obs in ind_map['base_vars']:
-                                obs_val = [tuple['obs'][obs] for  tuple in ind_tuples[obs] if tuple['attrs'][date_var]==date][0]
-                                if type(obs_val) in [int64, str]:
-                                    l.warning('Fix df reader and remove me')
-                                    params_values[date][obs] = int(obs_val)
+                                      comb.pop(j)
+                                  else:
+                                    comb.pop(j)
                                 else:
-                                    params_values[date][obs] = obs_val
-                        #write params values within temporary files
-                        staging_dir = self.pandem_path(f'files/staging/{ind}')
-                        exec_file_path = os.path.join(staging_dir, 'exec.R')
-                        result_path = os.path.join(staging_dir, 'result.json')
-                        for i, obs in enumerate(ind_map['base_vars']):
-                            param_values_list = [params_values[date][obs]  for date in params_values.keys() if obs in params_values[date]]
-                            param_file_path = os.path.join(staging_dir, obs+'.json')
-                            with open(param_file_path, 'w+') as jsonf:
-                                jsonf.write(json.dumps(param_values_list))
-                        if params_values:
-                            subprocess.run (f'/usr/bin/Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
-                            if os.path.exists(result_path):
-                                with open(self.pandem_path(result_path)) as f:
-                                    result = f.read()
-                                result = re.findall (r'([^\[," \]\n]+)', result)
-                                for i, res in enumerate(result):
-                                    date = sorted_ind_dates[i]
-                                    l.warning("take out period type from here!!")
-                                    ind_date_tuple = {'obs': {ind:res},
-                                                    'attrs':{**{date_var:date, 'period_type':'date'},
-                                                                **{k:v for k,v in zip(ind_map['attrs'], attr_comb)}
-                                                                }
-                                                    }
-                                indicators['tuples'].append(ind_date_tuple)
-                            else:
-                                l.warning('result file not found')
-                    
+                                  comb.pop(j)
+                        # The remaining combination have passed all validations to calculate the candidate indicator
+                        if len(comb) > 0:
+                          obs_keys[ind] = {
+                            "comb":set(comb),
+                            "dates":dates
+                          }
+                          # adding the found indicator to the list to calculate
+                          indicators_to_cal[ind] = {
+                            "step":step + 1,
+                            "comb":set(comb),
+                            "dates":dates,
+                            "date_par":date_par
+                          }
+                          # we have found something new so we will try to performa a new step
+                          stop = False
+            step = step + 1
+        self._pipeline_proxy.precalculate_end(indicators_to_cal, path=path, job=job)
 
-        self._pipeline_proxy.calculate_end(indicators, path = path, job = job).get()
+       
+    def prepare_scripts(self, ind, job):
+        scripts = self._scripts
+        params = self._parameters
+        vars_dic =  self._dict_of_variables
+        
+        # read the functin code from indcators directory
+        function_path = self.pandem_path(f'files', 'indicators', scripts[ind], 'function.R')
+        if not os.path.exists(function_path):
+            raise FileNotFoundError(f"Cannot found R scrip for calculate indicator {ind} it should be located at {function_path}")
+        with open(function_path) as f:
+            function_code = f.readlines()
+        staging_dir = self.staging_path(job['id'], f'ind/{ind}')
+        if not os.path.exists(staging_dir):
+            os.makedirs(staging_dir)
+        exec_file_path = os.path.join(staging_dir, 'exec.R')
+        result_path = os.path.join(staging_dir, 'result.json')
+        # write the R script within the exec.R file
+        execf = open(exec_file_path, 'w+')
+        for i, param in enumerate(params[ind]):
+            param_file_path = os.path.join(staging_dir, param+'.json')
+            execf.write(f'`{param}` <- jsonlite::fromJSON("{param_file_path}")'+'\n')
+        execf.write('res <- {\n')
+        for code_line in function_code:
+          execf.write(code_line)
+        execf.write('}\n')
+        execf.write(f'jsonlite::write_json(res, "{result_path}")'+'\n')
+        execf.close()
+
+
+    def calculate(self, indicators_to_cal, job):
+        vars_dic =  self._dict_of_variables
+        params = self._parameters
+        source =  job['dls_json']['scope']['source']
+        result = {"tuples": []}
+        # mixing indicators to calculate on all paths
+        if indicators_to_cal and len(indicators_to_cal) > 0:
+            combinations =  defaultdict(lambda: defaultdict(dict))
+            for path, inds in indicators_to_cal.items():
+              for ind, ind_map in inds.items():
+                # registering information for combination
+                for comb in ind_map["comb"]:
+                  if not "dates" in combinations[ind][comb]:
+                    combinations[ind][comb]["dates"] = {}
+                  combinations[ind][comb]["dates"][path] = ind_map["dates"]
+            
+            # looping trough all indicators
+            for ind, combis in combinations.items():
+                l.debug(f"calculating {ind} in {source} for {len(ind)} combinations")
+                # creating scripts for indicator
+                self.prepare_scripts(ind, job)
+                # getting all matching combinations for the indicator calculation from the database
+                obs = {p:vars_dic[p]["variable"] for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"]}
+                var_date, base_date = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] == "date"))
+                main_par, main_base = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"] ))
+                attrs = {p:vars_dic[p]["variable"] for p in params[ind] if p not in set(obs.keys())}
+                data = self._variables_proxy.lookup(list(obs), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
+                # iterating though each combination and launching the scripts to calculate the results
+                for comb, comb_map in combis.items():
+                  #sorting values per date
+                  if comb in data:
+                    row = data[comb]
+                    indexes = dict((v, k) for k, v in enumerate(sorted(v["attrs"][var_date] for v in row[main_base])))
+                    staging_dir = self.staging_path(job['id'], f'ind/{ind}')
+                    # write params values within temporary files
+                    # we start by generating lists full of nones for each found date
+                    can_run = True
+                    for p in params[ind]:
+                        param_values = [None]*len(indexes)
+                        # if the parameter is an observation we will look into the assocuated row attribute getting the date from attrs 
+                        if p in obs:
+                          for v in row[obs[p]]:
+                            param_values[indexes[v["attrs"][var_date]]] = v["value"]
+                        # if not an observation then the result is expected to be on attrs
+                        else:
+                          for v in row[obs[main_base]]:
+                            param_values[indexes[v["attrs"][var_date]]] = v["attrs"][attrs[p]]
+                        if next(iter(v for v in param_values if v is not None), None) is None:
+                          can_run = False
+                        # writing the values on the parameter file 
+                        param_file_path = os.path.join(staging_dir, p+'.json')
+                        with open(param_file_path, 'w+') as jsonf:
+                          jsonf.write(json.dumps(param_values))
+
+                    # executing the script
+                    exec_file_path = os.path.join(staging_dir, 'exec.R')
+                    result_path = os.path.join(staging_dir, 'result.json')
+                    if can_run:
+                        subprocess.run (f'/usr/bin/Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
+                        if os.path.exists(result_path):
+                            with open(self.pandem_path(result_path)) as f:
+                                r = json.load(f)
+                            for date, i in indexes.items():
+                                ind_date_tuple = {'obs': {ind:r[i]},
+                                                'attrs':{**{base_date:date, source:source,
+                                                            **{k:v for k,v in comb}
+                                                            }}
+                                                }
+                                result['tuples'].append(ind_date_tuple)
+                        else:
+                            l.warning(f'result file {result_path} not found')
+        
+        result['scope'] = {}            
+        result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
+        self._pipeline_proxy.calculate_end(result, job = job).get()

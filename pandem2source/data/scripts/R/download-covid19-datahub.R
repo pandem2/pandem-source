@@ -7,8 +7,10 @@ if(!require("COVID19")) {
 }
 message("getting data for covid19datahub :-) ")
 df <- covid19(country = c(
-  "AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "DEU", "GRC", "HUN", "IRL", "ITA",
- "LVA", "LTU", "LUX", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE", "GBR"), level = 3
+  #"AUT", 
+  "BEL"#, "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "DEU", "GRC", "HUN", "IRL", "ITA",
+ #"LVA", "LTU", "LUX", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE", "GBR"
+ ), level = 3
 )
 
 for(d in unique(df$date)) {

@@ -1,0 +1,244 @@
+data_family,variable,description,type,unit,linked_attributes,partition,formula,base_variable,modifiers
+01_cases,number_of_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","cum_to_daily(reporting_period, cumulative_cases)",,[]
+01_cases,cumulative_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","daily_to_cum(reporting_period, number_of_cases)",,[]
+01_cases,confirmed_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
+01_cases,cumulative_confirmed_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,cumulative_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
+01_cases,recovered_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""recovered""}]"
+01_cases,active_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","active_cases(reporting_date, confirmed_cases, pathogen_code)",number_of_cases,"[{""variable"": ""case_status"", ""value"": ""active""}]"
+01_cases,reinfection_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""reinfection""}]"
+01_cases,possible_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""possible""}]"
+01_cases,probable_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""probable""}]"
+01_cases,imported_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""imported""}]"
+01_cases,cases_at_onset_of_symptoms_date,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""period_type"", ""value"": ""onset_of_symptoms_date""}]"
+01_cases,pathogen_code,,referential,,,,,,[]
+01_cases,pathogen_name,,referential_alias,,pathogen_code,,,,[]
+01_cases,pathogen_alias,,referential_alias,,pathogen_code,,,,[]
+13_referentials,geo_code,,geo_referential,,,source,,,[]
+13_referentials,iso_country_code_2,,referential,,,source,,geo_code,"[{""variable"": ""geo_level"", ""value"": ""country""}]"
+13_referentials,geo_name,,referential_alias,,geo_code,source,,,[]
+13_referentials,country_name,,referential_alias,,geo_code,source,,geo_name,"[{""variable"": ""geo_level"", ""value"": ""country""}]"
+13_referentials,geo_parent,,characteristic,,geo_code,source,,,[]
+13_referentials,geo_level,"Country, NUTS_1, NUTS_2, NUTS_3",characteristic,,,source,,,[]
+13_referentials,geo_local_code,,referential_alias,,geo_code,source,,,[]
+13_referentials,source,,not characteristic,,,,,,[]
+13_referentials,file,,not characteristic,,,,,,[]
+13_referentials,line_number,,not characteristic,,,,,,[]
+13_referentials,tag,,characteristic,,,,,,[]
+13_referentials,tag_source,,characteristic,,"tag, source",,,,[]
+01_cases,case_status,,characteristic,,,,,,[]
+13_referentials,reporting_period,,date,date,,,,,[]
+13_referentials,reporting_date,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""date""}]"
+13_referentials,reporting_time,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""instant""}]"
+13_referentials,reporting_week,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""isoweek""}]"
+13_referentials,period_type,,characteristic,,,,,,[]
+01_cases,incidence,,indicator,people/people,,"source, case_status, geo_code","incidence(reporting_period, number_of_cases, population, pathogen_code)",,[]
+01_cases,rt_number,,indicator,qty,,"source, case_status, geo_code","rt_number(reporting_period, confirmed_cases, pathogen_code)",,[]
+01_cases,number_of_ppe_protective_equipment,,resource,units/time,,,,,[]
+01_cases,needs_of_ppe_protective_equipment,,resource,units/time,,,,,[]
+01_cases,outbreak_id_(if_associated_to_known_outbreak),,observation,id,,,,,[]
+02_deaths,number_of_deaths,,observation,people,,"Source, care_type, geo_code",,,[]
+02_deaths,deaths_infected,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
+02_deaths,deaths_infected_hospitalised,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}]"
+02_deaths,deaths_infected_in_icu,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}, {""variable"": ""bed_type"", ""value"": ""icu""}]"
+02_deaths,deaths_in_lctf,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""care_type"", ""value"": ""in_ltcf""}]"
+03_patient,patient_status,,characteristic,,,,,,[]
+02_deaths,mortality_rates,,indicator,people/people,,,,,[]
+03_patient,severity,,characteristic,,,,,,[]
+03_patient,number_of_non-infected_patients_,,observation,people,,,,,[]
+03_patient,number_of_patients,,observation,people,,"Source, care_type, geo_code",,,[]
+03_patient,hospitalised_infected_patients,,observation,people,,"Source, care_type, geo_code",,number_of_patients,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}]"
+03_patient,hospitalised_infected_patients_in_icu,,observation,people,,"Source, care_type, geo_code",,number_of_patients,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}, {""variable"": ""bed_type"", ""value"": ""icu""}]"
+03_patient,number_of_hospitalised_patients,,observation,people,,"Source, care_type, geo_code",,number_of_patients,"[{""variable"": ""care_type"", ""value"": ""hospitalised""}]"
+03_patient,icu_patients,,observation,people,,"Source, care_type, geo_code",,number_of_patients,"[{""variable"": ""care_type"", ""value"": ""hospitalised""}, {""variable"": ""bed_type"", ""value"": ""icu""}]"
+03_patient,infected_patients_in_ltcf,,observation,people,,"Source, care_type, geo_code",,number_of_patients,"[{""variable"": ""care_type"", ""value"": ""ltcf""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
+03_patient,hospitalised_sari_patients,,observation,people,,"Source, care_type, geo_code",,number_of_patients,"[{""variable"": ""patient_status"", ""value"": ""sari""}]"
+03_patient,hospitalised_covid_sari_patients,,observation,people,,"Source, care_type, geo_code",,number_of_patients,"[{""variable"": ""patient_status"", ""value"": ""sari_covid""}]"
+03_patient,number_of_patients_with_ventilator,,observation,people,,"Source, care_type, geo_code",,number_of_patients,"[{""variable"": ""bed_type"", ""value"": ""with_ventilator""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
+03_patient,number_of_icu_patients,,observation,people,,"Source, care_type, geo_code",,number_of_patients,"[{""variable"": ""bed_type"", ""value"": ""icu""}]"
+03_patient,care_type,,characteristic,,,,,,[]
+03_patient,bed_type,,characteristic,,,,,,[]
+03_patient,standarise_mortality_by_age,,observation,,,,,,[]
+03_patient,standarise_mortality_by_age_infected_people,,observation,,,,,standarise_mortality_by_age,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
+03_patient,excess_mortality,,indicator,,,,,,[]
+03_patient,excess_mortality_ltcf,,indicator,,,,,excess_mortality,"[{""variable"": ""care_type"", ""value"": ""ltcf""}]"
+03_patient,average_stay_length,,observation,days,,,,,[]
+03_patient,average_stay_length_at_icu,,observation,days,,,,average_stay_length,"[{""variable"": ""bed_type"", ""value"": ""icu""}]"
+03_patient,length_of_stay,,observation,days,,,,,[]
+03_patient,number_of_hospital_staff,,resource,people,,"Source, resource_type, geo_code",,,[]
+03_patient,number_of_resources,,resource,qty,,"Source, resource_type, geo_code",,,[]
+03_patient,number_of_operable_beds,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""bed""}, {""variable"": ""bed_type"", ""value"": ""operable""}]"
+03_patient,number_of_icu_operable_beds,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""bed""}, {""variable"": ""bed_type"", ""value"": ""icu""}]"
+03_patient,number_of_lctf_beds,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""bed""}, {""variable"": ""response_type"", ""value"": ""ltcf""}]"
+03_patient,number_of_nurses_available,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""staff_type"", ""value"": ""nurse""}]"
+03_patient,number_of_physicians_available,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""staff_type"", ""value"": ""physician""}]"
+03_patient,number_of_icu_specialist_anesthesiologist_available,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""staff_type"", ""value"": ""icu_specialist-anesthesiologist""}]"
+03_patient,ph_staff,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""staff_type"", ""value"": ""ph_staff""}]"
+03_patient,ph_staff_working_in_contact_tracing,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""staff_type"", ""value"": ""ph_staff""}, {""variable"": ""response_type"", ""value"": ""contact-tracing""}]"
+03_patient,number_of_emergency_staff,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""response_type"", ""value"": ""emergency""}]"
+03_patient,number_of_hcw_hospital_level,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""response_type"", ""value"": ""hospital""}, {""variable"": ""staff_type"", ""value"": ""hcw""}]"
+03_patient,staff_type,,characteristic,,,,,,[]
+03_patient,response_type,,characteristic,,,,,,[]
+03_patient,resource_type,,characteristic,,,,,,[]
+03_patient,qty_of_hospital_resources,,resource,qty,,,,,[]
+03_patient,number_of_hospital_resources_dependencies,,resource,qty,,,,,[]
+03_patient,beds_occupancy,,resource,people,,,,,[]
+04_tests,performed_tests,,observation,qty,,"Source, test_result, geo_code",,,[]
+04_tests,positive_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""positive""}]"
+04_tests,negative_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""negative""}]"
+04_tests,inconclusive_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""inconclusive""}]"
+04_tests,unknown_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""unknown""}]"
+04_tests,available_tests,,observation,qty,,,,,[]
+04_tests,test_result,,characteristic,,,,,,[]
+04_tests,epidemiological_surveys_answer,,observation,qty,,,,,[]
+04_tests,positivity_rate,,indicator,people/people,,,,,[]
+04_tests,number_of_test_staff,,resource,people,,,,,[]
+04_tests,qty_of_test_resources,,resource,qty,,,,,[]
+04_tests,number_of_test_resources_dependencies,,resource,qty,,,,,[]
+05_vaccination,doses_injected,,observation,qty,,"Source, vaccination_status, geo_code",,,[]
+05_vaccination,people_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,,[]
+05_vaccination,one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}]"
+05_vaccination,two_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}]"
+05_vaccination,three_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}]"
+05_vaccination,people_fully_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"":""vaccination_status"", ""value"":""fully_vaccinated""}]"
+05_vaccination,at_least_one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"":""vaccination_status"", ""value"":""one_dose_at_least""}]"
+05_vaccination,one_dose_vaccinated_infected,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
+05_vaccination,two_doses_vaccinated_infected,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
+05_vaccination,three_doses_vaccinated_infected,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
+05_vaccination,one_dose_vaccinated_hcw,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}, {""variable"": ""population_type"", ""value"": ""hcw""}]"
+05_vaccination,two_doses_vaccinated_hcw,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}, {""variable"": ""resource_status"", ""value"": ""hcw""}]"
+05_vaccination,three_doses_vaccinated_hcw,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}, {""variable"": ""patient_status"", ""value"": ""hcw""}]"
+05_vaccination,one_dose_vaccinated_uhc,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}, {""variable"": ""patient_status"", ""value"": ""uhc""}]"
+05_vaccination,two_doses_vaccinated_uhc,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}, {""variable"": ""population_type"", ""value"": ""uhc""}]"
+05_vaccination,three_doses_vaccinated_uhc,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}, {""variable"": ""population_type"", ""value"": ""uhc""}]"
+05_vaccination,one_dose_vaccinated_ltcf,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}, {""variable"": ""population_type"", ""value"": ""ltcf""}]"
+05_vaccination,two_doses_vaccinated_ltcf,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}, {""variable"": ""population_type"", ""value"": ""ltcf""}]"
+05_vaccination,three_doses_vaccinated_ltcf,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}, {""variable"": ""population_type"", ""value"": ""ltcf""}]"
+05_vaccination,vaccination_status,,characteristic,,,,,,[]
+13_referentials,population_type,,characteristic,,,,,,[]
+05_vaccination,resource_status,,characteristic,,,,,,[]
+05_vaccination,doses_scheduled_and_target_population,,observation,,,,,,[]
+05_vaccination,"doses_injected_by_age_group,risk_group,and_brand/type",,characteristic,,,,,,[]
+05_vaccination,"doses_by_vendor,batch",,characteristic,,,,,,[]
+05_vaccination,doses_injected_by_occupation_(hcw_an_other_essential_professionals),,characteristic,,,,,,[]
+05_vaccination,"doses_injected_in_high_risk_individuals_-_potential_risk_factors_(immunosuppressed,comorbidities,pregnant_women,elderly)",,characteristic,,,,,,[]
+05_vaccination,vaccination_side_effects_aefi_observed_and_severity,,characteristic,,,,,,[]
+05_vaccination,"vaccination_progress_(proportion_of_vaccinated,overall,by_age_and_risk_group)",,indicator,,,,,,[]
+05_vaccination,"vaccination_resources_(staff,centres,supplies)",,resource,,,,,,[]
+06_contact_tracing,number_of_index_cases_studied_,,observation,,,,,,[]
+06_contact_tracing,people_followed_by_contact_tracing,,observation,,,,,,[]
+06_contact_tracing,total_cases_identified_for_contact_tracing,,observation,,,,,people_followed_by_contact_tracing,"[{""variable"": ""contact_status"", ""value"": ""case""}]"
+06_contact_tracing,total_cases_previously_identified_as_contact,,observation,,,,,people_followed_by_contact_tracing,"[{""variable"": ""contact_status"", ""value"": ""case""}, {""variable"": ""case_origin"", ""value"": ""contact_transformed""}]"
+06_contact_tracing,total_cases_reached_for_contact_tracing,,observation,,,,,people_followed_by_contact_tracing,"[{""variable"": ""contact_status"", ""value"": ""case""}, {""variable"": ""reached_status"", ""value"": ""reached""}]"
+06_contact_tracing,total_cases_reached_for_contact_tracing_within_a_day,,observation,,,,,people_followed_by_contact_tracing,"[{""variable"": ""contact_status"", ""value"": ""case""}, {""variable"": ""reached_status"", ""value"": ""reached""}, {""variable"": ""contact_delay"", ""value"": ""within_a_day""}]"
+06_contact_tracing,total_contacts_identified,,observation,,,,,people_followed_by_contact_tracing,"[{""variable"": ""contact_status"", ""value"": ""contact""}]"
+06_contact_tracing,total_contacts_identified_and_reached,,observation,,,,,people_followed_by_contact_tracing,"[{""variable"": ""contact_status"", ""value"": ""contact""}, {""variable"": ""reached_status"", ""value"": ""reached""}]"
+06_contact_tracing,total_contacts_identified_and_reached_within_day,,observation,,,,,people_followed_by_contact_tracing,"[{""variable"": ""contact_status"", ""value"": ""contact""}, {""variable"": ""reached_status"", ""value"": ""reached""}, {""variable"": ""contact_delay"", ""value"": ""within_a_day""}]"
+06_contact_tracing,total_contacts_turning_positive,,observation,,,,,people_followed_by_contact_tracing,"[{""variable"": ""contact_status"", ""value"": ""contact""}, {""variable"": ""case_origin"", ""value"": ""contact_transformed""}]"
+06_contact_tracing,reached_status,,characteristic,,,,,,[]
+06_contact_tracing,contact_status,,characteristic,,,,,,[]
+06_contact_tracing,contact_delay,,characteristic,,,,,,[]
+06_contact_tracing,case_origin,,characteristic,,,,,,[]
+06_contact_tracing,contact_tracing_policy,,referential,,,,,,[]
+06_contact_tracing,proportion_of_new_cases_that_are_part_of_known_transmission_chains,,indicator,,,,,,[]
+06_contact_tracing,"nº_of_contacts,secondary_and_terciary_cases_per_index_case",,indicator,,,,,,[]
+06_contact_tracing,number_of_clusters_found_(and_cluster_type_-_definition),,characteristic,,,,,,[]
+06_contact_tracing,confirmed_cases_that_had_travel_during_infectious_period,,observation,,,,,,[]
+06_contact_tracing,types_of_contact,,characteristic,,,,,,[]
+06_contact_tracing,"contact_tracing_details_at_individual_level:_travel,contacts,date_of_isolation,date_of_quarantine,transmission_chains",,observation,,,,,,[]
+06_contact_tracing,cluster_identification_and_characterisation,,characteristic,,,,,,[]
+06_contact_tracing,notification_delay_(onset_of_symptoms_-_notification_date),,indicator,,,,,,[]
+06_contact_tracing,contact_tracers_(staff_working_in_contact_tracing),,resource,,,,,,[]
+07_lab,number_of_test_performed_(overall_and_by_individual),,observation,,,,,,[]
+07_lab,speed_of_spread_of_variants_(proportion_among_overall_cases),,observation,,,,,,[]
+07_lab,seroprevalence_(and_test_type),,indicator,,,,,,[]
+07_lab,test_type,,referential,,,,,,[]
+07_lab,seaway_water_virus_presence_(and_levels),,observation,,,,,,[]
+07_lab,mutations/sequences_spread_and_distributions,,characteristic,,,,,,[]
+07_lab,possibility_to_link_lab_data_with_cases/patient_data,,characteristic,,,,,,[]
+07_lab,possibility_to_associate_lab_data_with_aggregated_epidemiological_data,,characteristic,,,,,,[]
+07_lab,sensibility_&_specificity_of_test_methods,,document,,,,,,[]
+08_emergency_calls,monitoring_number_of_emergency_calls_(overall_and_by_syndrome),,observation,,,,,,[]
+08_emergency_calls,"comparison_current_situation_with_peacetime_symptoms,notifications_and_diagnostic_rates",,observation,,,,,,[]
+08_emergency_calls,severity_of_victims_(at_call_and_scene),,characteristic,,,,,,[]
+08_emergency_calls,number_of_calls_from_people_declared_as_confirm_case,,observation,,,,,,[]
+08_emergency_calls,monitoring_of_symptoms_from_emergency_calls,,characteristic,,,,,,[]
+09_first_response,ongoing_emergencies_(types),,observation,,,,,,[]
+09_first_response,visits_to_gp_with_compatible_symptoms_(disease_x),,observation,,,,,,[]
+09_first_response,details/type_of_protocol_applied,,characteristic,,,,,,[]
+09_first_response,"public_health_staff_(surveillance,prevention_and_control_activities)",,resource,,,,,,[]
+09_first_response,emergency_staff_,,resource,,,,,,[]
+10_transport,patient_transportation_type_(for_suspicious_or_confirmed_cases),,observation,,,,,,[]
+10_transport,current_ambulance_activity,,observation,,,,,,[]
+10_transport,patient_transfers,,observation,,,,,,[]
+10_transport,"transport_statistics_(duration,times)",,characteristic,,,,,,[]
+10_transport,transport_resources_(ambulances),,resource,,,,,,[]
+10_transport,ambulances_/_type,,resource,,,,,,[]
+10_transport,mass_patient_transport_threshold,,resource,,,,,,[]
+10_transport,mass_patient_transport_protocols,,document,,,,,,[]
+11_measures,number_of_people_entering_to_the_country_(by_origin),,observation,,,,,,[]
+11_measures,mitigation_measures_and_policies,,observation,,,,,,[]
+11_measures,"measure_details:_type_(eg_lockdown),start_-_end,place",,characteristic,,,,,,[]
+11_measures,border_rules/laws,,document,,,,,,[]
+12_population_study,adherence_to_prevention_and_control_measures,,observation,,,,,,[]
+12_population_study,is_people_understanding_public_health_communication,,observation,,,,,,[]
+12_population_study,alerts_&_early_warning_signals,,indicator,,,,,,[]
+12_population_study,social_media_custom_analysis,,indicator,,,,,,[]
+12_population_study,vaccination_acceptance_willingness,,indicator,,,,,,[]
+12_population_study,level_of_trust_in_the_government_and_institutions,,indicator,,,,,,[]
+12_population_study,"measure_social_impact_(psychological,lifestyle)",,indicator,,,,,,[]
+12_population_study,"indirect_impact_on_health_(other_notifiable_disease,disruption_of_services,indirect_deaths_and_morbidity)",,indicator,,,,,,[]
+12_population_study,people_beliefs_and_opinions_on_pandemic,,indicator,,,,,,[]
+12_population_study,most_consulted_public_information_sites,,observation,,,,,,[]
+12_population_study,people_information_needs,,document,,,,,,[]
+13_referentials,denominators_for_potential_risk_factors_or_individuals_at_risk,,referential,,,,,,[]
+13_referentials,"pathogen_specific_referential_epidemiological_parameters
+(host,vector,latency,contagiousness,serial_interval,susceptibility)",,referential,,,,,,[]
+13_referentials,symptoms_&_signs_by_pathogen,,referential,,,,,,[]
+13_referentials,care_procedures_(for_new_diseases),,referential,,,,,,[]
+13_referentials,variant,,referential,,,,,,[]
+13_referentials,variant_who_label,,referential_alias,,variant,,,,[]
+13_referentials,variant_introduction_date,,observation,date,,,,,[]
+13_referentials,sequenced_samples,,observation,,,,,,[]
+13_referentials,denominators_and_maps_for_different_geographic_location_(local_to_international),,referential,,,,,,[]
+13_referentials,population,,observation,people,,source,,,"[{""variable"": ""case_status"", ""value"": null}]"
+13_referentials,"social_determinants_by_area_or_case_(country_of_birth,wealth,studies,occupation)",,referential,,,,,,[]
+13_referentials,care_providers_by_area,,referential,,,,,,[]
+13_referentials,user_shared_guidelines,,document,,,,,,[]
+13_referentials,places_of_infection,,document,,,,,,[]
+13_referentials,supplies_for_potential_or_confirmed_effective_medication,,document,,,,,,[]
+14_metadata,"variable_definitions_(calcuation_method,description)",,referential,,,,,,[]
+14_metadata,source_contact,,referential,,,,,,[]
+14_metadata,data_owner,,referential,,,,,,[]
+14_metadata,data_providers_for_dashboards,,referential,,,,,,[]
+14_metadata,dashboard_profile_eg_emergency,,referential,,,,,,[]
+14_metadata,gdpr_compliance,,referential,,,,,,[]
+07_lab,number_detections_variant,,observation,people,,"source, geo_code",,,[]
+13_referentials,gender_code,,referential,,,,,,[]
+13_referentials,gender_name,,referential_alias,,gender_code,,,,[]
+13_referentials,age_group,,characteristic,range,,,,,[]
+01_cases,effective_growth_potential,,indicator,number,,,,,[]
+01_cases,number_of_alerts,,observation,,,"source, alert_topic",,,[]
+01_cases,alerts_on_humans,,observation,,,"source, alert_topic",,number_of_alerts,"[{""variable"": ""alert_topic"", ""value"": ""potential_case_in_humans""}]"
+01_cases,alerts_on_animals,,observation,,,"source, alert_topic",,number_of_alerts,"[{""variable"": ""alert_topic"", ""value"": ""potential_case_in_animals""}]"
+01_cases,alert_topic,,characteristic,,,,,,[]
+01_cases,number_of_participants,,observation,people,,,,population,"[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
+01_cases,participants_declaring_symptoms,,observation,people,,,,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
+01_cases,ari_ili_patients,,observation,people,,,,number_of_participants,"[{""variable"": ""patient_status"", ""value"": ""ari-ili""}]"
+01_cases,hospitalised_sari_patients,,observation,people,,,,number_of_participants,"[{""variable"": ""patient_status"", ""value"": ""sari""}, {""variable"": ""response_status"", ""value"": ""hospitalised""}]"
+01_cases,hospitalised_sari_infected_patients,,observation,people,,,,number_of_participants,"[{""variable"": ""patient_status"", ""value"": ""sari""}, {""variable"": ""response_status"", ""value"": ""hospitalised""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
+01_cases,positivity_for_influenza_ari_ili,,indicator,,,,,,[]
+01_cases,posititivity_for_covid_ari_ili,,indicator,,,,,,[]
+01_cases,outbreak_setting,,referential,,,,,,[]
+01_cases,detection_mode,,referential,,,,,,[]
+03_patient,comorbidity_code,,referential,,,,,,[]
+03_patient,comorbidity_name,,referential,,,,,,[]
+12_population_study,article_id,,observation,comma list,,,,,[]
+12_population_study,article_created_at,,private,,,,,,[]
+12_population_study,topic,,characteristic,,,,,,[]
+12_population_study,article_text,,private,,,,,,[]
+12_population_study,article_language,,characteristic,,,,,,[]
+12_population_study,article_count,,observation,qty,,"source, topic, reporting_period",,,[]
+12_population_study,article_alert,,indicator,,,"source, topic, reporting_period",,,[]
+12_population_study,article_cat_sentiment_analysis_attention,,characteristic,,,,,,[]
+12_population_study,article_cat_sug_min_attention,,characteristic,,,,,,[]
+12_population_study,article_cat_emotion_analysis_attention,,characteristic,,,,,,[]

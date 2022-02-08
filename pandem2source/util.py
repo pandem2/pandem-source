@@ -64,6 +64,7 @@ def get_custom(path, function):
     else:
       return eval(f"{'.'.join(path)}.{function}")
 
+
 class JsonEncoder(json.JSONEncoder):
   def default(self, z):
     if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64) or isinstance(z, datetime.date):

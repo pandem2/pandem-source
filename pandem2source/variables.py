@@ -16,30 +16,33 @@ class Variables(worker.Worker):
         super().on_start()
         self._storage_proxy=self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._pipeline_proxy=self._orchestrator_proxy.get_actor('pipeline').get().proxy()
+        self._variables = None
 
-    def get_variables(self): 
-        dic_variables = dict()
-        var_list=self._storage_proxy.read_file('variables/variables.json').get()
-        for var in var_list: 
-            if not var["base_variable"]:            
-                base_dict = var.copy()
-                base_dict["aliases"] = []
-                base_dict.pop("modifiers")
-                base_dict.pop("base_variable")
-                aliases = [{"alias":v['variable'], 
-                            "variable": v['base_variable'],
-                            "modifiers": v['modifiers']}
-                            for v in var_list if v['base_variable']==var['variable']]
-                
-                base_dict["aliases"] = aliases
-                dic_variables[var['variable']] = base_dict
-                if aliases:
-                    for alias in aliases:
-                        alias_dict = base_dict.copy()
-                        if "modifiers" in alias:
-                            alias_dict['modifiers'] = alias['modifiers']
-                        dic_variables[alias['alias']] = alias_dict
-        return dic_variables
+    def get_variables(self):
+        if self._variables is None:
+          dic_variables = dict()
+          var_list=self._storage_proxy.read_file('variables/variables.json').get()
+          for var in var_list: 
+              if not var["base_variable"]:            
+                  base_dict = var.copy()
+                  base_dict["aliases"] = []
+                  base_dict.pop("base_variable")
+                  aliases = [{"alias":v['variable'], 
+                              "variable": v['base_variable'],
+                              "formula": v['formula'],
+                              "modifiers": v['modifiers']}
+                              for v in var_list if v['base_variable']==var['variable']]
+                  
+                  base_dict["aliases"] = aliases
+                  dic_variables[var['variable']] = base_dict
+                  if aliases:
+                      for alias in aliases:
+                          alias_dict = base_dict.copy()
+                          alias_dict['formula'] = alias['formula'] if alias['formula'] is not None else None
+                          alias_dict['modifiers'] = alias['modifiers']
+                          dic_variables[alias['alias']] = alias_dict
+          self._variables = dic_variables
+        return self._variables
 
     def get_referential(self,variable_name):
         #print(f"getting {variable_name}")
@@ -57,7 +60,7 @@ class Variables(worker.Worker):
         return referentiel
 
 
-    def read_variable(self,variable_name, filter):
+    def read_variable(self,variable_name, filter = {}):
         dir_path = util.pandem_path('files/variables/', variable_name)
         if os.path.isdir(dir_path):
             requested_list = []
@@ -68,19 +71,24 @@ class Variables(worker.Worker):
                 if file_name == 'default.json':
                     target_files.append(file)
                 else:
+                    can_ignore = False
                     for var_val in file_name.split('.')[:-1]:
                         var = var_val.split('%')[0]
                         val = var_val.split('%')[1]
-                        if var in filter:
-                            if filter[var]==val:
-                                target_files.append(file)
-                                break
+                        if var in filter and type(filter[var]) == list and val not in filter[var]:
+                            can_ignore = True
+                            break
+                        elif var in filter and filter[var] != val:
+                            can_ignore = True
+                            break
+                    if not can_ignore:
+                        target_files.append(file)
             for file in target_files:
                 var_tuples = self._storage_proxy.read_file(file['path']).get()['tuples']
                 requested_vars = []
                 for var_tuple in var_tuples:
                     if all(att in var_tuple['attrs'].keys() for att in filter.keys()):
-                        if all(( var_tuple['attrs'][att]==val or var_tuple['attrs'][att] in val) for att, val in filter.items()) :
+                        if all((val is None or var_tuple['attrs'][att]==val or var_tuple['attrs'][att] in val) for att, val in filter.items()) :
                             requested_vars.append(var_tuple)
                 requested_list.extend(requested_vars)
             return requested_list
@@ -107,11 +115,11 @@ class Variables(worker.Worker):
               tt["attrs"] = {k:v for k,v in t["attrs"].items() if k not in private_attrs}
               yield tt
  
-    def write_variable(self, input_tuples, obs_type, path, job):
+    def write_variable(self, input_tuples, step, path, job):
         variables = self.get_variables()
         partition_dict = defaultdict(list)
-        if obs_type=='raw':
-            self.write_variable(self.tag_source_var(job["dls_json"]), 'tag_source', path, job)
+        if step ==0:
+            self.write_variable(self.tag_source_var(job["dls_json"]), None, path, job)
 
         if input_tuples['tuples']:
             for tuple in self.remove_private(input_tuples['tuples'], variables):
@@ -168,15 +176,9 @@ class Variables(worker.Worker):
                                 tuples_list.append(tup)            
                         with open(file_path, 'w') as f:
                             json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
-            if obs_type=='raw':
-                self._pipeline_proxy.publish_facts_end( path = path, job = job)
-            elif obs_type == 'tag_source':
-                pass
-            else:
-                self._pipeline_proxy.publish_indicators_end( path = path, job = job)
 
-        elif obs_type != 'tag_source':
-            self._pipeline_proxy.publish_indicators_end( path = path, job = job)
+        if step is not None:
+            self._pipeline_proxy.publish_end(path = path, job = job)
 
         
                     
@@ -192,7 +194,67 @@ class Variables(worker.Worker):
          'tuples':[*({'attr':{'tag_source': tag+'_'+source}, 'attrs':{'tag':tag, 'source': source}} for tag in tags)]
        }
 
+    def lookup(self, variables, combinations, source, filter = None, include_source = True, include_tag = False, types=None):
+      dico_vars  = self.get_variables()
 
+      tag_source = self.read_variable("tag_source")
+      tags = {t['attrs']['tag'] for t in tag_source if t['attrs']['source'] == source}
+      others = {t['attrs']['source'] for t in tag_source if t['attrs']['tag'] in tags and t['attrs']['source'] != source}
+
+      attrs = set()
+      filt = {}
+      if "attrs" in combinations:
+        indexed_comb = {}
+        for comb in combinations:
+          if "attrs" in comb:
+            keys = sorted(comb["attrs"].keys())
+            attrs.update(keys)
+            key = tuple((k, comb[k]) for k in keys if types is None or dico_vars[k]["type"] in types)
+            for k, v in key.items():
+              if k not in filt:
+                filt[k] = {}
+              filt[k].add(v)
+            indexed_comb[key] = comb["obs"] if "obs" in comb else {}
+      else:
+        indexed_comb = combinations
+        for key in indexed_comb:
+          for k, v in key:
+            if k not in filt:
+              filt[k] = set()
+            filt[k].add(v)
+          if types is None:
+            attrs.update(k for k, v in key)
+
+      if types is None:
+        types = {dico_vars[t]["type"] for t in attrs}
+      if filter is not None:
+        filt.update(filter)
+      res = {}
+      
+      for var in variables:
+        tuples = []
+        if include_source:
+          f = filter.copy()
+          f.update({"source":source})
+          tuples = self.read_variable(var, filter = f)
+        if include_tag and len(tuples) == 0:
+          f = filter.copy()
+          f.update({"source":others})
+          tuples = self.read_variable(var, filter = f)
+        for t in tuples:
+          keys = sorted(attr for attr in t["attrs"].keys() if dico_vars[attr]["type"] in types)
+          key = tuple((k, t["attrs"][k]) for k in keys)
+          filter_value = {k:v for k, v in t["attrs"].items() if k in filter}  
+          if key in indexed_comb:
+            if not key in res:
+              res[key] = {}
+            if "obs" in t:
+              obs_name =  next(iter(t["obs"].keys()))
+              if not obs_name in res[key]:
+                res[key][obs_name] = []
+              res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
+      return res
+      
 
 
 

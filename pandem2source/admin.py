@@ -28,8 +28,8 @@ def reset_default_folders(*folders):
       shutil.copytree(var_from, var_to, copy_function = shutil.copy)
 
 def read_variables_xls():
-  path = pkg_resources.resource_filename("pandem2source", "data/list-of-variables.xlsx")
-  df = pd.read_excel(path)
+  path = pkg_resources.resource_filename("pandem2source", "data/list-of-variables.csv")
+  df = pd.read_csv(path)
   df = df.rename(columns = {
     "Variable":"variable", 
     "Data Family":"data_family", 
@@ -48,7 +48,7 @@ def read_variables_xls():
     if col in ["linked_attributes", "partition"]:
       df[col] = df[col].str.split(",")
     if col == "modifiers":
-      df[col] = df[col].apply(lambda x : eval(x))
+      df[col] = df[col].apply(lambda x : json.loads(x))
   return df
 
 def write_json_variables(dest):

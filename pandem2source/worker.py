@@ -67,6 +67,8 @@ class Worker(pykka.ThreadingActor):
     def register_action(self, repeat, action, oneshot = False):
         self._actions.append({'repeat': repeat, 'func': action, 'oneshot':oneshot })
         
+    def staging_path(self, job_id, *args):
+        return self.pandem_path(f'files/staging', str(int(job_id)), *args)
 
 
 class Repeat:
