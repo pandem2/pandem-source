@@ -31,8 +31,11 @@ class NLPAnnotator(worker.Worker):
 
     def annotate(self, list_of_tuples, path, job):
       if self._models is None:
-        self._models = self.get_models()
+          self._models = self.get_models()
       
+
+
+
       self.launch_server_if_needed()
 
       # gathering information about nlp categories

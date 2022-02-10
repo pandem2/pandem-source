@@ -22,7 +22,11 @@ setup(
       "pykka",
       "lxml",
       "isoweek",
-      "tweepy"
+      "tweepy",
+      "tornado",
+      "asyncio",
+      "tornado-rest-swagger"
+
     ],
     packages=find_packages(exclude=('tests', 'docs')),
     include_package_data=True

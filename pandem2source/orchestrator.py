@@ -18,6 +18,7 @@ from . import standardizer
 from . import aggregator
 from . import variables
 from . import evaluator
+from . import api
 import datetime
 import os
 import pandas as pd
@@ -92,6 +93,10 @@ class Orchestration(pykka.ThreadingActor):
          # launch evaluator actor
         evaluator_ref = evaluator.Evaluator.start('evaluator', self.actor_ref, self.settings)
         self.current_actors['evaluator'] = {'ref': evaluator_ref}
+
+         # launch api actor
+        api_ref = api.apiREST.start('api', self.actor_ref, self.settings)
+        self.current_actors['api'] = {'ref': api_ref}
 
         # Launching acquisition actors (active actors)
         # List source definition files within 'source-definitions' through storage actor to get 
