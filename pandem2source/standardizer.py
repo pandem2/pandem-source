@@ -93,7 +93,10 @@ class Standardizer(worker.Worker):
                     else:
                       #Create a issue since validation failed 
                       file_name = tuples['scope']['file_name']
-                      line_number = tuples['tuples'][i]['attrs']['line_number'] 
+                      if i >= 0:
+                        line_number = tuples['tuples'][i]['attrs']['line_number']
+                      else:
+                        line_number = -1
                       message=(f"Code {var_value} does not exist in referential '{var_name}'. Line {line_number} in file {file_name} (source: '{tuples['scope']['source']}').")
                       issue={ "step":job['step'], 
                               "line":line_number, 

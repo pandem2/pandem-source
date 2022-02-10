@@ -231,7 +231,7 @@ class Evaluator(worker.Worker):
             
             # looping trough all indicators
             for ind, combis in combinations.items():
-                l.debug(f"calculating {ind} in {source} for {len(ind)} combinations")
+                l.debug(f"calculating {ind} in {source} for {len(combis)} combinations")
                 # creating scripts for indicator
                 self.prepare_scripts(ind, job)
                 # getting all matching combinations for the indicator calculation from the database

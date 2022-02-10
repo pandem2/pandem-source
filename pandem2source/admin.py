@@ -27,9 +27,9 @@ def reset_default_folders(*folders):
         shutil.rmtree(var_to)
       shutil.copytree(var_from, var_to, copy_function = shutil.copy)
 
-def read_variables_xls():
+def read_variables_definitions():
   path = pkg_resources.resource_filename("pandem2source", "data/list-of-variables.csv")
-  df = pd.read_csv(path)
+  df = pd.read_csv(path, encoding = "ISO-8859-1")
   df = df.rename(columns = {
     "Variable":"variable", 
     "Data Family":"data_family", 
@@ -52,7 +52,7 @@ def read_variables_xls():
   return df
 
 def write_json_variables(dest):
-  df = read_variables_xls()
+  df = read_variables_definitions()
   path = dest
   result = df.to_json(orient = "records")
   parsed = json.loads(result)

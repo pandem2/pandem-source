@@ -7,16 +7,18 @@ if(!require("COVID19")) {
 }
 message("getting data for covid19datahub :-) ")
 df <- covid19(country = c(
-  #"AUT", 
-  "BEL"#, "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "DEU", "GRC", "HUN", "IRL", "ITA",
+  #"AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", 
+  "FRA"
+ #, "DEU", "GRC", "HUN", "IRL", "ITA",
  #"LVA", "LTU", "LUX", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE", "GBR"
  ), level = 3
 )
 
-for(d in unique(df$date)) {
+df$key_nuts <- ifelse(is.na(df$key_nuts), df$iso_alpha_2, df$key_nuts)
+for(n in unique(df$key_nuts)) {
   ddf <- df %>% 
-    filter(date == d)
-  write.csv(ddf, paste(d, ".csv", sep = ""), row.names = FALSE)
+    filter(key_nuts == n)
+  write.csv(ddf, paste(n, ".csv", sep = ""), row.names = FALSE)
 }
 message("getting covid-19 datahub data done")
 

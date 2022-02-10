@@ -26,7 +26,7 @@ class Aggregator(worker.Worker):
     geo_parents = {var["linked_attributes"][0]:var["variable"] for var in variables.values() if var["type"] == "characteristic" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos}
 
     var_asc = {code:self.rel_ascendants(self.descendants(code, parent)) for code, parent in geo_parents.items()}
-    
+    breakpoint() 
     for t in list_of_tuples['tuples']:
       aggr_func =  self.tuple_aggregate_function(t, variables)
       if aggr_func is None:

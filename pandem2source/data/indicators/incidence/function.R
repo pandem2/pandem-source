@@ -1,1 +1,1 @@
-p1/p2
+number_of_cases/population

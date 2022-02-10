@@ -73,8 +73,8 @@ class Variables(worker.Worker):
                 else:
                     can_ignore = False
                     for var_val in file_name.split('.')[:-1]:
-                        var = var_val.split('%')[0]
-                        val = var_val.split('%')[1]
+                        var = var_val.split('=')[0]
+                        val = var_val.split('=')[1]
                         if var in filter and type(filter[var]) == list and val not in filter[var]:
                             can_ignore = True
                             break
@@ -102,7 +102,7 @@ class Variables(worker.Worker):
         if partition is None:
           return 'default.json'
         else:
-          return '.'.join([key + '%' + str(val) for key, val in tuple['attrs'].items() if key in partition]) + '.json'
+          return '.'.join([key + '=' + str(val) for key, val in tuple['attrs'].items() if key in partition]) + '.json'
 
     def remove_private(self, tuples, variables):
         private_attrs = {k for k, v in variables.items() if v["type"] == "private"}

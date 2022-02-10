@@ -140,7 +140,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 06_contact_tracing,case_origin,,characteristic,,,,,,[]
 06_contact_tracing,contact_tracing_policy,,referential,,,,,,[]
 06_contact_tracing,proportion_of_new_cases_that_are_part_of_known_transmission_chains,,indicator,,,,,,[]
-06_contact_tracing,"nº_of_contacts,secondary_and_terciary_cases_per_index_case",,indicator,,,,,,[]
+06_contact_tracing,"n�_of_contacts,secondary_and_terciary_cases_per_index_case",,indicator,,,,,,[]
 06_contact_tracing,number_of_clusters_found_(and_cluster_type_-_definition),,characteristic,,,,,,[]
 06_contact_tracing,confirmed_cases_that_had_travel_during_infectious_period,,observation,,,,,,[]
 06_contact_tracing,types_of_contact,,characteristic,,,,,,[]
@@ -200,7 +200,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 13_referentials,variant_introduction_date,,observation,date,,,,,[]
 13_referentials,sequenced_samples,,observation,,,,,,[]
 13_referentials,denominators_and_maps_for_different_geographic_location_(local_to_international),,referential,,,,,,[]
-13_referentials,population,,observation,people,,source,,,"[{""variable"": ""case_status"", ""value"": null}]"
+13_referentials,population,,observation,people,,"source, geo_code",,,"[{""variable"": ""case_status"", ""value"": null}, {""variable"": ""pathogen_code"", ""value"": null}]"
 13_referentials,"social_determinants_by_area_or_case_(country_of_birth,wealth,studies,occupation)",,referential,,,,,,[]
 13_referentials,care_providers_by_area,,referential,,,,,,[]
 13_referentials,user_shared_guidelines,,document,,,,,,[]
