@@ -76,12 +76,13 @@ class Evaluator(worker.Worker):
             return False
       return True
 
-    def plan_calculate(self, list_of_tuples, path, job):
+    def plan_calculate(self, list_of_tuples, job):
         var_dic = self._dict_of_variables
         modifiers = self._modifiers
         params_set = self._params_set
         parameters = self._parameters
         obs_keys = {}
+        next_keys = {}
         for t in list_of_tuples:
           if "obs" in t and "attrs" in t: 
             var_name = next(iter(t["obs"].keys()))  
@@ -115,8 +116,6 @@ class Evaluator(worker.Worker):
                     attr_pars =  [p for p in no_date_pars if var_dic[p]['type'] not in {'observation', 'indicator', 'resource'}]
                     obs_pars =  list([p for p in params if var_dic[p]['type'] in {'observation', 'indicator', 'resource'}])
                     base_pars =  list([var_dic[p]["variable"] for p in obs_pars])
-                    #if ind == "rt_number" and "NL" in path:
-                    #  breakpoint()
                     # in order to test this indicator we need to find at least the first observation on the current values
                     if len(obs_pars) > 0 and  base_pars[0] in obs_keys:
                       main_obs = obs_pars[0]
@@ -171,7 +170,7 @@ class Evaluator(worker.Worker):
                                   comb.pop(j)
                         # The remaining combination have passed all validations to calculate the candidate indicator
                         if len(comb) > 0:
-                          obs_keys[ind] = {
+                          next_keys[ind] = {
                             "comb":set(comb),
                             "dates":dates
                           }
@@ -185,7 +184,9 @@ class Evaluator(worker.Worker):
                           # we have found something new so we will try to performa a new step
                           stop = False
             step = step + 1
-        self._pipeline_proxy.precalculate_end(indicators_to_cal, path=path, job=job)
+            obs_keys.update(next_keys)
+            next_keys.clear()
+        self._pipeline_proxy.precalculate_end(indicators_to_cal, job=job)
 
        
     def prepare_scripts(self, ind, job):
@@ -224,17 +225,9 @@ class Evaluator(worker.Worker):
         result = {"tuples": []}
         # mixing indicators to calculate on all paths
         if indicators_to_cal and len(indicators_to_cal) > 0:
-            combinations =  defaultdict(lambda: defaultdict(dict))
-            for path, inds in indicators_to_cal.items():
-              for ind, ind_map in inds.items():
-                # registering information for combination
-                for comb in ind_map["comb"]:
-                  if not "dates" in combinations[ind][comb]:
-                    combinations[ind][comb]["dates"] = {}
-                  combinations[ind][comb]["dates"][path] = ind_map["dates"]
-            
             # looping trough all indicators
-            for ind, combis in combinations.items():
+            for ind, ind_map in indicators_to_cal.items():
+                combis = ind_map["comb"]
                 l.debug(f"calculating {ind} in {source} for {len(combis)} combinations")
                 # creating scripts for indicator
                 self.prepare_scripts(ind, job)
@@ -243,27 +236,32 @@ class Evaluator(worker.Worker):
                 var_date, base_date = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] == "date"))
                 main_par, main_base = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"] ))
                 attrs = {p:vars_dic[p]["variable"] for p in params[ind] if p not in set(obs.keys())}
-                data = self._variables_proxy.lookup(list(obs), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
+                data = self._variables_proxy.lookup(list(obs.values()), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
                 # iterating though each combination and launching the scripts to calculate the results
-                for comb, comb_map in combis.items():
+                for comb in combis:
                   #sorting values per date
                   if comb in data:
                     row = data[comb]
-                    indexes = dict((v, k) for k, v in enumerate(sorted(v["attrs"][var_date] for v in row[main_base])))
+                    comb_map = {k:v for k, v in comb}
+                    indexes = dict((v, k) for k, v in enumerate(sorted(v["attrs"][base_date] for v in row[main_base])))
                     staging_dir = self.staging_path(job['id'], f'ind/{ind}')
                     # write params values within temporary files
                     # we start by generating lists full of nones for each found date
                     can_run = True
                     for p in params[ind]:
                         param_values = [None]*len(indexes)
-                        # if the parameter is an observation we will look into the assocuated row attribute getting the date from attrs 
+                        # if the parameter is an observation we will look into the associated row attribute getting the date from attrs 
                         if p in obs:
                           for v in row[obs[p]]:
-                            param_values[indexes[v["attrs"][var_date]]] = v["value"]
-                        # if not an observation then the result is expected to be on attrs
+                            param_values[indexes[v["attrs"][base_date]]] = v["value"]
+                        # if not an observation then the result is expected to be on attrs or in combination
                         else:
-                          for v in row[obs[main_base]]:
-                            param_values[indexes[v["attrs"][var_date]]] = v["attrs"][attrs[p]]
+                          for v in row[obs[main_par]]:
+                            if attrs[p] in v["attrs"]:
+                              param_values[indexes[v["attrs"][base_date]]] = v["attrs"][attrs[p]]
+                            else:
+                              param_values[indexes[v["attrs"][base_date]]] = comb_map[attrs[p]]
+                              
                         if next(iter(v for v in param_values if v is not None), None) is None:
                           can_run = False
                         # writing the values on the parameter file 
@@ -277,13 +275,16 @@ class Evaluator(worker.Worker):
                     if can_run:
                         subprocess.run (f'/usr/bin/Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
                         if os.path.exists(result_path):
+                            
+                            modifiers = {t["variable"]:t["value"] for t in vars_dic[ind]["modifiers"] } if "modifiers" in vars_dic[ind] else {}
                             with open(self.pandem_path(result_path)) as f:
                                 r = json.load(f)
                             for date, i in indexes.items():
-                                ind_date_tuple = {'obs': {ind:r[i]},
-                                                'attrs':{**{base_date:date, source:source,
-                                                            **{k:v for k,v in comb}
-                                                            }}
+                                ind_date_tuple = {'obs': {ind:r[i] if r[i] != "NA" else None},
+                                                'attrs':{**{base_date:date, "source":source},
+                                                         **{k:v for k,v in comb},
+                                                         ** modifiers
+                                                         }
                                                 }
                                 result['tuples'].append(ind_date_tuple)
                         else:

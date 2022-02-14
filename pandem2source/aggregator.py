@@ -18,7 +18,7 @@ class Aggregator(worker.Worker):
       self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
       self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
 
-  def aggregate(self, list_of_tuples, path, job):
+  def aggregate(self, list_of_tuples, job):
     variables = self._variables_proxy.get_variables().get()
     cumm = {}
     untouched = []
@@ -26,8 +26,7 @@ class Aggregator(worker.Worker):
     geo_parents = {var["linked_attributes"][0]:var["variable"] for var in variables.values() if var["type"] == "characteristic" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos}
 
     var_asc = {code:self.rel_ascendants(self.descendants(code, parent)) for code, parent in geo_parents.items()}
-    breakpoint() 
-    for t in list_of_tuples['tuples']:
+    for t in [t for t in list_of_tuples['tuples'] if "attr" in t or "obs" in t]:
       aggr_func =  self.tuple_aggregate_function(t, variables)
       if aggr_func is None:
         untouched.append(t)
@@ -41,7 +40,7 @@ class Aggregator(worker.Worker):
 
     result = list_of_tuples.copy()
     result['tuples'] = untouched + [*cumm.values()]
-    self._pipeline_proxy.aggregate_end(result, path = path, job = job)
+    self._pipeline_proxy.aggregate_end(result, job = job)
 
   def descendants(self, code, parent):
     codes = self._variables_proxy.get_referential(code).get()

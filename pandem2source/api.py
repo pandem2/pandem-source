@@ -135,7 +135,7 @@ class JobsBySourceHandler(tornado.web.RequestHandler):
           - name: source
             in: query
             description: source name
-            required: true
+            required: false
             schema:
               type: string
         responses:
@@ -152,25 +152,93 @@ class JobsBySourceHandler(tornado.web.RequestHandler):
                   schema:
                     type: string
         """
-        source = self.get_argument('source')
+        source = self.get_argument('source', default = None)
         sources = list(self.storage_proxy.read_db('source').get()['name'])
-        if source not in sources:
+        if source is not None and source not in sources:
             self.set_status(400)
             return self.write("Invalid or not found source")
         else:
             df_issues = self.storage_proxy.read_db('issue').get()
             df_jobs = self.storage_proxy.read_db('job').get()
-            df_jobs_source = df_jobs[df_jobs['source']==source]
-            jobs_list = [{'id': df_jobs_source['id'].iloc[i],
-                        'start': str(df_jobs_source['start_on'].iloc[i]),
-                        'end': str(df_jobs_source['end_on'].iloc[i]),
-                        'status': df_jobs_source['status'].iloc[i],
-                        'step': df_jobs_source['step'].iloc[i],
-                        'dls': df_jobs_source['dls_json'].iloc[i],
-                        'issues number': len(df_issues[(df_issues['source']==source) & (df_issues['job_id']==df_jobs_source['id'].iloc[i])]) if df_issues else 0
-                        } 
-                        for i in range(len(df_jobs_source))]
+            df_jobs_source = df_jobs
+            if source is not None:
+              df_jobs_source = df_jobs[df_jobs['source']==source]
+            jobs_list = [
+              {'id': df_jobs_source['id'].iloc[i],
+                  'source': str(df_jobs_source['source'].iloc[i]),
+                  'start': str(df_jobs_source['start_on'].iloc[i]),
+                  'end': str(df_jobs_source['end_on'].iloc[i]),
+                  'status': df_jobs_source['status'].iloc[i],
+                  'step': df_jobs_source['step'].iloc[i],
+                  'dls': df_jobs_source['dls_json'].iloc[i],
+                  'issues number': len(df_issues[(df_issues['source']==df_jobs_source['source'].iloc[i]) & (df_issues['job_id']==df_jobs_source['id'].iloc[i])]) if df_issues is not None else 0
+              } 
+              for i in range(len(df_jobs_source))
+            ]
         response = {'Jobs' : jobs_list}
+        self.write(response)
+
+class IssuesHandler(tornado.web.RequestHandler):
+    def initialize(self, storage_proxy):
+        self.storage_proxy = storage_proxy
+    def get(self):
+        """
+        ---
+        tags:
+          - Issues
+        summary: List of issues realted to a Job of a source
+        description: List of issues produced  for a particular job in a source.
+        operationId: getJobs
+        parameters:
+          - name: source
+            in: query
+            description: source name
+            required: false
+            schema:
+              type: string
+          - name: job
+            in: query
+            description: job id
+            required: false
+            schema:
+              type: int
+        responses:
+            '200':
+              description: List of issues found during job of sources
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/IssueModel'
+                application/xml:
+                  schema:
+                    $ref: '#/components/schemas/IssueModel'
+                text/plain:
+                  schema:
+                    type: string
+        """
+        source = self.get_argument('source', default = None)
+        job = self.get_argument('job', default = None)
+
+        sources = list(self.storage_proxy.read_db('source').get()['name'])
+        if source is not None and source not in sources:
+            self.set_status(400)
+            return self.write("Invalid or not found source")
+        else:
+            df_jobs = self.storage_proxy.read_db('job').get()
+            if source is not None:
+              df_jobs_source = df_jobs[df_jobs['source']==source]
+            if job is not None:
+              df_jobs_source = df_jobs[df_jobs['id']==job]
+
+            df_issues = self.storage_proxy.read_db('issue').get()
+            if df_issues is not None:
+              df_issues = df_issues[df_issues['job_id'].isin(df_jobs['id'])]
+              df_issues = df_issues.copy()
+              df_issues["raised_on"] = df_issues["raised_on"].astype(str)
+              issue_list = df_issues.to_dict('records') 
+            else:
+              issue_list = []
+        response = {'Issues' : issue_list}
         self.write(response)
 
 
@@ -196,17 +264,32 @@ class JobsModel(object):
             type: array
     """
 
+@components.schemas.register
+class IssueModel(object):
+    """
+    ---
+    type: object
+    description: Issue model representation
+    properties:
+        Issues:
+            type: array
+    """
+
 
 class Application(tornado.web.Application):
 
     def __init__(self, storage_proxy):
         settings = {"debug": True}
-        self._routes = [tornado.web.url(r"/jobs", JobsBySourceHandler, {'storage_proxy': storage_proxy}),tornado.web.url(r"/sources", SourcesHandler, {'storage_proxy': storage_proxy})]
+        self._routes = [
+          tornado.web.url(r"/jobs", JobsBySourceHandler, {'storage_proxy': storage_proxy}),
+          tornado.web.url(r"/sources", SourcesHandler, {'storage_proxy': storage_proxy}),
+          tornado.web.url(r"/issues", IssuesHandler, {'storage_proxy': storage_proxy})
+        ]
         setup_swagger(
             self._routes,
-            swagger_url="/doc",
+            swagger_url="/",
             description="",
             api_version="1.0.0",
-            title="Journal API"
+            title="Pandem source API"
         )
         super(Application, self).__init__(self._routes, **settings)

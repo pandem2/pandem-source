@@ -2,7 +2,7 @@
     "scope":{
       "source":"covid19-datahub",
       "source_description":"Unified dataset by collecting worldwide fine-grained case data, merged with exogenous variables helpful for a better understanding of COVID-19.",
-      "tags":["covid-19", "world", "countrt", "nuts-3"],
+      "tags":["covid-19-datahub"],
       "frequency":"daily",
       "reference_user":"",
       "reporting_email":"",

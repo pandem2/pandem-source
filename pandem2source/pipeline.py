@@ -39,9 +39,9 @@ class Pipeline(worker.Worker):
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
         self.job_stdtuples = defaultdict(dict)
-        self.job_aggrtuples = defaultdict(dict)
-        self.job_precalinds = defaultdict(dict)
-        self.job_indicators = defaultdict(dict)
+        self.job_aggrtuples = {}
+        self.job_precalinds = {}
+        self.job_indicators = {}
         self.job_issues = defaultdict(list)
         self.pending_count = {}
 
@@ -60,8 +60,10 @@ class Pipeline(worker.Worker):
                                                  and x['step'] != self.last_step
                                               ) or x["id"] == self.restart_job
                                          ).get()
-
         if jobs is not None :
+            # deleting issues on job is we are restarting a job
+            if self.restart_job > 0:
+              self._storage_proxy.delete_db('issue', filter = lambda i: i['job_id'] == self.restart_job) 
             jobs = jobs.to_dict(orient = 'records')
 
             new_dls = dict((dls["scope"]["source"],dls) for dls in  (self._storage_proxy.read_file(f["path"]).get() for f in self._storage_proxy.list_files('source-definitions').get()))
@@ -148,11 +150,7 @@ class Pipeline(worker.Worker):
             calc_step = self.job_precalstep[job['id']] + 1
             self.job_precalstep[job['id']] = calc_step
             # recreating the indicators to calculate for the current step
-            ind_in_step = {
-              path:({k:v for k,v in inds.items() if v["step"] == calc_step}) 
-              for path, inds in self.job_precalinds[job['id']].items() 
-                if len(list(v for v in inds.values() if v["step"] == calc_step))> 0
-            }
+            ind_in_step = {k:v for k,v in self.job_precalinds[job['id']].items() if v["step"] == calc_step}
             if len(ind_in_step) > 0:
               self.update_job_step(job, 'calculate_started')
               self.send_to_calculate(ind_in_step, job)
@@ -277,46 +275,48 @@ class Pipeline(worker.Worker):
             self.update_job_step(job, 'annotate_ended')
 
     def send_to_aggregate(self, tuples, job):
-        self.pending_count[job["id"]] = len(tuples)
-        for path, ttuples in tuples.items():
-            self._aggregate_proxy.aggregate(ttuples, path, job)
+        tts = {
+          "tuples":[],
+          "scope":{"update_scope":{}}
+        }
+        for p, tt in tuples.items():
+          tts['tuples'].extend(tt['tuples'])
+          for u in tt['scope']['update_scope']:
+            v = u["value"] if type(u["value"]) in [list, set] else [u["value"]]
+            if u['variable'] in tts['scope']['update_scope'] :
+               tts['scope']['update_scope'][u['variable']].update(v)
+            else:
+               tts['scope']['update_scope'][u['variable']] = set(v)
 
-    def aggregate_end(self, tuples, path, job): 
-        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        self.job_aggrtuples[job["id"]][path] = tuples
-        if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'aggregate_ended')
+        tts['scope']['update_scope'] = [{"variable":k, "value":list(v)} for k, v in tts['scope']['update_scope'].items()]
+        self._aggregate_proxy.aggregate(tts, job)
+
+    def aggregate_end(self, tuples, job): 
+        self.job_aggrtuples[job["id"]] = tuples
+        self.update_job_step(job, 'aggregate_ended')
     
     def send_to_precalculate(self, tuples, job):
-        self.pending_count[job["id"]] = len(tuples)
-        for path, ttuples in tuples.items():
-            self._evaluator_proxy.plan_calculate(ttuples['tuples'], path, job)
+        self._evaluator_proxy.plan_calculate(tuples['tuples'], job)
 
-    def precalculate_end(self, indicators_to_calculate, path, job): 
-        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        self.job_precalinds[job["id"]][path] = indicators_to_calculate
+    def precalculate_end(self, indicators_to_calculate, job): 
+        self.job_precalinds[job["id"]] = indicators_to_calculate
         self.job_precalstep[job["id"]] = 0
-
-        if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'precalculate_ended')
+        self.update_job_step(job, 'precalculate_ended')
 
     def send_to_calculate(self, indicators_to_calculate, job): 
         self._evaluator_proxy.calculate(indicators_to_calculate, job)
 
     def calculate_end(self, ind_tuples, job): 
-        self.job_indicators[job["id"]]["calculated"] = ind_tuples
+        self.job_indicators[job["id"]] = ind_tuples
         self.update_job_step(job, 'calculate_ended')
 
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         calc_step = self.job_precalstep[job['id']]
-        for path, ttuples in tuples.items():
-            self._variables_proxy.write_variable(ttuples, calc_step, path, job)
+        self._variables_proxy.write_variable(tuples, calc_step, job)
     
-    def publish_end(self, path, job): 
-        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'publish_ended')
+    def publish_end(self, job): 
+        self.update_job_step(job, 'publish_ended')
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step):
@@ -358,7 +358,7 @@ class Pipeline(worker.Worker):
         for code in issues_codes:
             issues_to_write = [issue for issue in issues if issue['issue_type']==code]
             if len(issues_to_write)>50:
-                issues_to_write = issues_to_write[:49]
+                issues_to_write = issues_to_write.group_by("issue_type").head(50)
             for issue in issues_to_write:
                 self._storage_proxy.write_db(record=issue, db_class='issue').get() 
 

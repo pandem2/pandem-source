@@ -75,10 +75,10 @@ class Variables(worker.Worker):
                     for var_val in file_name.split('.')[:-1]:
                         var = var_val.split('=')[0]
                         val = var_val.split('=')[1]
-                        if var in filter and type(filter[var]) == list and val not in filter[var]:
+                        if var in filter and type(filter[var]) in [list, set] and val not in filter[var]:
                             can_ignore = True
                             break
-                        elif var in filter and filter[var] != val:
+                        elif var in filter and type(filter[var]) not in [list, set] and filter[var] != val:
                             can_ignore = True
                             break
                     if not can_ignore:
@@ -115,11 +115,11 @@ class Variables(worker.Worker):
               tt["attrs"] = {k:v for k,v in t["attrs"].items() if k not in private_attrs}
               yield tt
  
-    def write_variable(self, input_tuples, step, path, job):
+    def write_variable(self, input_tuples, step, job):
         variables = self.get_variables()
         partition_dict = defaultdict(list)
         if step ==0:
-            self.write_variable(self.tag_source_var(job["dls_json"]), None, path, job)
+            self.write_variable(self.tag_source_var(job["dls_json"]), None, job)
 
         if input_tuples['tuples']:
             for tuple in self.remove_private(input_tuples['tuples'], variables):
@@ -178,7 +178,7 @@ class Variables(worker.Worker):
                             json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
 
         if step is not None:
-            self._pipeline_proxy.publish_end(path = path, job = job)
+            self._pipeline_proxy.publish_end(job = job)
 
         
                     
@@ -234,11 +234,13 @@ class Variables(worker.Worker):
       for var in variables:
         tuples = []
         if include_source:
-          f = filter.copy()
+          f = {k:v for k, v in filt.items() if v is not None}
           f.update({"source":source})
+          # TODO make read variable work with alias variables so it can return active cases and confirmed cases on the same query
           tuples = self.read_variable(var, filter = f)
-        if include_tag and len(tuples) == 0:
-          f = filter.copy()
+        if include_tag and (tuples is None or len(tuples) == 0):
+          breakpoint()
+          f = {k:v for k, v in filt.items() if v is not None}
           f.update({"source":others})
           tuples = self.read_variable(var, filter = f)
         for t in tuples:

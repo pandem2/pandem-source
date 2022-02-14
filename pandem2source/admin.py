@@ -88,6 +88,8 @@ def reset_source(source_name):
     shutil.copyfile(script_from, script_to)
 
 def delete_all():
+    if os.path.exists(util.pandem_path("settings.yml")):
+      os.remove(util.pandem_path("settings.yml"))
     if os.path.exists(util.pandem_path("files")):
       shutil.rmtree(util.pandem_path("files"))
     if os.path.exists(util.pandem_path("database")):

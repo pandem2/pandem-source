@@ -171,7 +171,7 @@ class Storage(worker.Worker):
     def delete_db(self, db_class, filter=None):
         df = self.db_tables[db_class]
         if filter != None:
-            df = df.drop(index = df.index[df.apply(filter, axis = 1)])
+            df = df.drop(index = df.apply(filter, axis = 1).index)
         self.db_tables[db_class] = df
         df.to_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle'))
         return df

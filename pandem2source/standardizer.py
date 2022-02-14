@@ -85,12 +85,12 @@ class Standardizer(worker.Worker):
                   if var_type in type_translate:
                     std_var['attrs'].pop(var_name)
                   for var_value in values:
-                    if  var_value in var_ref:
+                    if  var_value is not None and var_value in var_ref:
                       if var_type in type_translate:
                         new_values.append(refs_alias[var_name][var_value])
                       else: 
                         new_values.append(var_value)
-                    else:
+                    elif var_value is not None:
                       #Create a issue since validation failed 
                       file_name = tuples['scope']['file_name']
                       if i >= 0:
@@ -124,7 +124,8 @@ class Standardizer(worker.Worker):
                 update_tuple=std_var
             else:
                 for cle, value in global_tuple['attrs'].items():
-                    std_var['attrs'][cle]=value
+                    if cle not in std_var:
+                       std_var['attrs'][cle]=value
                 std_tuples['tuples'].append(std_var)
         std_tuples['scope']['update_scope']= [*({'variable':k, 'value':v} for k,v in update_tuple['attrs'].items())]
         #print("\n".join(util.pretty(std_tuples).split("\n")[0:100]))
