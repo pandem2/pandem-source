@@ -340,7 +340,7 @@ class DataframeReader(worker.Worker):
               if not "attrs" in tup:
                 tup["attrs"] = {}
               if mod_var not in tup["attrs"] or tup["attrs"][mod_var] is None:
-                  tup["attrs"][mod_var] = mod["value"]
+                tup["attrs"][mod_var] = mod["value"]
         return tup
 
     def transform_range(self, value):

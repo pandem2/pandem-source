@@ -124,7 +124,7 @@ class Standardizer(worker.Worker):
                 update_tuple=std_var
             else:
                 for cle, value in global_tuple['attrs'].items():
-                    if cle not in std_var:
+                    if cle not in std_var['attrs']:
                        std_var['attrs'][cle]=value
                 std_tuples['tuples'].append(std_var)
         std_tuples['scope']['update_scope']= [*({'variable':k, 'value':v} for k,v in update_tuple['attrs'].items())]

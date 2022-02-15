@@ -28,12 +28,6 @@ def absolute_to_relative(path, inner_path):
     return path
 
 def pretty(o):
-  class JsonEncoder(json.JSONEncoder):
-    def default(self, z):
-      if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64):
-        return (str(z))
-      else:
-        return super().default(z)
   return json.dumps(o,cls=JsonEncoder, indent = 4)
 
 def get_or_set_secret(name):
@@ -67,8 +61,10 @@ def get_custom(path, function):
 
 class JsonEncoder(json.JSONEncoder):
   def default(self, z):
-    if isinstance(z, datetime.datetime) or isinstance(z, numpy.int64) or isinstance(z, datetime.date):
+    if isinstance(z, datetime.datetime) or isinstance(z, datetime.date):
       return (str(z))
+    elif  isinstance(z, numpy.int64):
+      return int(z)
     else:
       return super().default(z)
 

@@ -93,7 +93,8 @@ class Evaluator(worker.Worker):
                   "dates":set()
                 }
               date_attrs = set(vn for vn in t["attrs"].keys() if var_dic[vn]['type'] == 'date' and t["attrs"][vn] is not None)
-              sorted_attrs = list(sorted(vn for vn in t["attrs"].keys() if var_dic[vn]['type'] not in ['not_characteristic', 'date'] and t["attrs"][vn] is not None))
+              independent_attrs = [t for t in t["attrs"].keys() if t not in modifiers[var_name] or  modifiers[var_name][t] is not None]
+              sorted_attrs = list(sorted(vn for vn in independent_attrs if var_dic[vn]['type'] not in ['not_characteristic', 'date'] and t["attrs"][vn] is not None))
               if len(sorted_attrs) > 0 and len(date_attrs)>0:
                 obs_keys[var_name]["comb"].add(tuple((vn, t["attrs"][vn]) for vn in sorted_attrs))
                 obs_keys[var_name]["dates"].add(tuple((vn, t["attrs"][vn]) for vn in date_attrs))
@@ -133,6 +134,7 @@ class Evaluator(worker.Worker):
                             base_to_test = base_pars[i]
                             # if the current obs base variable is not on obs key we have to look for it on published data
                             if len(comb) > 0 and base_to_test not in obs_keys:
+                               # if the current obs has null mofifiers we have to delete those from lookup key
                                pub_comb = self._variables_proxy.lookup([base_to_test], comb, job['dls_json']['scope']['source'], date_filter, include_source = False, include_tag = True).get()
                                obs_keys[base_to_test] = {
                                  "comb":set(pub_comb.keys()),
@@ -140,10 +142,13 @@ class Evaluator(worker.Worker):
                                }
                             # iterating over current possible combinations
                             j = 0
+                            #if ind == "incidence" and obs_to_test == "population":
+                            #    breakpoint()
                             while j < len(comb):
                                 # the current combination should exists on obs_keys for the current parameter base observation
                                 # tuple must contain the attrs_pars unless the current observation overrides it with a modifier
                                 attr_pars_ok = True
+                                # testing independent keys which is attributes not modified by the variable
                                 key = comb[j]
                                 for attr_par in attr_pars:
                                   ignore_attr = attr_par in modifiers[obs_to_test]
@@ -160,7 +165,9 @@ class Evaluator(worker.Worker):
                                         break
                                   if attrs_obs_ok:
                                     # checking if the current combination exists for the expected base variable
-                                    if base_to_test in obs_keys and key in obs_keys[base_to_test]["comb"]:
+                                    # exluding modifiers
+                                    indep_key = tuple([(k, v) for k, v in key if k not in modifiers[obs_to_test] or modifiers[obs_to_test][k] is not None])
+                                    if base_to_test in obs_keys and indep_key in obs_keys[base_to_test]["comb"]:
                                       j = j + 1
                                     else:
                                       comb.pop(j)
@@ -252,8 +259,11 @@ class Evaluator(worker.Worker):
                         param_values = [None]*len(indexes)
                         # if the parameter is an observation we will look into the associated row attribute getting the date from attrs 
                         if p in obs:
+                          if not obs[p] in row:
+                            breakpoint()
                           for v in row[obs[p]]:
-                            param_values[indexes[v["attrs"][base_date]]] = v["value"]
+                            if v["attrs"][base_date] in indexes:
+                              param_values[indexes[v["attrs"][base_date]]] = v["value"]
                         # if not an observation then the result is expected to be on attrs or in combination
                         else:
                           for v in row[obs[main_par]]:

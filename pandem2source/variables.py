@@ -7,6 +7,7 @@ import datetime
 import numpy
 from collections import defaultdict
 from .util import JsonEncoder
+import logging as l
 
 class Variables(worker.Worker):
     def __init__(self, name, orchestrator_ref, settings): 
@@ -61,8 +62,14 @@ class Variables(worker.Worker):
 
 
     def read_variable(self,variable_name, filter = {}):
+        # l.debug(f"requesting {variable_name} with filter = {filter}" )       
         dir_path = util.pandem_path('files/variables/', variable_name)
+        variables = self.get_variables()
         if os.path.isdir(dir_path):
+            for mod in variables[variable_name]["modifiers"]:
+              if mod['variable'] in filter:
+                filter = filter.copy()
+                filter[mod['variable']] = {mod['value']}
             requested_list = []
             list_files = self._storage_proxy.list_files_abs(dir_path).get()
             target_files = []
@@ -196,7 +203,7 @@ class Variables(worker.Worker):
 
     def lookup(self, variables, combinations, source, filter = None, include_source = True, include_tag = False, types=None):
       dico_vars  = self.get_variables()
-
+      modifiers = {v:{m['variable']:m['value'] for m in vardef['modifiers']} for v, vardef in dico_vars.items() if len(dico_vars[v]["modifiers"]) > 0}
       tag_source = self.read_variable("tag_source")
       tags = {t['attrs']['tag'] for t in tag_source if t['attrs']['source'] == source}
       others = {t['attrs']['source'] for t in tag_source if t['attrs']['tag'] in tags and t['attrs']['source'] != source}
@@ -243,9 +250,11 @@ class Variables(worker.Worker):
           f = {k:v for k, v in filt.items() if v is not None}
           f.update({"source":others})
           tuples = self.read_variable(var, filter = f)
+        # if currnet variable has modifiers we have to find the matching index for the tuple
+        key_map = {tuple((k, (v if var not in modifiers or not k in modifiers[var] else modifiers[var][k])) for k, v in comb):comb for comb in combinations}
         for t in tuples:
           keys = sorted(attr for attr in t["attrs"].keys() if dico_vars[attr]["type"] in types)
-          key = tuple((k, t["attrs"][k]) for k in keys)
+          key = key_map[tuple((k, t["attrs"][k]) for k in keys)]
           filter_value = {k:v for k, v in t["attrs"].items() if k in filter}  
           if key in indexed_comb:
             if not key in res:
