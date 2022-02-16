@@ -246,24 +246,24 @@ class Variables(worker.Worker):
           # TODO make read variable work with alias variables so it can return active cases and confirmed cases on the same query
           tuples = self.read_variable(var, filter = f)
         if include_tag and (tuples is None or len(tuples) == 0):
-          breakpoint()
           f = {k:v for k, v in filt.items() if v is not None}
           f.update({"source":others})
           tuples = self.read_variable(var, filter = f)
         # if currnet variable has modifiers we have to find the matching index for the tuple
         key_map = {tuple((k, (v if var not in modifiers or not k in modifiers[var] else modifiers[var][k])) for k, v in comb):comb for comb in combinations}
-        for t in tuples:
-          keys = sorted(attr for attr in t["attrs"].keys() if dico_vars[attr]["type"] in types)
-          key = key_map[tuple((k, t["attrs"][k]) for k in keys)]
-          filter_value = {k:v for k, v in t["attrs"].items() if k in filter}  
-          if key in indexed_comb:
-            if not key in res:
-              res[key] = {}
-            if "obs" in t:
-              obs_name =  next(iter(t["obs"].keys()))
-              if not obs_name in res[key]:
-                res[key][obs_name] = []
-              res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
+        if tuples is not None:
+          for t in tuples:
+            keys = sorted(attr for attr in t["attrs"].keys() if dico_vars[attr]["type"] in types)
+            key = key_map[tuple((k, t["attrs"][k]) for k in keys)]
+            filter_value = {k:v for k, v in t["attrs"].items() if k in filter}  
+            if key in indexed_comb:
+              if not key in res:
+                res[key] = {}
+              if "obs" in t:
+                obs_name =  next(iter(t["obs"].keys()))
+                if not obs_name in res[key]:
+                  res[key][obs_name] = []
+                res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
       return res
       
 

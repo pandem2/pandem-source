@@ -1,10 +1,10 @@
 library(dplyr)
-dir.create(Sys.getenv("R_LIBS_USER"), recursive = TRUE)  # create personal library
-.libPaths(Sys.getenv("R_LIBS_USER")) 
-if(!require("COVID19")) {
-    devtools::install_github(repo = "covid19datahub/COVID19", ref = "7f20c86", upgrade = "never", lib = Sys.getenv("R_LIBS_USER"))
+#dir.create(Sys.getenv("R_LIBS_USER"), recursive = TRUE)  # create personal library
+#.libPaths(Sys.getenv("R_LIBS_USER")) 
+#if(!require("COVID19")) {
+#    devtools::install_github(repo = "covid19datahub/COVID19", ref = "b941b66e59b7b0aec4807eb5b28208abba66de4a", upgrade = "never", lib = Sys.getenv("R_LIBS_USER"))
     library(COVID19)
-}
+#}
 message("getting data for covid19datahub :-) ")
 df <- covid19(country = c(
   "AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", 

@@ -39,6 +39,8 @@ class Standardizer(worker.Worker):
         ignore_check = set(c["variable"] for c in dls["columns"] if "action" in c and c["action"] == "insert")
         type_translate=['referential_alias']
         type_validate=['referential', 'geo_referential', 'referential_alias']
+        ref_matched = {}
+        ref_failed = {}
         for i in range(-2, len(tuples['tuples'])):
             std_var = {}
             #retrieves the globals variable
@@ -56,6 +58,8 @@ class Standardizer(worker.Worker):
                     referential=self._variables_proxy.get_referential(var_name).get()
                     if referential is not None:
                         refs_values[var_name]=set([x['attr'][var_name] for x in referential])
+                        ref_matched[var_name] = False
+                        ref_failed[var_name] = False
                     elif var_name not in ignore_check : 
                         self.delay_standardize(tuples = tuples, path = path, job = job, dls = dls, source_name = tuples['scope']['source'], var_name = var_name)
                         return
@@ -64,6 +68,8 @@ class Standardizer(worker.Worker):
                     if alias is not None:
                         code=variables[var_name]['linked_attributes'][0]
                         refs_alias[var_name] = dict((x['attr'][var_name],x['attrs'][code]) for x in alias)
+                        ref_matched[var_name] = False
+                        ref_failed[var_name] = False
                     elif var_name not in ignore_check : 
                         self.delay_standardize(tuples = tuples, path = path, job = job, dls = dls, source_name = tuples['scope']['source'], var_name = var_name)
                         return
@@ -86,12 +92,14 @@ class Standardizer(worker.Worker):
                     std_var['attrs'].pop(var_name)
                   for var_value in values:
                     if  var_value is not None and var_value in var_ref:
+                      ref_matched[var_name] = True
                       if var_type in type_translate:
                         new_values.append(refs_alias[var_name][var_value])
                       else: 
                         new_values.append(var_value)
                     elif var_value is not None:
                       #Create a issue since validation failed 
+                      ref_failed[var_name] = True
                       file_name = tuples['scope']['file_name']
                       if i >= 0:
                         line_number = tuples['tuples'][i]['attrs']['line_number']
@@ -127,13 +135,19 @@ class Standardizer(worker.Worker):
                     if cle not in std_var['attrs']:
                        std_var['attrs'][cle]=value
                 std_tuples['tuples'].append(std_var)
+        # the source will be delayed if there referentials with some failures and no success
+        for ref, failed in ref_failed.items():
+          if failed and not ref_matched[ref]:
+            self.delay_standardize(tuples = tuples, path = path, job = job, dls = dls, source_name = tuples['scope']['source'], var_name = ref)
+            return
+
         std_tuples['scope']['update_scope']= [*({'variable':k, 'value':v} for k,v in update_tuple['attrs'].items())]
         #print("\n".join(util.pretty(std_tuples).split("\n")[0:100]))
         self._pipeline_proxy.standardize_end(tuples = std_tuples, issues = list_issues, path = path, job = job)
 
     def delay_standardize(self, tuples, path, job, dls, var_name, source_name):
         # Delaying standardisation for one minute
-        l.info(f"1 minute delay on standardisation for job {job['id']} for source {source_name} since variable {var_name} has not yet been published")
+        l.info(f"1 minute delay on standardisation for job {job['id']} for source {source_name} since no matching {var_name} was found")
         self.register_action(
           repeat = worker.Repeat(timedelta(minutes = 1), last_exec = datetime.now()),  
           action = lambda: self._self_proxy.standardize(tuples = tuples, path = path, job = job, dls = dls),

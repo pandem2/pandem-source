@@ -31,7 +31,7 @@ class Storage(worker.Worker):
                                              'source': pd.Series(dtype='str'), 
                                              'source_files': pd.Series(dtype=object),
                                              'file_sizes': pd.Series(dtype=object),
-                                             'progress': pd.Series(dtype='str'),
+                                             'progress': pd.Series(dtype=float),
                                              'start_on': pd.Series(dtype=object),
                                              'end_on': pd.Series(dtype=object),
                                              'step': pd.Series(dtype='str'), 
@@ -93,7 +93,7 @@ class Storage(worker.Worker):
             shutil.copyfile(src_path, dest_path)  
         
             
-    def list_files(self, path, match=None, recursive=True, exclude=['.git']): #path under files
+    def list_files(self, path, match=None, recursive=True, exclude=['.git'], include_dirs = False, include_files = True): #path under files
         files_paths = []
         if recursive:
             for (dirpath, dirnames, filenames) in os.walk(os.path.join(os.getenv('PANDEM_HOME'), 'files', path)):
@@ -103,7 +103,11 @@ class Storage(worker.Worker):
                 files_paths += [os.path.join(dirpath, file) for file in filenames]
         else:
             paths= os.listdir(os.path.join(os.getenv('PANDEM_HOME'), 'files', path))
-            files_paths = [file_path for file_path in paths if os.path.isfile(os.path.join(os.getenv('PANDEM_HOME'), 'files', path, file_path))]
+            files_paths = [file_path for file_path in paths 
+              if include_files and os.path.isfile(os.path.join(os.getenv('PANDEM_HOME'), 'files', path, file_path)) or
+                 include_dirs and os.path.isdir(os.path.join(os.getenv('PANDEM_HOME'), 'files', path, file_path)) 
+
+            ]
         if match is not None:
             matched_files = [{'path': file_path, 'name':os.path.basename(file_path)} for file_path in files_paths if re.mach(match, os.path.basename(file_path))] 
             return matched_files
@@ -140,8 +144,11 @@ class Storage(worker.Worker):
                 return 'no files founded' 
         else:
             raise FileNotFoundError("folder {0} does not exist!".format(path))  
-
-
+    
+    def delete_dir(self, path):
+        if os.path.exists(path):
+            shutil.rmtree(path)
+        
     def write_db(self, record, db_class):
         df = self.db_tables[db_class]
         if not 'id' in  record:
@@ -171,7 +178,7 @@ class Storage(worker.Worker):
     def delete_db(self, db_class, filter=None):
         df = self.db_tables[db_class]
         if filter != None:
-            df = df.drop(index = df.apply(filter, axis = 1).index)
+            df = df.drop(index = df.loc[df.apply(filter, axis = 1)].index)
         self.db_tables[db_class] = df
         df.to_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle'))
         return df

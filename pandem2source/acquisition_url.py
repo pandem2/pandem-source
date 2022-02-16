@@ -23,12 +23,12 @@ class AcquisitionURL(acquisition.Acquisition):
             parts = urlparse(url)
             if 'file_name' not in dls['acquisition']['channel']:
               dest_name = parts.path.replace("/", "_")
-            elif type(dls['acquisition']['chanel']['file_name'])==str :
+            elif type(dls['acquisition']['channel']['file_name'])==str :
               dest_name = dls['acquisition']['channel']['file_name']
             else:
               dest_name = ''
               for p in dls['acquisition']['channel']['file_name']:
-                if p.starswith("query."):
+                if p.startswith("query."):
                   for par, val in parse_qsl(parts.query):
                     if p == f"query.{par}":
                       dest_name = f"{dest_name}_{par}-{val}"

@@ -17,6 +17,7 @@ class Pipeline(worker.Worker):
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)
         self.retry_failed = retry_failed
         self.restart_job = restart_job
+        self._jobs_to_keep = settings["pandem"]["source"]["pipeline"]["jobs-to-keep"]
 
     def on_start(self):
         super().on_start()
@@ -87,62 +88,62 @@ class Pipeline(worker.Worker):
         for job in self.job_steps['submitted_ended'].copy().values():
             submitted_files = job['source_files']
             if "decompress" not in job['dls_json']['acquisition'].keys():
-                self.update_job_step(job, 'read_format_started')
+                self.update_job_step(job, 'read_format_started', 0.1)
                 self.send_to_readformat(submitted_files, job)
             else:
-                self.update_job_step(job, 'unarchive_started')
+                self.update_job_step(job, 'unarchive_started', 0.1)
                 self.send_to_unarchive(submitted_files, job)
         
         # Jobs after decompression ends
         for job in self.job_steps['unarchive_ended'].copy().values():
             decompressed_files = self.decompressed_files[job['id']]
-            self.update_job_step(job, 'read_format_started')
+            self.update_job_step(job, 'read_format_started', 0.2)
             self.send_to_readformat(decompressed_files, job)
 
         # Jobs after read format ends
         for job in self.job_steps['read_format_ended'].copy().values():
             dfs = self.job_df[job["id"]]
-            self.update_job_step(job, 'read_df_started')
+            self.update_job_step(job, 'read_df_started', 0.3)
             self.send_to_read_df(dfs, job)
         
         # Jobs after read df ends
         for job in self.job_steps['read_df_ended'].copy().values():
             tuples = self.job_tuples[job["id"]]
-            self.update_job_step(job, 'standardize_started')
+            self.update_job_step(job, 'standardize_started', 0.4)
             self.send_to_standardize(tuples, job)
         
         # Jobs after standardize ends
         for job in self.job_steps['standardize_ended'].copy().values():
             tuples = self.job_stdtuples[job["id"]]
             if self.job_to_annotate(job):
-                self.update_job_step(job, 'annotate_started')
+                self.update_job_step(job, 'annotate_started', 0.5)
                 self.send_to_annotate(tuples, job)
             else:
-                self.update_job_step(job, 'aggregate_started')
+                self.update_job_step(job, 'aggregate_started', 0.6)
                 self.send_to_aggregate(tuples, job)
 
         # Jobs after annnotate text ends
         for job in self.job_steps['annotate_ended'].copy().values():
             tuples = self.job_stdtuples[job["id"]]
-            self.update_job_step(job, 'aggregate_started')
+            self.update_job_step(job, 'aggregate_started', 0.6)
             self.send_to_aggregate(tuples, job)
         
         # Jobs after aggregate ends
         for job in self.job_steps['aggregate_ended'].copy().values():
             tuples = self.job_aggrtuples[job["id"]]
-            self.update_job_step(job, 'precalculate_started')
+            self.update_job_step(job, 'precalculate_started', 0.7)
             self.send_to_precalculate(tuples, job)
         
         # Jobs after precalculate ends
         for job in self.job_steps['precalculate_ended'].copy().values():
             tuples = self.job_aggrtuples[job["id"]]  
-            self.update_job_step(job, 'publish_started')
+            self.update_job_step(job, 'publish_started', 0.9)
             self.send_to_publish(tuples, job)
 
         # Jobs after calculate ends
         for job in self.job_steps['calculate_ended'].copy().values():
             indicators_tuples = self.job_indicators[job["id"]]
-            self.update_job_step(job, 'publish_started')
+            self.update_job_step(job, 'publish_started', 0.9)
             self.send_to_publish(indicators_tuples, job)
 
         # Jobs after publish indicator ended
@@ -152,22 +153,18 @@ class Pipeline(worker.Worker):
             # recreating the indicators to calculate for the current step
             ind_in_step = {k:v for k,v in self.job_precalinds[job['id']].items() if v["step"] == calc_step}
             if len(ind_in_step) > 0:
-              self.update_job_step(job, 'calculate_started')
+              self.update_job_step(job, 'calculate_started', 0.8)
               self.send_to_calculate(ind_in_step, job)
             else:       
-              self.update_job_step(job, 'ended')
-              for job_dico in self.job_dicos:
-                  if job["id"] in job_dico:
-                    job_dico.pop(job["id"])
+              self.update_job_step(job, 'ended', 1.0)
+              self.remove_job(job)
      
-    
-
     def submit_files(self, dls, paths):
         job_record = {'source': dls['scope']['source'],
                       'file_sizes': [os.path.getsize(path)/1024 for path in paths],
-                      'progress': '0%',
+                      'progress': 0.0,
                       'start_on': datetime.datetime.now(),
-                      'end_on': '',
+                      'end_on': None,
                       'step': 'submitted_started',
                       'status': 'in progress',
                       'dls_json' : dls
@@ -183,7 +180,7 @@ class Pipeline(worker.Worker):
                                              'job').get()
         job = self._storage_proxy.read_db('job', filter= lambda x: x['id']==job_id).get().to_dict(orient='records')[0]
 
-        self.update_job_step(job, 'submitted_ended')
+        self.update_job_step(job, 'submitted_ended', 0.05)
 
     def send_to_readformat(self, paths, job):
        self.pending_count[job["id"]] = len(paths)
@@ -206,7 +203,7 @@ class Pipeline(worker.Worker):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_df[job["id"]][path] = df
         if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'read_format_ended')
+            self.update_job_step(job, 'read_format_ended', 0.25)
 
     def send_to_unarchive(self, paths, job):
         filter_paths = job['dls_json']["acquisition"]["decompress"]["path"]
@@ -225,7 +222,7 @@ class Pipeline(worker.Worker):
         self.decompressed_files[job['id']].append(path_in_staging)
         self._storage_proxy.write_file(path_in_staging, bytes, 'wb+').get()
         if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'unarchive_ended')
+            self.update_job_step(job, 'unarchive_ended', 0.15)
 
     def send_to_read_df(self, dfs, job):
         self.pending_count[job["id"]] = len(dfs)
@@ -241,7 +238,7 @@ class Pipeline(worker.Worker):
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
             warning_number = sum(issue['issue_severity']=='warning' for issue in self.job_issues[job["id"]])
             if errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
-                self.update_job_step(job, 'read_df_ended')
+                self.update_job_step(job, 'read_df_ended', 0.35)
             else:
                 self.fail_job(job)
 
@@ -259,7 +256,7 @@ class Pipeline(worker.Worker):
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
             warning_number = sum(issue['issue_severity']=='warning' for issue in self.job_issues[job["id"]])
             if errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
-                self.update_job_step(job, 'standardize_ended')
+                self.update_job_step(job, 'standardize_ended', 0.45)
             else:
                 self.fail_job(job)
     
@@ -272,7 +269,7 @@ class Pipeline(worker.Worker):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_stdtuples[job["id"]][path] = tuples
         if self.pending_count[job["id"]] == 0:
-            self.update_job_step(job, 'annotate_ended')
+            self.update_job_step(job, 'annotate_ended', 0.55)
 
     def send_to_aggregate(self, tuples, job):
         tts = {
@@ -293,7 +290,7 @@ class Pipeline(worker.Worker):
 
     def aggregate_end(self, tuples, job): 
         self.job_aggrtuples[job["id"]] = tuples
-        self.update_job_step(job, 'aggregate_ended')
+        self.update_job_step(job, 'aggregate_ended', 0.65)
     
     def send_to_precalculate(self, tuples, job):
         self._evaluator_proxy.plan_calculate(tuples['tuples'], job)
@@ -301,14 +298,14 @@ class Pipeline(worker.Worker):
     def precalculate_end(self, indicators_to_calculate, job): 
         self.job_precalinds[job["id"]] = indicators_to_calculate
         self.job_precalstep[job["id"]] = 0
-        self.update_job_step(job, 'precalculate_ended')
+        self.update_job_step(job, 'precalculate_ended', 0.75)
 
     def send_to_calculate(self, indicators_to_calculate, job): 
         self._evaluator_proxy.calculate(indicators_to_calculate, job)
 
     def calculate_end(self, ind_tuples, job): 
         self.job_indicators[job["id"]] = ind_tuples
-        self.update_job_step(job, 'calculate_ended')
+        self.update_job_step(job, 'calculate_ended', 0.85)
 
     def send_to_publish(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
@@ -316,10 +313,10 @@ class Pipeline(worker.Worker):
         self._variables_proxy.write_variable(tuples, calc_step, job)
     
     def publish_end(self, job): 
-        self.update_job_step(job, 'publish_ended')
+        self.update_job_step(job, 'publish_ended', 0.95)
     
     # this function returns a future that can be waited to ensure that file job is written to disk
-    def update_job_step(self, job, step):
+    def update_job_step(self, job, step, progress):
         l.debug(f"Changing to step {step} for job {job['id']} source {job['dls_json']['scope']['source']}")
         # removing job from current step dict
         if job["step"] in self.job_steps and job["id"]:
@@ -329,10 +326,13 @@ class Pipeline(worker.Worker):
             l.warning(f"Warning: could not find id {job['id']} in job_steps {job['step']}") 
         # changing the job step 
         job["step"] = step
+        job["progress"] = progress
 
         # addong the job to te new dict unless is on the last step
         if step == self.last_step:
-          job["status"] = "Success"
+          job["status"] = "success"
+          job["end_on"] = datetime.datetime.now()
+          job["progress"] = 1
         else:
           self.job_steps[step][job["id"]] = job
 
@@ -354,13 +354,11 @@ class Pipeline(worker.Worker):
         return self._storage_proxy.write_db(job, 'job')
 
     def write_issues(self, issues):
-        issues_codes = set([issue['issue_type'] for issue in issues])
-        for code in issues_codes:
-            issues_to_write = [issue for issue in issues if issue['issue_type']==code]
-            if len(issues_to_write)>50:
-                issues_to_write = issues_to_write.group_by("issue_type").head(50)
-            for issue in issues_to_write:
-                self._storage_proxy.write_db(record=issue, db_class='issue').get() 
+        type_count = {issue['issue_type']:0 for issue in issues}
+        for issue in issues:
+            if type_count[issue['issue_type']] < 50:
+              type_count[issue['issue_type']] =  type_count[issue['issue_type']] + 1
+              self._storage_proxy.write_db(record=issue, db_class='issue').get() 
 
     def job_to_annotate(self, job):
       if "columns" in job['dls_json']:
@@ -368,7 +366,25 @@ class Pipeline(worker.Worker):
           if "variable" in col and col["variable"] == "article_text":
             return True
       return False
-      
-  
 
+    def remove_job(self, job):    
+        for job_dico in self.job_dicos:
+            if job["id"] in job_dico:
+              job_dico.pop(job["id"])
+        self.clean_old_jobs(job["source"])
+
+    def clean_old_jobs(self, source):
+        # getting 10 oldest jobs
+        jobs = self._storage_proxy.read_db("job", lambda j: j["source"] == source).get()
+        if len(jobs) > self._jobs_to_keep:
+          breakpoint()
+          n_del = len(jobs) - self._jobs_to_keep
+          to_del = jobs.sort_values("id", axis = 0, ascending = True).head(n_del)["id"]
+          # deleting issues
+          self._storage_proxy.delete_db("issue", lambda i: i["job_id"] in to_del).get()
+          # deleting jobs
+          self._storage_proxy.delete_db("job", lambda j: j["id"] in to_del).get()
+          # deketing staging
+          for job_id in to_del:
+            self._storage_proxy.delete_dir(self.staging_path(int(job_id)))
 
