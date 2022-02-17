@@ -62,9 +62,6 @@ class Pipeline(worker.Worker):
                                               ) or x["id"] == self.restart_job
                                          ).get()
         if jobs is not None :
-            # deleting issues on job is we are restarting a job
-            if self.restart_job > 0:
-              self._storage_proxy.delete_db('issue', filter = lambda i: i['job_id'] == self.restart_job) 
             jobs = jobs.to_dict(orient = 'records')
 
             new_dls = dict((dls["scope"]["source"],dls) for dls in  (self._storage_proxy.read_file(f["path"]).get() for f in self._storage_proxy.list_files('source-definitions').get()))
@@ -72,6 +69,9 @@ class Pipeline(worker.Worker):
               j["step"]="submitted_ended"
               j["status"]="in progress"
               j["dls_json"] = new_dls[j["source"]]
+              # deleting issues on jobs we are restarting
+              self._storage_proxy.delete_db('issue', filter = lambda i: i['job_id'] == j["id"]) 
+            
             self.job_steps['submitted_ended'] = dict([(j["id"], j) for j in jobs])  
         process_repeat = worker.Repeat(datetime.timedelta(seconds=1))
         self.register_action(process_repeat, self.process_jobs) 
@@ -377,7 +377,6 @@ class Pipeline(worker.Worker):
         # getting 10 oldest jobs
         jobs = self._storage_proxy.read_db("job", lambda j: j["source"] == source).get()
         if len(jobs) > self._jobs_to_keep:
-          breakpoint()
           n_del = len(jobs) - self._jobs_to_keep
           to_del = jobs.sort_values("id", axis = 0, ascending = True).head(n_del)["id"]
           # deleting issues

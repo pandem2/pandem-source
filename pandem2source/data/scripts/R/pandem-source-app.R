@@ -6,6 +6,7 @@ if(!require("shiny")) {
 ui <- function(source_list) {
   shiny::navbarPage("PANDEM II: Data Surveillance"
     , shiny::tabPanel("Integration progress", integration_page())
+    , shiny::tabPanel("Issues", issues_page())
     , shiny::tabPanel("Data sources", data_sources_page(source_list))
     , shiny::tabPanel("Data dictionary", variables_page())
     , shiny::tabPanel("Query", query_page())
@@ -31,6 +32,22 @@ integration_page <- function() {
   )
 }
 
+issues_page <- function() {
+  fluidPage(
+    shiny::fluidRow(
+      shiny::column(12, 
+        shiny::h4("Integration Issues") 
+      )
+    ),
+    shiny::fluidRow(
+      shiny::column(1),
+      shiny::column(10, 
+        DT::dataTableOutput("issues_df")
+      ),
+      shiny::column(1)
+    ) 
+  )
+}
 data_sources_page <- function(sources) {
   fluidPage(
     shiny::fluidRow(
@@ -129,12 +146,26 @@ server <- function(input, output, session, ...) {
   `%>%` <- magrittr::`%>%`
   
   rv_sources <- shiny::reactive({
+    shiny::invalidateLater(5000)
     jsonlite::fromJSON("http://localhost:8000/sources")
   })
-  rv_source_details <- shiny::reactive({jsonlite::fromJSON(paste("http://localhost:8000/source_details?source=", URLencode(input$source_detail, reserved=TRUE), sep = ""))})
+  rv_source_details <- shiny::reactive({
+    jsonlite::fromJSON(paste("http://localhost:8000/source_details?source=", 
+      URLencode(
+        input$source_detail,
+        reserved=TRUE
+      ), sep = ""
+    ))
+  })
+  rv_issues <- shiny::reactive({
+    jsonlite::fromJSON("http://localhost:8000/issues")
+  })
+  rv_variable_list <- shiny::reactive({
+    jsonlite::fromJSON("http://localhost:8000/variable_list")
+  })
   
   output$sources_df <- DT::renderDataTable({
-      sources = rv_sources()
+      sources = shiny::isolate(rv_sources())
       data <- tibble::as_tibble(data.frame(
         Name = sources$sources$name, 
         Progress = sources$sources$progress,
@@ -154,10 +185,10 @@ server <- function(input, output, session, ...) {
         escape = FALSE,
         options = list(
           searching = FALSE,
-          pageLength = nrow(data)
+          pageLength = 50 
           #dom = 't'
         ),
-        rownames = FALSE,
+        rownames = TRUE,
         selection = 'none'
      ) %>%
       DT::formatStyle('Progress',
@@ -167,6 +198,24 @@ server <- function(input, output, session, ...) {
         backgroundPosition = 'center') %>%
       DT::formatPercentage(c("Progress"), 2)
     })
+    shiny::observe({
+      sources = rv_sources()
+      data <- tibble::as_tibble(data.frame(
+        Name = sources$sources$name, 
+        Progress = sources$sources$progress,
+        Step = sources$sources$`step`, 
+        Status=sources$sources$`status`,
+        `Last Import Started` = substr(sources$sources$`last_import_start`, 1, 19), 
+        `Last Import Ended` = substr(sources$sources$`last_import_end`, 1, 19), 
+        `Next Check` = substr(sources$sources$`next_check`, 1, 19), 
+        `Files` = sources$sources$`files`,  
+        `Mb` = round(sources$sources$`size`/1024, 1),  
+        `Issues` = sources$sources$`issues`,  
+         check.names = FALSE
+      )) %>% dplyr::filter(!is.na(.data$Step)) 
+
+      DT::replaceData(DT::dataTableProxy('sources_df'), data)
+    }) 
     
     output$source_name <- shiny::renderText({
       names(rv_source_details()$definitions)[[1]]
@@ -246,13 +295,77 @@ server <- function(input, output, session, ...) {
         escape = FALSE,
         options = list(
           searching = FALSE,
-          pageLength = nrow(data)
+          pageLength = 200
           #dom = 't'
         ),
         rownames = FALSE,
         selection = 'none'
      ) 
     })
+    
+    output$issues_df <- DT::renderDataTable({
+      issues <- rv_issues()$issues
+      data <- tibble::as_tibble(data.frame(
+           Id = issues$id,
+           `Job Id` = issues$job_id,
+           Source = issues$tag,
+           Table = issues$source,
+           `Severity` = issues$issue_severity,
+           `Issue Type` = issues$issue_type,
+           Step = issues$step,
+           `Line Number` = issues$line,
+           File = issues$file,
+           Message = issues$message,
+           `Raised On` = substring(issues$raised_on, 19),
+           check.names = FALSE
+      ))  
+
+      DT::datatable(
+        data, 
+        escape = FALSE,
+        options = list(
+          searching = TRUE,
+          pageLength = 200
+          #dom = 't'
+        ),
+        rownames = FALSE,
+        selection = 'none'
+     ) 
+    })
+
+    output$variables_df <- DT::renderDataTable({
+      variables <- rv_variable_list()$variables
+      data <- tibble::as_tibble(data.frame(
+        `Family` = variables$data_family,
+        `Type` = variables$type,
+        `Variable` = gsub("_", " ", variables$variable),
+        `Base Variable` = gsub("_", " ", variables$base_variable),
+        `Definition` = variables$description,
+         Unit = variables$unit,
+        `Partition` = 
+           paste("<UL>", sapply(variables$partition, function(r) paste(sapply(r, function(i) paste("<LI>", i, "</LI>", collapse = "", sep = "")), collapse = "")), "</UL>", sep = ""),
+        `Modifiers` = 
+           sapply(variables$modifiers, function(df) if(nrow(df) == 0) "" else paste("<UL><LI>", paste(df$variable, ": ", df$value, sep = "", collapse = "</LI><LI>"), sep = "", "</LI></UL>")),
+        `Links` = sapply(variables$linked_attributes, function(v) paste(v, paste(v, collapse = ', '))),
+        `Formula` = variables$formula,
+        check.names = FALSE
+      ))  
+
+      DT::datatable(
+        data, 
+        escape = FALSE,
+        options = list(
+          searching = TRUE,
+          pageLength = 200
+          #dom = 't'
+        ),
+        rownames = FALSE,
+        selection = 'none'
+     ) 
+    })
+
+
+
 
 }
   

@@ -123,23 +123,23 @@ class SourcesHandler(tornado.web.RequestHandler):
               "next_check":None
             }
             tags[tag_name] = tag
-            if source["next_exec"] is not None and (tag["next_check"] is None or tag["next_check"] > str(source["next_exec"])):
-              tag["next_check"] = str(source["next_exec"])
+          if source["next_exec"] is not None and (tag["next_check"] is None or tag["next_check"] > str(source["next_exec"])):
+            tag["next_check"] = str(source["next_exec"])
+          
+          if is_last_job:
+            tag["progress"] = (tag["progress"]*tag["files"] + j['progress']*len(j["source_files"]))/(tag["files"] + len(j["source_files"]))
+            tag["files"] = tag["files"] + len(j["source_files"])
+            tag["size"] =  tag["size"] + sum(j["file_sizes"])
+            tag["issues"] =  tag["issues"] + len(df_issues[df_issues['job_id']==j["id"]] if df_issues is not None else [])
             
-            if is_last_job:
-              tag["progress"] = (tag["progress"]*tag["files"] + j['progress']*len(j["source_files"]))/(tag["files"] + len(j["source_files"]))
-              tag["files"] = tag["files"] + len(j["source_files"])
-              tag["size"] =  tag["size"] + sum(j["file_sizes"])
-              tag["issues"] =  tag["issues"] + len(df_issues[df_issues['job_id']==j["id"]] if df_issues is not None else [])
-              
-              if tag["last_import_start"] is None or tag['last_import_start'] < str(j['start_on']):
-                  tag["last_import_start"] = str(j["start_on"])
-              if "step" not in tag or tag["progress"] < j["progress"]:
-                  tag['status'] = j['status']
-                  tag['steps'] = j["step"]
-            else:
-              if tag["last_import_end"] is None or (j["end_on"] is not None and str(j["end_on"]) > tag["last_import_end"]):
-                source['last_import_end'] = str(j['end_on'])
+            if tag["last_import_start"] is None or tag['last_import_start'] < str(j['start_on']):
+                tag["last_import_start"] = str(j["start_on"])
+            if ("step" not in tag) or tag["progress"] < j["progress"]:
+                tag['status'] = j['status']
+                tag['step'] = j["step"]
+          else:
+            if tag["last_import_end"] is None or (j["end_on"] is not None and str(j["end_on"]) > tag["last_import_end"]):
+              source['last_import_end'] = str(j['end_on'])
               
         res = list(tags.values())
         res.sort(key = lambda s:s["name"]) 
@@ -211,7 +211,7 @@ class IssuesHandler(tornado.web.RequestHandler):
         """
         ---
         tags:
-          - Issues
+          - issues
         summary: List of issues realted to a Job of a source
         description: List of issues produced  for a particular job in a source.
         operationId: getIssues
@@ -257,14 +257,22 @@ class IssuesHandler(tornado.web.RequestHandler):
               df_jobs_source = df_jobs[df_jobs['id']==job]
 
             df_issues = self.storage_proxy.read_db('issue').get()
+            if df_jobs is not None:
+              dlss = {j['source']:j['dls_json'] for j in df_jobs.to_dict('records')}
+            else :
+              dlss = {}
+            tags = {source:dls["scope"]["tags"][0] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else source for source, dls in dlss.items()}
+
             if df_issues is not None:
               df_issues = df_issues[df_issues['job_id'].isin(df_jobs['id'])]
               df_issues = df_issues.copy()
               df_issues["raised_on"] = df_issues["raised_on"].astype(str)
+              df_issues["tag"] = df_issues['source'].apply(lambda s: tags[s])
+
               issue_list = df_issues.to_dict('records') 
             else:
               issue_list = []
-        response = {'Issues' : issue_list}
+        response = {'issues' : issue_list}
         self.write(response)
 
 
@@ -390,7 +398,7 @@ class IssueModel(object):
     type: object
     description: Issue model representation
     properties:
-        Issues:
+        issues:
             type: array
     """
 
