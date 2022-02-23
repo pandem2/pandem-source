@@ -140,7 +140,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 06_contact_tracing,case_origin,,characteristic,,,,,,[]
 06_contact_tracing,contact_tracing_policy,,referential,,,,,,[]
 06_contact_tracing,proportion_of_new_cases_that_are_part_of_known_transmission_chains,,indicator,,,,,,[]
-06_contact_tracing,"n�_of_contacts,secondary_and_terciary_cases_per_index_case",,indicator,,,,,,[]
+06_contact_tracing,"n?_of_contacts,secondary_and_terciary_cases_per_index_case",,indicator,,,,,,[]
 06_contact_tracing,number_of_clusters_found_(and_cluster_type_-_definition),,characteristic,,,,,,[]
 06_contact_tracing,confirmed_cases_that_had_travel_during_infectious_period,,observation,,,,,,[]
 06_contact_tracing,types_of_contact,,characteristic,,,,,,[]

@@ -147,15 +147,13 @@ about_page <- function(logo_path) {
   fluidPage(
     shiny::fluidRow(
       shiny::column(12, 
-        shiny::h4("Query") 
+        shiny::h4("by the pandem consortium") 
       )
     ),
     shiny::fluidRow(
-      shiny::column(1),
-      shiny::column(10, 
-        shiny::img("big_logo", src=b64)
-      ),
-      shiny::column(1)
+      shiny::column(12, 
+        shiny::img(src=b64, height="80%", width="80%", align="center")
+      )
     ) 
   )
 }
@@ -482,10 +480,14 @@ while(is.null(source_list)) {
 # test if there is at least one argument: if not, return an error
 if (length(args)==0) {
   options = options(shiny.fullstacktrace = TRUE)
+}
 if (length(args)>0) {
   options = options(shiny.fullstacktrace = TRUE, shiny.port = as.integer(args[1]))
 }
 if (length(args)>1) {
   logo_path = args[2]
+} else {
+  logo_path = ""
+}
 shiny::shinyApp(ui = ui(source_list, logo_path), server = server, options = options )
 
