@@ -25,7 +25,7 @@ class FormatReaderXLS(formatreader.FormatReader):
             if len(missing) > 0:
               raise ValueError(f"Cannot find columns {missing} on sheet {sheet}")
             cols = df.iloc[best_row]
-            df  = pd.DataFrame(df.values[cols_row+1:], columns=cols)
+            df  = pd.DataFrame(df.values[best_row+1:], columns=cols)
         else:
             raise ValueError('can not read from empty bytes')
         return df

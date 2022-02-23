@@ -1,14 +1,13 @@
 {
     "scope":{
-      "source":"local-regions",
-      "source_description":"Local regions from RIVM",
-      "tags":["COVID19 Template"],
+      "source":"local-regions-THL",
+      "source_description":"Local regions from THL",
+      "tags":["THL COVID-19 manual"],
       "frequency":"every 30 seconds",
       "reference_user":"",
       "reporting_email":"",
       "globals":[
-        {"variable":"source"},
-        {"variable":"pathogen_name", "value":"COVID-19"}
+        {"variable":"source"}
       ],
       "update_scope":[
         {"variable":"source"}
@@ -17,7 +16,7 @@
     "acquisition":{
       "channel":{
         "name":"input-local",
-        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "xls_file":"M.12 Upload templates_end_users_THL.xlsx",
         "sheet":"Local regions"
       },
       "format": {

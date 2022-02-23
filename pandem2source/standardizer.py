@@ -20,7 +20,7 @@ class Standardizer(worker.Worker):
         self._pipeline_proxy=self._orchestrator_proxy.get_actor('pipeline').get().proxy()
 
     #def standardize(self, tuples_to_validate, job):
-    def standardize(self, tuples, path, job, dls, delayed = False):  
+    def standardize(self, tuples, path, job, dls):  
         """
             IN:         tuples_to_validate and object job
             ACTIONS:    check the code and updates with a code if the values are in a ref
@@ -61,7 +61,7 @@ class Standardizer(worker.Worker):
                         ref_matched[var_name] = False
                         ref_failed[var_name] = False
                     elif var_name not in ignore_check : 
-                        self.delay_standardize(tuples = tuples, path = path, job = job, dls = dls, source_name = tuples['scope']['source'], var_name = var_name)
+                        self._pipeline_proxy.standardize_end(tuples = None, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
                         return
                 if var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
                     alias=self._variables_proxy.get_referential(var_name).get() 
@@ -71,7 +71,7 @@ class Standardizer(worker.Worker):
                         ref_matched[var_name] = False
                         ref_failed[var_name] = False
                     elif var_name not in ignore_check : 
-                        self.delay_standardize(tuples = tuples, path = path, job = job, dls = dls, source_name = tuples['scope']['source'], var_name = var_name)
+                        self._pipeline_proxy.standardize_end(tuples = None, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
                         return
 
                 var_type = variables[var_name]['type']
@@ -138,25 +138,22 @@ class Standardizer(worker.Worker):
         # the source will be delayed if there referentials with some failures and no success
         for ref, failed in ref_failed.items():
           if failed and not ref_matched[ref]:
-            if not delayed:
-              # delete report existing issues
-              for i in list_issues:
-                self._storage_proxy.write_db(i, 'issue') 
-            self.delay_standardize(tuples = tuples, path = path, job = job, dls = dls, source_name = tuples['scope']['source'], var_name = ref)
+            self._pipeline_proxy.standardize_end(tuples = None, issues = list_issues, path = path, job = job)
             return
-
         std_tuples['scope']['update_scope']= [*({'variable':k, 'value':v} for k,v in update_tuple['attrs'].items())]
         #print("\n".join(util.pretty(std_tuples).split("\n")[0:100]))
-        if delayed:
-          # delete existing solved issues since delayed was fixed
-          self._storage_proxy.delete_db('issue', lambda i:i['issue_type'] == "ref-not-found") 
+        # delete potential issues if this is a repeated call
+        self._storage_proxy.delete_db('issue', lambda i:i['issue_type'] == "ref-not-found" and i['job_id'] == job['id']) 
         self._pipeline_proxy.standardize_end(tuples = std_tuples, issues = list_issues, path = path, job = job)
 
-    def delay_standardize(self, tuples, path, job, dls, var_name, source_name):
-        # Delaying standardisation for one minute
-        l.info(f"1 minute delay on standardisation for job {job['id']} for source {source_name} since no matching {var_name} was found")
-        self.register_action(
-          repeat = worker.Repeat(timedelta(minutes = 1), last_exec = datetime.now()),  
-          action = lambda: self._self_proxy.standardize(tuples = tuples, path = path, job = job, dls = dls, delayed = True),
-          oneshot = True
-        )
+    def nothing_found_issue(self, file_name, job, var_name):
+      return { "step":job['step'], 
+        "line":0, 
+        "source":job["source"], 
+        "file":file_name, 
+        "message":f"Cannot find any match for variable {var_name} on {file_name} this standardize will be retried if all files on source have the same issue", 
+        "raised_on":datetime.now(), 
+        "job_id":job['id'], 
+        "issue_type":"ref-not-found",
+        'issue_severity':"warning"
+      }

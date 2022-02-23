@@ -9,7 +9,9 @@ import pandas as pd
 import numpy as np
 import json
 import isoweek
-import logging as l
+import logging
+import re
+l = logging.getLogger("pandem.dfreader")
 
 class DataframeReader(worker.Worker):
     __metaclass__ = ABCMeta
@@ -143,13 +145,17 @@ class DataframeReader(worker.Worker):
         elif unit == 'date':
             if np.issubdtype(dtype, np.datetime64):
                 return value
+            elif type(value) == datetime:
+                return value
             elif format.get("date_format") is None:
                 raise AssertionError("You have to provide a format to parse a date on Data source definition, on ['acquisition']['format']['date_format']")
             elif format.get("date_format") =='isoweek':
                 if dtype in ["int", "int64", "float", "float64"]:
-                  return isoweek.Week(int(int(value)/100),int(value)%100).monday()
+                    return isoweek.Week(int(int(value)/100),int(value)%100).thursday()
                 else:
-                  return isoweek.Week(int(value[:4]),int(value[-2:])).monday()
+                    year = [int(v) for v in re.findall("[0-9]+", value) if int(v) > 100][0]
+                    week = [int(v) for v in re.findall("[0-9]+", value) if int(v) < 100][0]
+                    return isoweek.Week(year,week).thursday()
             else:
                 return datetime.strptime(value, format.get('date_format'))
         elif self.is_numeric_unit(unit) :
@@ -159,7 +165,7 @@ class DataframeReader(worker.Worker):
               else:
                 return value
             else:
-                value = str(value)
+                value = str(value).replace(" ","")
                 if "thousands_separator" in format and format["thousands_separator"]!=".":
                   value = value.replace(format["thousands_separator"], "") 
                 if "decimal_separator" in format and format["decimal_separator"]!=".":

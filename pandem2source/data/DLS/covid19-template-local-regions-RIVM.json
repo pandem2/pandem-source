@@ -2,7 +2,7 @@
     "scope":{
       "source":"local-regions-rivm",
       "source_description":"Local regions from RIVM",
-      "tags":[],
+      "tags":["RIVM COVID-19 manual"],
       "frequency":"every 30 seconds",
       "reference_user":"",
       "reporting_email":"",
@@ -11,8 +11,7 @@
         {"variable":"pathogen_name", "value":"COVID-19"}
       ],
       "update_scope":[
-        {"variable":"source"},
-        {"variable":"reporting_date"}
+        {"variable":"source"}
       ]
     },
     "acquisition":{

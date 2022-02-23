@@ -2,7 +2,7 @@
     "scope":{
       "source":"twitter",
       "source_description":"",
-      "tags":["Social Media"],
+      "tags":["Twitter"],
       "frequency":"every 1 minutes",
       "reference_user":"",
       "reporting_email":"",

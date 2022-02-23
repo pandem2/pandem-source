@@ -1,11 +1,12 @@
 import sys, os
-import yaml
 import argparse
 import logging
 import shutil
 from . import util 
 from .orchestrator import Orchestration
 from . import admin
+
+l = logging.getLogger("pandem")
 
 def main(a):
   #conf = config()
@@ -35,6 +36,17 @@ def main(a):
     help="Whether to retry failed jobs" 
   )
   
+  start_parser.add_argument(
+    "--not-retry-active", 
+    action="store_true", 
+    help="Whether to do not retry active jobs" 
+  )
+  start_parser.add_argument(
+    "--no-app", 
+    action="store_true", 
+    help="If present the pandem2-source app will not be lauched" 
+  )
+
   start_parser.add_argument(
     "-r",
     "--restart-job", 
@@ -111,9 +123,9 @@ def main(a):
     args.func(args, parser)
 
 # handlers
-def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart_job = 0):
+def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart_job = 0, not_retry_active = False):
   from types import SimpleNamespace
-  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None, "restart_job":restart_job}))
+  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None, "restart_job":restart_job, "no_app":False, "not_retry_active":not_retry_active}))
 
 # handlers
 def do_start(args, *other):
@@ -132,27 +144,23 @@ def do_start(args, *other):
   if not os.path.exists(config):
     shutil.copy(defaults, config)
 
-  with open(config, "r") as f:
-    settings = yaml.safe_load(f)
   # Adding python scripts on pandem_home to the system path
   sys.path.insert(1, util.pandem_path("files", "scripts", "py"))
-
-  if os.environ.get("PANDEM_NLP") is not None:
-     settings["pandem"]["source"]["nlp"]["models_path"] = os.environ.get("PANDEM_NLP")
-  else:
-     while "models_path" not in settings["pandem"]["source"]["nlp"] or settings["pandem"]["source"]["nlp"]["models_path"] == "": 
-       settings["pandem"]["source"]["nlp"]["models_path"] = input(f"""
-         Please specify the location of nlp components for text classification
-
-         ** tip: Next time you can set the environmens variable PANDEM_NLP 
-         or set the value in pandem->source->nlp->models_path on {config}
-         you can download the models from here: https://drive.google.com/file/d/1mSl2X4DQQZKf1sHeJaKDZOM6ydi4nVEK/view?usp=sharing
-         """)
+  settings = util.settings()
+  
+  install_issues = admin.install_issues()
+  if len(install_issues) > 0:
+    eol = '\n'
+    l.warning(f"""The following errors where found on current PANDEM-2 installation please fix before proceed
+    {eol.join(install_issues)}
+    """)
+    return None
+  
   if args.restart_job > 0:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = None, restart_job = args.restart_job)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = False, restart_job = args.restart_job, retry_active = True)
     orch = orchestrator_ref.proxy()
   elif args.limit_collection is not None:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed, restart_job = args.restart_job)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed, restart_job = args.restart_job, retry_active = not args.not_retry_active)
     orch = orchestrator_ref.proxy()
     storage_proxy = orch.get_actor("storage").get().proxy()
     dls_files = storage_proxy.list_files('source-definitions').get()
@@ -163,14 +171,19 @@ def do_start(args, *other):
       acquisition_proxy = orch.get_actor(f"acquisition_{dls['acquisition']['channel']['name']}").get().proxy()
       acquisition_proxy.add_datasource(dls)
   else:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed, retry_active = not args.not_retry_active)
     orch = orchestrator_ref.proxy()
+
+  # launching pandem2source app
+  if not args.no_app:
+    admin.run_pandem2app()    
+
   return orch
   
 def do_reset(args, *other):
   if args.restore_factory_defaults:
     admin.delete_all()
-    admin.reset_default_folders("input-local" "input-local-defaults", "dfcustom", "scripts", "variables", "indicators")
+    admin.reset_default_folders("input-local", "input-local-defaults", "dfcustom", "scripts", "variables", "indicators", "img")
   if args.variables or args.restore_factory_defaults:
     admin.reset_variables(in_home = True)
   if args.covid19_datahub or args.ecdc_covid19_variants or args.restore_factory_defaults:

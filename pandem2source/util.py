@@ -4,6 +4,7 @@ import json
 import numpy
 import io
 import getpass
+import yaml
 
 def check_pandem_home():
   if os.environ.get("PANDEM_HOME") is None:
@@ -15,6 +16,13 @@ def pandem_path(*path):
   else:
     return os.path.join(os.environ.get("PANDEM_HOME"), *path)
 
+def settings():
+  config = pandem_path("settings.yml")
+  with open(config, "r") as f:
+    settings = yaml.safe_load(f)
+  if os.environ.get("PANDEM_NLP") is not None:
+     settings["pandem"]["source"]["nlp"]["models_path"] = os.environ.get("PANDEM_NLP")
+  return settings
 
 def absolute_to_relative(path, inner_path):
     rel = os.environ.get("PANDEM_HOME")

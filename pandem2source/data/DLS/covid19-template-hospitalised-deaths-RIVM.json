@@ -2,7 +2,7 @@
     "scope":{
       "source":"hospitalised-deaths-RIVM",
       "source_description":"Hospitalised deaths dataset from a local excel file sheet",
-      "tags":[],
+      "tags":["RIVM COVID-19 manual"],
       "frequency":"every 30 seconds",
       "reference_user":"",
       "reporting_email":"",
@@ -11,8 +11,7 @@
         {"variable":"pathogen_name", "value":"COVID-19"}
       ],
       "update_scope":[
-        {"variable":"source"},
-        {"variable":"reporting_date"}
+        {"variable":"source"}
       ]
     },
     "acquisition":{
@@ -31,8 +30,7 @@
     },
     "columns":[
       {"name":"Date", "variable":"reporting_date"}, 
-      {"name":"Country", "variable":"country_name"}, 
-      {"name":"nuts2/3", "variable":"geo_local_code"},
+      {"name":"Country/nuts", "variable":"geo_local_code"}, 
       {"name":"Age group", "variable":"age_group"},
       {"name":"Gender", "variable":"gender_code"},
       {"name":"Population", "variable":"population"},

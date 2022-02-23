@@ -14,7 +14,7 @@ import subprocess
 from copy import deepcopy
 from itertools import chain
 import logging as l
-
+import traceback
 
 
 
@@ -226,80 +226,92 @@ class Evaluator(worker.Worker):
 
 
     def calculate(self, indicators_to_cal, job):
-        vars_dic =  self._dict_of_variables
-        params = self._parameters
-        source =  job['dls_json']['scope']['source']
-        result = {"tuples": []}
-        # mixing indicators to calculate on all paths
-        if indicators_to_cal and len(indicators_to_cal) > 0:
-            # looping trough all indicators
-            for ind, ind_map in indicators_to_cal.items():
-                combis = ind_map["comb"]
-                l.debug(f"calculating {ind} in {source} for {len(combis)} combinations")
-                # creating scripts for indicator
-                self.prepare_scripts(ind, job)
-                # getting all matching combinations for the indicator calculation from the database
-                obs = {p:vars_dic[p]["variable"] for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"]}
-                var_date, base_date = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] == "date"))
-                main_par, main_base = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"] ))
-                attrs = {p:vars_dic[p]["variable"] for p in params[ind] if p not in set(obs.keys())}
-                data = self._variables_proxy.lookup(list(obs.values()), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
-                # iterating though each combination and launching the scripts to calculate the results
-                for comb in combis:
-                  #sorting values per date
-                  if comb in data:
-                    row = data[comb]
-                    comb_map = {k:v for k, v in comb}
-                    indexes = dict((v, k) for k, v in enumerate(sorted(v["attrs"][base_date] for v in row[main_base])))
-                    staging_dir = self.staging_path(job['id'], f'ind/{ind}')
-                    # write params values within temporary files
-                    # we start by generating lists full of nones for each found date
-                    can_run = True
-                    for p in params[ind]:
-                        param_values = [None]*len(indexes)
-                        # if the parameter is an observation we will look into the associated row attribute getting the date from attrs 
-                        if p in obs:
-                          if not obs[p] in row:
-                            breakpoint()
-                          for v in row[obs[p]]:
-                            if v["attrs"][base_date] in indexes:
-                              param_values[indexes[v["attrs"][base_date]]] = v["value"]
-                        # if not an observation then the result is expected to be on attrs or in combination
-                        else:
-                          for v in row[obs[main_par]]:
-                            if attrs[p] in v["attrs"]:
-                              param_values[indexes[v["attrs"][base_date]]] = v["attrs"][attrs[p]]
+        try:
+            vars_dic =  self._dict_of_variables
+            params = self._parameters
+            source =  job['dls_json']['scope']['source']
+            result = {"tuples": []}
+            # mixing indicators to calculate on all paths
+            if indicators_to_cal and len(indicators_to_cal) > 0:
+                # looping trough all indicators
+                for ind, ind_map in indicators_to_cal.items():
+                    combis = ind_map["comb"]
+                    l.debug(f"calculating {ind} in {source} for {len(combis)} combinations")
+                    # creating scripts for indicator
+                    self.prepare_scripts(ind, job)
+                    # getting all matching combinations for the indicator calculation from the database
+                    obs = {p:vars_dic[p]["variable"] for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"]}
+                    var_date, base_date = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] == "date"))
+                    main_par, main_base = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"] ))
+                    attrs = {p:vars_dic[p]["variable"] for p in params[ind] if p not in set(obs.keys())}
+                    data = self._variables_proxy.lookup(list(obs.values()), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
+                    # iterating though each combination and launching the scripts to calculate the results
+                    for comb in combis:
+                      #sorting values per date
+                      if comb in data:
+                        row = data[comb]
+                        comb_map = {k:v for k, v in comb}
+                        indexes = dict((v, k) for k, v in enumerate(sorted(v["attrs"][base_date] for v in row[main_base])))
+                        staging_dir = self.staging_path(job['id'], f'ind/{ind}')
+                        # write params values within temporary files
+                        # we start by generating lists full of nones for each found date
+                        can_run = True
+                        for p in params[ind]:
+                            param_values = [None]*len(indexes)
+                            # if the parameter is an observation we will look into the associated row attribute getting the date from attrs 
+                            if p in obs:
+                              for v in row[obs[p]]:
+                                if v["attrs"][base_date] in indexes:
+                                  param_values[indexes[v["attrs"][base_date]]] = v["value"]
+                            # if not an observation then the result is expected to be on attrs or in combination
                             else:
-                              param_values[indexes[v["attrs"][base_date]]] = comb_map[attrs[p]]
-                              
-                        if next(iter(v for v in param_values if v is not None), None) is None:
-                          can_run = False
-                        # writing the values on the parameter file 
-                        param_file_path = os.path.join(staging_dir, p+'.json')
-                        with open(param_file_path, 'w+') as jsonf:
-                          jsonf.write(json.dumps(param_values))
+                              for v in row[obs[main_par]]:
+                                  if attrs[p] in v["attrs"]:
+                                    param_values[indexes[v["attrs"][base_date]]] = v["attrs"][attrs[p]]
+                                  else:
+                                    param_values[indexes[v["attrs"][base_date]]] = comb_map[attrs[p]]
+                                  
+                            if next(iter(v for v in param_values if v is not None), None) is None:
+                              can_run = False
+                            # writing the values on the parameter file 
+                            param_file_path = os.path.join(staging_dir, p+'.json')
+                            with open(param_file_path, 'w+') as jsonf:
+                              jsonf.write(json.dumps(param_values))
 
-                    # executing the script
-                    exec_file_path = os.path.join(staging_dir, 'exec.R')
-                    result_path = os.path.join(staging_dir, 'result.json')
-                    if can_run:
-                        subprocess.run (f'/usr/bin/Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
-                        if os.path.exists(result_path):
-                            
-                            modifiers = {t["variable"]:t["value"] for t in vars_dic[ind]["modifiers"] } if "modifiers" in vars_dic[ind] else {}
-                            with open(self.pandem_path(result_path)) as f:
-                                r = json.load(f)
-                            for date, i in indexes.items():
-                                ind_date_tuple = {'obs': {ind:r[i] if r[i] != "NA" else None},
-                                                'attrs':{**{base_date:date, "source":source},
-                                                         **{k:v for k,v in comb},
-                                                         ** modifiers
-                                                         }
-                                                }
-                                result['tuples'].append(ind_date_tuple)
-                        else:
-                            l.warning(f'result file {result_path} not found')
-        
-        result['scope'] = {}            
-        result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
-        self._pipeline_proxy.calculate_end(result, job = job).get()
+                        # executing the script
+                        exec_file_path = os.path.join(staging_dir, 'exec.R')
+                        result_path = os.path.join(staging_dir, 'result.json')
+                        if can_run:
+                            subprocess.run (f'/usr/bin/Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
+                            if os.path.exists(result_path):
+                                
+                                modifiers = {t["variable"]:t["value"] for t in vars_dic[ind]["modifiers"] } if "modifiers" in vars_dic[ind] else {}
+                                with open(self.pandem_path(result_path)) as f:
+                                    r = json.load(f)
+                                for date, i in indexes.items():
+                                    ind_date_tuple = {'obs': {ind:r[i] if r[i] != "NA" else None},
+                                                    'attrs':{**{base_date:date, "source":source},
+                                                             **{k:v for k,v in comb},
+                                                             ** modifiers
+                                                             }
+                                                    }
+                                    result['tuples'].append(ind_date_tuple)
+                            else:
+                                l.warning(f'result file {result_path} not found')
+            
+            result['scope'] = {}            
+            result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
+            self._pipeline_proxy.calculate_end(result, job = job).get()
+        except Exception as e: 
+            l.warning(f"Error during calculation, job {job['id']} will fail")
+            issue = { "step":job['step'], 
+                   "line":0, 
+                   "source":job['source'], 
+                   "file":'', 
+                   "message":f"{str(e)}\n{traceback.format_exc()}", 
+                   "raised_on":datetime.now(), 
+                   "job_id":job['id'], 
+                   "issue_type":"error",
+                   'issue_severity':"error"
+            }
+            self._pipeline_proxy.fail_job(job, issue = issue).get()

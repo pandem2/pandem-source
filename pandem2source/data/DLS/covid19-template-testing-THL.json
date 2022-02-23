@@ -1,8 +1,8 @@
 {
     "scope":{
-      "source":"testing-sheet-rivm",
+      "source":"testing-sheet-THL",
       "source_description":"Testing dataset from a local excel file sheet",
-      "tags":["RIVM COVID-19 manual"],
+      "tags":["THL COVID-19 manual"],
       "frequency":"every 30 seconds",
       "reference_user":"",
       "reporting_email":"",
@@ -17,26 +17,22 @@
     "acquisition":{
       "channel":{
         "name":"input-local",
-        "xls_file":"M.12 Upload templates_end_users_RIVM.xlsx",
+        "xls_file":"M.12 Upload templates_end_users_THL.xlsx",
         "sheet":"Testing"
       },
       "format": {
         "name":"xls",
         "decimal_sign":".",
         "thousands_separator":"",
-        "date_format":"YYYY-MM-DD",
+        "date_format":"isoweek",
         "encoding":"UTF-8"
       }
     },
     "columns":[
-      {"name":"Date", "variable":"reporting_date"}, 
-      {"name":"NUTS2/3/country", "variable":"geo_local_code"},
+      {"name":"Date", "variable":"reporting_week"}, 
+      {"name":"NUTS2/3/country", "variable":"geo_name"},
       {"name":"Test Type (active cases)", "variable":"test_type"},
-      {"name":"Num of available tests", "variable":"available_tests"},
       {"name":"number of test performed", "variable":"performed_tests"},
-      {"name":"Positive results", "variable":"positive_results"},
-      {"name":"Negative results", "variable":"negative_results"},
-      {"name":"Inconclusive results", "variable":"inconclusive_results"},
-      {"name":"Unknown results", "variable":"unknown_results"}
+      {"name":"Positive results", "variable":"positive_results"}
     ]
 }

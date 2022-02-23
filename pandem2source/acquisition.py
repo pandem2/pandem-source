@@ -65,6 +65,7 @@ class Acquisition(worker.Worker):
         # registering new source if not already on the source table
         find_source = self._storage_proxy.read_db('source', lambda x: x['name']==dls['scope']['source']).get()
         if find_source is None  or len(find_source["id"]) == 0:
+            last_exec = None
             id_source = self._storage_proxy.write_db(
                  {
                   'name': dls['scope']['source'],
@@ -73,9 +74,11 @@ class Acquisition(worker.Worker):
                 'source'
             ).get()
         else:
+            last_exec = find_source["last_exec"].values[0]
             id_source = find_source["id"].values[0]
        # updating the internal variable current sources
         self.current_sources[id_source] = dls 
+        
         loop_frequency_str = dls['scope']['frequency'].strip()
         if 'frequency_start_hour' in dls['scope']:
           start_hour = int(dls['scope']['frequency_start_hour'])
@@ -86,18 +89,18 @@ class Acquisition(worker.Worker):
         else :
           end_hour = None
         if loop_frequency_str=='':
-            monitor_repeat = worker.Repeat(timedelta(days=1), start_hour = start_hour, end_hour = end_hour)         
+            monitor_repeat = worker.Repeat(timedelta(days=1), start_hour = start_hour, end_hour = end_hour, last_exec = last_exec)         
         elif loop_frequency_str=='daily':
-            monitor_repeat = worker.Repeat(timedelta(days=1), start_hour = start_hour, end_hour = end_hour)
+            monitor_repeat = worker.Repeat(timedelta(days=1), start_hour = start_hour, end_hour = end_hour, last_exec = last_exec)
         elif loop_frequency_str.split(' ')[-1]=='seconds':
             loop_frequency = int(loop_frequency_str.split(' ')[-2]) #every n seconds
-            monitor_repeat = worker.Repeat(timedelta(seconds=loop_frequency), start_hour = start_hour, end_hour = end_hour)
+            monitor_repeat = worker.Repeat(timedelta(seconds=loop_frequency), start_hour = start_hour, end_hour = end_hour, last_exec = last_exec)
         elif loop_frequency_str.split(' ')[-1]=='minutes':
             loop_frequency = int(loop_frequency_str.split(' ')[-2]) #every n minutes
-            monitor_repeat = worker.Repeat(timedelta(minutes=loop_frequency), start_hour = start_hour, end_hour = end_hour)
+            monitor_repeat = worker.Repeat(timedelta(minutes=loop_frequency), start_hour = start_hour, end_hour = end_hour, last_exec = last_exec)
         elif loop_frequency_str.split(' ')[-1]=='hours':
             loop_frequency = int(loop_frequency_str.split(' ')[-2]) #every n hours
-            monitor_repeat = worker.Repeat(timedelta(hours=loop_frequency), start_hour = start_hour, end_hour = end_hour)
+            monitor_repeat = worker.Repeat(timedelta(hours=loop_frequency), start_hour = start_hour, end_hour = end_hour, last_exec = last_exec)
 
         self.register_action(repeat=monitor_repeat, action=lambda: self.monitor_source(id_source, dls, monitor_repeat))        
 

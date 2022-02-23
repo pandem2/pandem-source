@@ -1,0 +1,38 @@
+{
+    "scope":{
+      "source":"hospitalised-deaths-THL",
+      "source_description":"Hospitalised deaths dataset from a local excel file sheet",
+      "tags":["THL COVID-19 manual"],
+      "frequency":"every 30 seconds",
+      "reference_user":"",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"},
+        {"variable":"pathogen_name", "value":"COVID-19"}
+      ],
+      "update_scope":[
+        {"variable":"source"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"input-local",
+        "xls_file":"M.12 Upload templates_end_users_THL.xlsx",
+        "sheet":"Hospitalised_deaths"
+      },
+      "format": {
+        "name":"xls",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"YYYY-MM-DD",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"Country", "variable":"geo_name"}, 
+      {"name":"Number of patients Hospitalized with COVID", "variable":"hospitalised_infected_patients"},
+      {"name":"Number of patients in ICU with COVID", "variable":"hospitalised_infected_patients_in_icu"},
+      {"name":"Number of deaths with COVID", "variable":"deaths_infected"}
+    ]
+}

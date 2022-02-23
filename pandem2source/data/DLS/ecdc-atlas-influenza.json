@@ -2,7 +2,7 @@
     "scope":{
       "source":"ecdc-atlas-influenza",
       "source_description":"This source extracts Influenza data from the ECDC Surveillance Atlas of Infectious Diseases (https://www.ecdc.europa.eu/en/surveillance-atlas-infectious-diseases). The ECDC Atlas is a tool that interacts with the latest available data about a number of infectious diseases. The interface allows users to interact and manipulate the data to produce a variety of tables and. The information contained in the dataset provided through ATLAS is made available by ECDC collating data from the Member States collected through The European Surveillance System (TESSy). ",
-      "tags":["ecdc", "Influenza"],
+      "tags":["ECDC Atlas", "Influenza"],
       "frequency":"daily",
       "reference_user":"surveillance@ecdc.europa.eu",
       "reporting_email":"",

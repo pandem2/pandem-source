@@ -9,13 +9,17 @@ from collections import defaultdict
 from . import worker
 from . import util
 from abc import ABC, abstractmethod, ABCMeta
-import logging as l
+
+import logging
+
+l = logging.getLogger("pandem.pipeline")
 
 class Pipeline(worker.Worker):
     __metaclass__ = ABCMeta  
-    def __init__(self, name, orchestrator_ref, settings, retry_failed = False, restart_job = 0): 
+    def __init__(self, name, orchestrator_ref, settings, retry_failed = False, restart_job = 0, retry_active = True): 
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)
         self.retry_failed = retry_failed
+        self.retry_active = retry_active
         self.restart_job = restart_job
         self._jobs_to_keep = settings["pandem"]["source"]["pipeline"]["jobs-to-keep"]
 
@@ -56,10 +60,12 @@ class Pipeline(worker.Worker):
         self.last_step = "ended"
         jobs = self._storage_proxy.read_db('job',
                                           filter= lambda x: 
-                                             (  ( (x['status'] == 'in progress' or x['status'] == 'failed') and self.retry_failed) 
-                                                 and x['step'] != 'submitted_started' 
-                                                 and x['step'] != self.last_step
-                                              ) or x["id"] == self.restart_job
+                                             ( 
+                                                 ((x['status'] == 'in progress' and self.retry_active) or (x['status'] == 'failed' and self.retry_failed)) 
+                                                   and x['step'] != 'submitted_started' 
+                                                   and x['step'] != self.last_step
+                                                   and self.restart_job == 0
+                                             ) or x["id"] == self.restart_job
                                          ).get()
         if jobs is not None :
             jobs = jobs.to_dict(orient = 'records')
@@ -70,7 +76,7 @@ class Pipeline(worker.Worker):
               j["status"]="in progress"
               j["dls_json"] = new_dls[j["source"]]
               # deleting issues on jobs we are restarting
-              self._storage_proxy.delete_db('issue', filter = lambda i: i['job_id'] == j["id"]) 
+              self._storage_proxy.delete_db('issue', filter = lambda i: int(i['job_id']) == int(j["id"])) 
             
             self.job_steps['submitted_ended'] = dict([(j["id"], j) for j in jobs])  
         process_repeat = worker.Repeat(datetime.timedelta(seconds=1))
@@ -200,6 +206,8 @@ class Pipeline(worker.Worker):
               raise RuntimeError(f'Unsupported format in {file_path}')
 
     def read_format_end(self, job, path, df):
+        if job["status"] == "failed":
+          return
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_df[job["id"]][path] = df
         if self.pending_count[job["id"]] == 0:
@@ -214,6 +222,8 @@ class Pipeline(worker.Worker):
 
     
     def unarchive_end(self, archive_path, filter_path, bytes, job):
+        if job["status"] == "failed":
+          return
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         dest_file = hashlib.sha1(f"{archive_path}/{filter_path}".encode()).hexdigest()+'_'+os.path.basename(filter_path)
         dir_in_staging = self.staging_path(job['id'], 'unarch')
@@ -230,42 +240,64 @@ class Pipeline(worker.Worker):
             self._dfreader_proxy.df2tuple(df, path, job, job["dls_json"])
 
     def read_df_end(self, tuples, issues, path, job): 
+        if job["status"] == "failed":
+          return
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_tuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
+        
+        progress =  (1.0/10) * len(self.job_tuples[job["id"]]) / (self.pending_count[job["id"]] + len(self.job_tuples[job["id"]]))
+        
         if self.pending_count[job["id"]] == 0:
             self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
             warning_number = sum(issue['issue_severity']=='warning' for issue in self.job_issues[job["id"]])
             if errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
-                self.update_job_step(job, 'read_df_ended', 0.35)
+                self.update_job_step(job, 'read_df_ended', 0.3 + progress)
             else:
                 self.fail_job(job)
+        else:
+            self.update_job_step(job, job["step"], 0.3 + progress)
 
     def send_to_standardize(self, tuples, job):
+        if job["status"] == "failed":
+          return
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
             self._standardizer_proxy.standardize(ttuples, path, job, job["dls_json"])
 
     def standardize_end(self, tuples, issues, path, job): 
+        if job["status"] == "failed":
+          return
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_stdtuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
+        
+        progress =  (1.0/10) * len(self.job_stdtuples[job["id"]]) / (self.pending_count[job["id"]] + len(self.job_stdtuples[job["id"]]))
+        
         if self.pending_count[job["id"]] == 0:
             self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
             warning_number = sum(issue['issue_severity']=='warning' for issue in self.job_issues[job["id"]])
-            if errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
-                self.update_job_step(job, 'standardize_ended', 0.45)
+            if all(t is None for t in self.job_stdtuples[job['id']].values()):
+                # If all tuples returnes are None means that some referential were missing and that this source needs to be delayed
+                l.debug(f"Source {job['dls_json']['scope']['source']} has been reversed to read format end since some referential failed completely, probably some depending source is missing")
+                self.update_job_step(job, 'read_df_ended',  0.4)
+            elif errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
+                self.update_job_step(job, 'standardize_ended',  0.4 + progress)
             else:
                 self.fail_job(job)
-    
+        else:
+            self.update_job_step(job, job["step"], 0.4 + progress)
+
     def send_to_annotate(self, tuples, job):
         self.pending_count[job["id"]] = len(tuples)
         for path, ttuples in tuples.items():
             self._nlp_proxy.annotate(ttuples, path, job)
 
     def annotate_end(self, tuples, path, job):
+        if job["status"] == "failed":
+          return
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_stdtuples[job["id"]][path] = tuples
         if self.pending_count[job["id"]] == 0:
@@ -277,18 +309,21 @@ class Pipeline(worker.Worker):
           "scope":{"update_scope":{}}
         }
         for p, tt in tuples.items():
-          tts['tuples'].extend(tt['tuples'])
-          for u in tt['scope']['update_scope']:
-            v = u["value"] if type(u["value"]) in [list, set] else [u["value"]]
-            if u['variable'] in tts['scope']['update_scope'] :
-               tts['scope']['update_scope'][u['variable']].update(v)
-            else:
-               tts['scope']['update_scope'][u['variable']] = set(v)
+          if tt is not None:
+            tts['tuples'].extend(tt['tuples'])
+            for u in tt['scope']['update_scope']:
+              v = u["value"] if type(u["value"]) in [list, set] else [u["value"]]
+              if u['variable'] in tts['scope']['update_scope'] :
+                 tts['scope']['update_scope'][u['variable']].update(v)
+              else:
+                 tts['scope']['update_scope'][u['variable']] = set(v)
 
         tts['scope']['update_scope'] = [{"variable":k, "value":list(v)} for k, v in tts['scope']['update_scope'].items()]
         self._aggregate_proxy.aggregate(tts, job)
 
     def aggregate_end(self, tuples, job): 
+        if job["status"] == "failed":
+          return
         self.job_aggrtuples[job["id"]] = tuples
         self.update_job_step(job, 'aggregate_ended', 0.65)
     
@@ -296,6 +331,8 @@ class Pipeline(worker.Worker):
         self._evaluator_proxy.plan_calculate(tuples['tuples'], job)
 
     def precalculate_end(self, indicators_to_calculate, job): 
+        if job["status"] == "failed":
+          return
         self.job_precalinds[job["id"]] = indicators_to_calculate
         self.job_precalstep[job["id"]] = 0
         self.update_job_step(job, 'precalculate_ended', 0.75)
@@ -304,6 +341,8 @@ class Pipeline(worker.Worker):
         self._evaluator_proxy.calculate(indicators_to_calculate, job)
 
     def calculate_end(self, ind_tuples, job): 
+        if job["status"] == "failed":
+          return
         self.job_indicators[job["id"]] = ind_tuples
         self.update_job_step(job, 'calculate_ended', 0.85)
 
@@ -313,11 +352,13 @@ class Pipeline(worker.Worker):
         self._variables_proxy.write_variable(tuples, calc_step, job)
     
     def publish_end(self, job): 
+        if job["status"] == "failed":
+          return
         self.update_job_step(job, 'publish_ended', 0.95)
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step, progress):
-        l.debug(f"Changing to step {step} for job {job['id']} source {job['dls_json']['scope']['source']}")
+        l.debug(f"Changing to step {step} for job {job['id']} source {job['dls_json']['scope']['source']} {round(progress*100, 1)}%")
         # removing job from current step dict
         if job["step"] in self.job_steps and job["id"]:
           if job["id"] in self.job_steps[job["step"]]:
@@ -339,19 +380,35 @@ class Pipeline(worker.Worker):
         return self._storage_proxy.write_db(job, 'job')
     
     # this function returns a future that can be waited to ensure that file job is written to disk
-    def fail_job(self, job):
-        l.warning(f"Changing status of job {job['id']} to 'failed' for {job['dls_json']['scope']['source']}")
-        l.info(util.pretty(self.job_issues[job["id"]]))
-        # removing job from current step dict
-        if job["step"] in self.job_steps and job["id"]:
-          if job["id"] in self.job_steps[job["step"]]:
-            self.job_steps[job["step"]].pop(job["id"])
+    def fail_job(self, job, delete_job = False, issue = None):
+        if type(job) == int :
+          for stepjobs in self.job_steps.values():
+            if job in stepjobs:
+              job = stepjobs[job]
+              break
+        if type(job) == int:
+          if delete_job:
+            self.clean_job_ids([job])
           else:
-            l.warning(f"Warning: could not find id {job['id']} in job_steps {job['step']}") 
-        # changing the job status 
-        job["status"] = "failed"
+            raise ValueError(f"Could not find job {job}")
+        else:
+          l.warning(f"Changing status of job {job['id']} to 'failed' for {job['dls_json']['scope']['source']}")
+          # removing job from current step dict
+          if job["step"] in self.job_steps and job["id"]:
+            if job["id"] in self.job_steps[job["step"]]:
+              self.job_steps[job["step"]].pop(job["id"])
+            else:
+              l.warning(f"Warning: could not find id {job['id']} in job_steps {job['step']}") 
+          # changing the job status 
+          job["status"] = "failed"
 
-        return self._storage_proxy.write_db(job, 'job')
+          if delete_job:
+            self.remove_job(job)
+          else:
+            self._storage_proxy.write_db(job, 'job')
+          # writing and issue if required
+          if issue is not None:
+            self._storage_proxy.write_db(record=issue, db_class='issue').get() 
 
     def write_issues(self, issues):
         type_count = {issue['issue_type']:0 for issue in issues}
@@ -378,12 +435,16 @@ class Pipeline(worker.Worker):
         jobs = self._storage_proxy.read_db("job", lambda j: j["source"] == source).get()
         if len(jobs) > self._jobs_to_keep:
           n_del = len(jobs) - self._jobs_to_keep
-          to_del = jobs.sort_values("id", axis = 0, ascending = True).head(n_del)["id"]
-          # deleting issues
-          self._storage_proxy.delete_db("issue", lambda i: i["job_id"] in to_del).get()
-          # deleting jobs
-          self._storage_proxy.delete_db("job", lambda j: j["id"] in to_del).get()
-          # deketing staging
-          for job_id in to_del:
-            self._storage_proxy.delete_dir(self.staging_path(int(job_id)))
+          to_del = jobs.sort_values("id", axis = 0, ascending = True).head(n_del)["id"].tolist()
+          self.clean_job_ids(to_del) 
+    
+    def clean_job_ids(self, ids):
+      to_del = {int(j) for j in ids}
+      # deleting issues
+      self._storage_proxy.delete_db("issue", lambda i: int(i["job_id"]) in to_del ).get()
+      # deleting jobs
+      self._storage_proxy.delete_db("job", lambda j: int(j["id"]) in to_del).get()
+      # deleting staging
+      for job_id in to_del:
+        self._storage_proxy.delete_dir(self.staging_path(int(job_id)))
 

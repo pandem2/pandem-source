@@ -14,7 +14,7 @@ from tornado_swagger.components import components
 from tornado_swagger.setup import setup_swagger
 
 
-logger = logging.getLogger(__name__)
+l = logging.getLogger("pandem-api")
 
 
 class apiREST(worker.Worker):
@@ -28,17 +28,19 @@ class apiREST(worker.Worker):
         super().on_start()
         self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
+        self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy()
         try:
-            logger.debug("Starting HTTP server")
+            l.debug("Starting HTTP server")
             sockets = tornado.netutil.bind_sockets(self._api_port) 
             self.server = HttpServer(
                 storage_proxy=self._storage_proxy,
                 variables_proxy = self._variables_proxy,
+                pipeline_proxy = self._pipeline_proxy,
                 sockets=sockets
             )
             self.server.start()
         except OSError as err:
-            logger.debug(f"HTTP server startup failed: {err}")
+            l.debug(f"HTTP server startup failed: {err}")
 
     def on_stop(self):
         self.server.stop()
@@ -46,10 +48,11 @@ class apiREST(worker.Worker):
 
 class HttpServer(threading.Thread):
 
-    def __init__(self, storage_proxy, variables_proxy, sockets): 
+    def __init__(self, storage_proxy, variables_proxy, pipeline_proxy, sockets): 
         super().__init__()
         self.storage_proxy = storage_proxy
         self.variables_proxy = variables_proxy
+        self.pipeline_proxy = pipeline_proxy
         self.sockets = sockets
         self.app = None
         self.server = None
@@ -61,14 +64,14 @@ class HttpServer(threading.Thread):
             # start Tornado in a another thread than the main thread, we must
             # explicitly create an asyncio loop for the current thread.
             asyncio.set_event_loop(asyncio.new_event_loop())
-        self.app = Application(self.storage_proxy, self.variables_proxy)
+        self.app = Application(self.storage_proxy, self.variables_proxy, self.pipeline_proxy)
         self.server = tornado.httpserver.HTTPServer(self.app)
         self.server.add_sockets(self.sockets)
         self.io_loop = tornado.ioloop.IOLoop.current()
         self.io_loop.start()
 
     def stop(self):
-        logger.debug("Stopping HTTP server")
+        l.debug("Stopping HTTP server")
         self.io_loop.add_callback(self.io_loop.stop)
 
 
@@ -106,7 +109,7 @@ class SourcesHandler(tornado.web.RequestHandler):
         
         for j in jobs:
           source = sources[j['source']]
-          is_last_job = len([jj for jj in jobs if j["source"] == jj["source"] and jj["start_on"] > j["start_on"]]) == 0
+          is_active_or_last_job = j["status"] == "in progress" or len([jj for jj in jobs if j["source"] == jj["source"] and jj["start_on"] > j["start_on"]]) == 0
           dls = j['dls_json']
           tag_name = dls["scope"]["tags"][0] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else source["name"]
           if tag_name in tags:
@@ -126,7 +129,7 @@ class SourcesHandler(tornado.web.RequestHandler):
           if source["next_exec"] is not None and (tag["next_check"] is None or tag["next_check"] > str(source["next_exec"])):
             tag["next_check"] = str(source["next_exec"])
           
-          if is_last_job:
+          if is_active_or_last_job and type(j["source_files"]) == list:
             tag["progress"] = (tag["progress"]*tag["files"] + j['progress']*len(j["source_files"]))/(tag["files"] + len(j["source_files"]))
             tag["files"] = tag["files"] + len(j["source_files"])
             tag["size"] =  tag["size"] + sum(j["file_sizes"])
@@ -147,8 +150,9 @@ class SourcesHandler(tornado.web.RequestHandler):
         self.write(response)
 
 class JobsBySourceHandler(tornado.web.RequestHandler):
-    def initialize(self, storage_proxy):
+    def initialize(self, storage_proxy, pipeline_proxy):
         self.storage_proxy = storage_proxy
+        self.pipeline_proxy = pipeline_proxy
     def get(self):
         """
         ---
@@ -179,30 +183,57 @@ class JobsBySourceHandler(tornado.web.RequestHandler):
                     type: string
         """
         source = self.get_argument('source', default = None)
-        sources = list(self.storage_proxy.read_db('source').get()['name'])
-        if source is not None and source not in sources:
-            self.set_status(400)
-            return self.write("Invalid or not found source")
-        else:
-            df_issues = self.storage_proxy.read_db('issue').get()
-            df_jobs = self.storage_proxy.read_db('job').get()
-            df_jobs_source = df_jobs
-            if source is not None:
-              df_jobs_source = df_jobs[df_jobs['source']==source]
-            jobs_list = [
-              {'id': df_jobs_source['id'].iloc[i],
-                  'source': str(df_jobs_source['source'].iloc[i]),
-                  'start': str(df_jobs_source['start_on'].iloc[i]),
-                  'end': str(df_jobs_source['end_on'].iloc[i]),
-                  'status': df_jobs_source['status'].iloc[i],
-                  'step': df_jobs_source['step'].iloc[i],
-                  'dls': df_jobs_source['dls_json'].iloc[i],
-                  'issues number': len(df_issues[(df_issues['source']==df_jobs_source['source'].iloc[i]) & (df_issues['job_id']==df_jobs_source['id'].iloc[i])]) if df_issues is not None else 0
+        df_issues = self.storage_proxy.read_db('issue').get()
+        df_jobs = self.storage_proxy.read_db('job').get()
+        jobs_list = []
+        for j in df_jobs.to_dict('records'):
+          dls = j['dls_json']
+          tag_name = dls["scope"]["tags"][0] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else j["source"]
+          if source is None or source == tag_name: 
+            jobs_list.append(
+              {'id': j['id'],
+                'source': str(j['source']),
+                'start': str(j['start_on']),
+                'end': str(j['end_on']),
+                'status': j['status'],
+                'step': j['step'],
+                #'dls': j['dls_json'],
+                'progress': j['progress'],
+                'files': len(j['source_files']) if type(j["source_files"]) == list else None,
+                'size': len(j['file_sizes']) if type(j["file_sizes"]) == list else None,
+                'issues': len(df_issues[(df_issues['source']==j['source']) & (df_issues['job_id']==j['id'])]) if df_issues is not None else 0
               } 
-              for i in range(len(df_jobs_source))
-            ]
-        response = {'Jobs' : jobs_list}
+            )
+        jobs_list.sort(key = lambda j:j['id'], reverse = True)      
+        response = {'jobs' : jobs_list}
         self.write(response)
+
+    def delete(self):
+        """
+        ---
+        tags:
+          - Jobs
+        summary: Force a job to be failed and delete all its data
+        description: Force a job to be failed and delete all its data
+        operationId: failJobs
+        parameters:
+          - name: job_id
+            in: query
+            description: job id to delete
+            required: true
+            schema:
+              type: int
+        responses:
+            '200':
+              description: id of deleted job
+              content:
+                text/plain:
+                  schema:
+                    type: string
+        """
+        job_id = self.get_argument('job_id', default = None)
+        self.pipeline_proxy.fail_job(int(job_id), delete_job = True).get()
+        self.write(job_id)
 
 class IssuesHandler(tornado.web.RequestHandler):
     def initialize(self, storage_proxy):
@@ -222,7 +253,7 @@ class IssuesHandler(tornado.web.RequestHandler):
             required: false
             schema:
               type: string
-          - name: job
+          - name: job_id
             in: query
             description: job id
             required: false
@@ -243,7 +274,7 @@ class IssuesHandler(tornado.web.RequestHandler):
                     type: string
         """
         source = self.get_argument('source', default = None)
-        job = self.get_argument('job', default = None)
+        job = self.get_argument('job_id', default = None)
 
         sources = list(self.storage_proxy.read_db('source').get()['name'])
         if source is not None and source not in sources:
@@ -252,9 +283,9 @@ class IssuesHandler(tornado.web.RequestHandler):
         else:
             df_jobs = self.storage_proxy.read_db('job').get()
             if source is not None:
-              df_jobs_source = df_jobs[df_jobs['source']==source]
+              df_jobs = df_jobs[df_jobs['source']==source]
             if job is not None:
-              df_jobs_source = df_jobs[df_jobs['id']==job]
+              df_jobs = df_jobs[df_jobs['id'].astype(int)==int(job)]
 
             df_issues = self.storage_proxy.read_db('issue').get()
             if df_jobs is not None:
@@ -428,10 +459,10 @@ class VariableListModel(object):
 
 class Application(tornado.web.Application):
 
-    def __init__(self, storage_proxy, variables_proxy):
-        settings = {"debug": True}
+    def __init__(self, storage_proxy, variables_proxy, pipeline_proxy):
+        settings = {"debug": False}
         self._routes = [
-          tornado.web.url(r"/jobs", JobsBySourceHandler, {'storage_proxy': storage_proxy}),
+          tornado.web.url(r"/jobs", JobsBySourceHandler, {'storage_proxy': storage_proxy, 'pipeline_proxy':pipeline_proxy}),
           tornado.web.url(r"/sources", SourcesHandler, {'storage_proxy': storage_proxy}),
           tornado.web.url(r"/issues", IssuesHandler, {'storage_proxy': storage_proxy}),
           tornado.web.url(r"/source_details", SourceDetailsHandler, {'storage_proxy': storage_proxy}),

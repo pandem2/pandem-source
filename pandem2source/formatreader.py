@@ -2,6 +2,10 @@ import time
 from . import worker
 from . import util
 from abc import ABC, abstractmethod, ABCMeta
+import logging
+from datetime import datetime
+
+l = logging.getLogger("pandem.formatreader")
 
 class FormatReader(worker.Worker):
     __metaclass__ = ABCMeta  
@@ -21,32 +25,45 @@ class FormatReader(worker.Worker):
         pass
     
     def read_format_start(self, job, file_path):
-        #print(f'I m in read_format_start : {file_path} with job : {job}')
-        df = self.read_df(file_path, job['dls_json'])
-        dls = job['dls_json']
+        try:
+          #print(f'I m in read_format_start : {file_path} with job : {job}')
+          df = self.read_df(file_path, job['dls_json'])
+          dls = job['dls_json']
 
-        # adding column line number if it does not exists
-        if 'line_number' not in df.columns :
-            df['line_number'] = range(1, len(df)+1) 
+          # adding column line number if it does not exists
+          if 'line_number' not in df.columns :
+              df['line_number'] = range(1, len(df)+1) 
 
-        # adding file_path column
-        if 'file' not in df.columns:
-          df['file'] = file_path
+          # adding file_path column
+          if 'file' not in df.columns:
+            df['file'] = file_path
 
-        # calling custom df transformer if defined
-        custom_trans = util.get_custom(["sources", dls["scope"]["source"].replace("-", "_").replace(" ", "_")],"df_transform")
-        if custom_trans is not None:
-          df = custom_trans(df)
+          # calling custom df transformer if defined
+          custom_trans = util.get_custom(["sources", dls["scope"]["source"].replace("-", "_").replace(" ", "_")],"df_transform")
+          if custom_trans is not None:
+            df = custom_trans(df)
 
-        # Applying filters if any
-        if "filter" in dls:
-          for f in dls["filter"]:
-            if "type" in f and f["type"] == "in" and "column" in f and "values" in f and f["column"] in df:
-              df = df[df[f["column"]].isin(f["values"])]
+          # Applying filters if any
+          if "filter" in dls:
+            for f in dls["filter"]:
+              if "type" in f and f["type"] == "in" and "column" in f and "values" in f and f["column"] in df:
+                df = df[df[f["column"]].isin(f["values"])]
 
-        # reseting index
-        df.reset_index(drop=True, inplace=True)
-        self._pipeline_proxy.read_format_end(job, file_path, df).get()
-
+          # reseting index
+          df.reset_index(drop=True, inplace=True)
+          self._pipeline_proxy.read_format_end(job, file_path, df).get()
+        except Exception as e: 
+          l.warning(f"Error during dataframe reading, job {job['id']} will fail")
+          issue = { "step":job['step'], 
+                   "line":0, 
+                   "source":job['source'], 
+                   "file":file_path, 
+                   "message":str(e), 
+                   "raised_on":datetime.now(), 
+                   "job_id":job['id'], 
+                   "issue_type":"error",
+                   'issue_severity':"error"
+          }
+          self._pipeline_proxy.fail_job(job, issue = issue).get()
         
 

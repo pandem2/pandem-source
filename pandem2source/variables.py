@@ -54,8 +54,9 @@ class Variables(worker.Worker):
             list_files=self._storage_proxy.list_files(path).get()
             for file in list_files:
                 var_list=self._storage_proxy.read_file(file['path']).get()
-                for var in var_list['tuples']:
-                    referentiel.append(var)
+                if type(var_list) == dict:
+                    for var in var_list['tuples']:
+                        referentiel.append(var)
         else: 
             return None
         return referentiel

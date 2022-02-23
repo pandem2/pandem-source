@@ -1,16 +1,19 @@
+#!/usr/bin/env Rscript
+args = commandArgs(trailingOnly=TRUE)
+
+
 if(!require("shiny")) {
-  install.packages("shiny")
+  stop("Shiny package is not availabla and it is needed to run the dashboard")
 }
 
-# 
-ui <- function(source_list) {
+ 
+ui <- function(source_list, logo_path) {
   shiny::navbarPage("PANDEM II: Data Surveillance"
     , shiny::tabPanel("Integration progress", integration_page())
-    , shiny::tabPanel("Issues", issues_page())
     , shiny::tabPanel("Data sources", data_sources_page(source_list))
     , shiny::tabPanel("Data dictionary", variables_page())
     , shiny::tabPanel("Query", query_page())
-    , shiny::tabPanel("About", about_page())
+    , shiny::tabPanel("About", about_page(logo_path))
   )
 }
 
@@ -28,12 +31,25 @@ integration_page <- function() {
         DT::dataTableOutput("sources_df")
       ),
       shiny::column(1)
-    ) 
-  )
-}
-
-issues_page <- function() {
-  fluidPage(
+    ), 
+    shiny::fluidRow(
+      shiny::column(12, 
+        shiny::h4("Jobs") 
+      )
+    ),
+    shiny::fluidRow(
+      shiny::column(1),
+      shiny::column(10, 
+        DT::dataTableOutput("jobs_df")
+      ),
+      shiny::column(1)
+    ), 
+    shiny::fluidRow(
+      shiny::column(2, 
+        shiny::actionButton("job_delete", "Delete selected Job"),
+      ),
+      shiny::column(10) 
+    ),
     shiny::fluidRow(
       shiny::column(12, 
         shiny::h4("Integration Issues") 
@@ -45,9 +61,10 @@ issues_page <- function() {
         DT::dataTableOutput("issues_df")
       ),
       shiny::column(1)
-    ) 
+    )
   )
 }
+
 data_sources_page <- function(sources) {
   fluidPage(
     shiny::fluidRow(
@@ -125,7 +142,8 @@ query_page <- function() {
 
 
 
-about_page <- function() {
+about_page <- function(logo_path) {
+  b64 <- base64enc::dataURI(file=logo_path, mime="image/jpeg")
   fluidPage(
     shiny::fluidRow(
       shiny::column(12, 
@@ -135,6 +153,7 @@ about_page <- function() {
     shiny::fluidRow(
       shiny::column(1),
       shiny::column(10, 
+        shiny::img("big_logo", src=b64)
       ),
       shiny::column(1)
     ) 
@@ -144,11 +163,13 @@ about_page <- function() {
 
 server <- function(input, output, session, ...) {
   `%>%` <- magrittr::`%>%`
-  
+ 
+  rv_reload_sources <- shiny::reactiveVal(0)
   rv_sources <- shiny::reactive({
-    shiny::invalidateLater(5000)
+    shiny::invalidateLater(10000)
     jsonlite::fromJSON("http://localhost:8000/sources")
   })
+
   rv_source_details <- shiny::reactive({
     jsonlite::fromJSON(paste("http://localhost:8000/source_details?source=", 
       URLencode(
@@ -157,14 +178,32 @@ server <- function(input, output, session, ...) {
       ), sep = ""
     ))
   })
+
+  
   rv_issues <- shiny::reactive({
-    jsonlite::fromJSON("http://localhost:8000/issues")
+    job_row <- input$jobs_df_rows_selected
+    shiny::validate(
+      shiny::need(length(job_row) > 0, 'Please select a job to see its issues')
+    )
+    job_id = rv_jobs()$jobs$id[[job_row]]
+    jsonlite::fromJSON(paste("http://localhost:8000/issues?job_id=", job_id ,sep = ""))
   })
+
   rv_variable_list <- shiny::reactive({
     jsonlite::fromJSON("http://localhost:8000/variable_list")
   })
+
+  rv_jobs <- shiny::reactive({
+    source_row <- input$sources_df_rows_selected
+    shiny::validate(
+      shiny::need(length(source_row) > 0, 'Please select a source to see its jobs')
+    )
+    source_name = rv_sources()$sources$name[[source_row]]
+    jsonlite::fromJSON(paste("http://localhost:8000/jobs?source=",URLencode(source_name, reserved=TRUE), sep = ""))
+  })
   
   output$sources_df <- DT::renderDataTable({
+      observed <- rv_reload_sources()
       sources = shiny::isolate(rv_sources())
       data <- tibble::as_tibble(data.frame(
         Name = sources$sources$name, 
@@ -189,15 +228,16 @@ server <- function(input, output, session, ...) {
           #dom = 't'
         ),
         rownames = TRUE,
-        selection = 'none'
+        selection = 'single'
      ) %>%
       DT::formatStyle('Progress',
         background = DT::styleColorBar(c(0,1), 'lightblue'),
         backgroundSize = '98% 88%',
         backgroundRepeat = 'no-repeat',
-        backgroundPosition = 'center') %>%
+        backgroundPosition = 'left') %>%
       DT::formatPercentage(c("Progress"), 2)
     })
+
     shiny::observe({
       sources = rv_sources()
       data <- tibble::as_tibble(data.frame(
@@ -213,8 +253,9 @@ server <- function(input, output, session, ...) {
         `Issues` = sources$sources$`issues`,  
          check.names = FALSE
       )) %>% dplyr::filter(!is.na(.data$Step)) 
-
-      DT::replaceData(DT::dataTableProxy('sources_df'), data)
+      
+      proxy <- DT::dataTableProxy('sources_df')
+      DT::replaceData(proxy, data, clearSelection = "none")
     }) 
     
     output$source_name <- shiny::renderText({
@@ -302,35 +343,76 @@ server <- function(input, output, session, ...) {
         selection = 'none'
      ) 
     })
-    
-    output$issues_df <- DT::renderDataTable({
-      issues <- rv_issues()$issues
-      data <- tibble::as_tibble(data.frame(
-           Id = issues$id,
-           `Job Id` = issues$job_id,
-           Source = issues$tag,
-           Table = issues$source,
-           `Severity` = issues$issue_severity,
-           `Issue Type` = issues$issue_type,
-           Step = issues$step,
-           `Line Number` = issues$line,
-           File = issues$file,
-           Message = issues$message,
-           `Raised On` = substring(issues$raised_on, 19),
-           check.names = FALSE
-      ))  
+   
+    shiny::observe({
+      observed <- input$sources_df_rows_selected
+      output$jobs_df <- DT::renderDataTable({
+        jobs = shiny::isolate(rv_jobs())$jobs
+        data <- tibble::as_tibble(data.frame(
+          Id = jobs$id, 
+          Source = jobs$source, 
+          Progress = jobs$progress, 
+          Step = jobs$step, 
+          Status = jobs$status,
+          Started = substr(jobs$start, 1, 19), 
+          Ended = substr(jobs$end, 1, 19), 
+          Files = jobs$files,  
+          Mb = round(jobs$size/1024, 1),  
+          Issues = jobs$issues,  
+          check.names = FALSE
+        )) 
 
-      DT::datatable(
-        data, 
-        escape = FALSE,
-        options = list(
-          searching = TRUE,
-          pageLength = 200
-          #dom = 't'
-        ),
-        rownames = FALSE,
-        selection = 'none'
-     ) 
+        DT::datatable(
+          data, 
+          escape = FALSE,
+          options = list(
+            searching = FALSE,
+            pageLength = 50 
+            #dom = 't'
+          ),
+          rownames = TRUE,
+          selection = 'single'
+       ) %>%
+        DT::formatStyle('Progress',
+          background = DT::styleColorBar(c(0,1), 'lightblue'),
+          backgroundSize = '98% 88%',
+          backgroundRepeat = 'no-repeat',
+          backgroundPosition = 'left') %>%
+        DT::formatPercentage(c("Progress"), 2)
+      })
+    })
+
+    shiny::observe({
+      observed <- input$jobs_df_rows_selected
+      output$issues_df <- DT::renderDataTable({
+        issues <- shiny::isolate(rv_issues())$issues
+        data <- tibble::as_tibble(data.frame(
+             Id = issues$id,
+             `Job Id` = issues$job_id,
+             Source = issues$tag,
+             Table = issues$source,
+             `Severity` = issues$issue_severity,
+             `Issue Type` = issues$issue_type,
+             Step = issues$step,
+             `Line Number` = issues$line,
+             File = issues$file,
+             Message = issues$message,
+             `Raised On` = substr(issues$raised_on, 1, 19),
+             check.names = FALSE
+        ))  
+
+        DT::datatable(
+          data, 
+          escape = FALSE,
+          options = list(
+            searching = TRUE,
+            pageLength = 200
+            #dom = 't'
+          ),
+          rownames = FALSE,
+          selection = 'none'
+       ) 
+      })
     })
 
     output$variables_df <- DT::renderDataTable({
@@ -346,7 +428,7 @@ server <- function(input, output, session, ...) {
            paste("<UL>", sapply(variables$partition, function(r) paste(sapply(r, function(i) paste("<LI>", i, "</LI>", collapse = "", sep = "")), collapse = "")), "</UL>", sep = ""),
         `Modifiers` = 
            sapply(variables$modifiers, function(df) if(nrow(df) == 0) "" else paste("<UL><LI>", paste(df$variable, ": ", df$value, sep = "", collapse = "</LI><LI>"), sep = "", "</LI></UL>")),
-        `Links` = sapply(variables$linked_attributes, function(v) paste(v, paste(v, collapse = ', '))),
+        `Links` = sapply(variables$linked_attributes, function(v) paste(v, collapse = ', ')),
         `Formula` = variables$formula,
         check.names = FALSE
       ))  
@@ -364,11 +446,46 @@ server <- function(input, output, session, ...) {
      ) 
     })
 
+    shiny::observeEvent(input$job_delete, {
+      shiny::showModal(shiny::modalDialog(
+        title = "Confirm deletion",
+        "Are you sure you want to permanently delete the job",
+        footer = shiny::tagList(shiny::actionButton("job_do_delete", "Yes"), shiny::modalButton("Cancel"))
+      ))
+    })
+    
+    shiny::observeEvent(input$job_do_delete, {
+      job_row <- input$jobs_df_rows_selected
+      job_id = rv_jobs()$jobs$id[[job_row]]
+      httr::DELETE(paste('http://localhost:8000/jobs?job_id=', job_id, sep = ""))
+      #rv_reload_sources(shiny::isolate(rv_reload_sources()) + 1)
+      source_row <- input$sources_df_rows_selected
+      proxy <- DT::dataTableProxy('sources_df')
+      DT::selectRows(proxy, NULL)
+      DT::selectRows(proxy, source_row)
+      shiny::removeModal()
+    })
 
 
 
 }
   
-source_list <- jsonlite::fromJSON("http://localhost:8000/source_details")$sources
-shiny::shinyApp(ui = ui(source_list), server = server, options = options(shiny.fullstacktrace = TRUE))
+source_list <- NULL
+while(is.null(source_list)) {
+  source_list = tryCatch(jsonlite::fromJSON("http://localhost:8000/source_details"), error = function(e) NULL)
+  if(is.null(source_list)) {
+    message("going to sleep for 2 seconds until pandem2source API is up")
+    Sys.sleep(2)
+  }
+}
+
+# test if there is at least one argument: if not, return an error
+if (length(args)==0) {
+  options = options(shiny.fullstacktrace = TRUE)
+if (length(args)>0) {
+  options = options(shiny.fullstacktrace = TRUE, shiny.port = as.integer(args[1]))
+}
+if (length(args)>1) {
+  logo_path = args[2]
+shiny::shinyApp(ui = ui(source_list, logo_path), server = server, options = options )
 

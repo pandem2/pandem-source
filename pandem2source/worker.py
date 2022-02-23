@@ -4,6 +4,8 @@ import os
 import time
 import threading
 from datetime import datetime, timedelta
+import pandas as pd
+import numpy as np
 
 class Worker(pykka.ThreadingActor):
     '''
@@ -79,6 +81,8 @@ class Repeat:
             self.last_exec = last_exec
         
         def next_exec(self): #last_exec:datetime.datetime()
+            if pd.isna(self.last_exec):
+              self.last_exec = None
             if self.last_exec is None:
               next_exec = datetime.now()
             else :

@@ -2,7 +2,7 @@
     "scope":{
       "source":"icd-diseases",
       "source_description":"",
-      "tags":[],
+      "tags":["ICD-10"],
       "frequency":"every 8 hours",
       "reference_user":"",
       "reporting_email":"",

@@ -161,7 +161,10 @@ class Storage(worker.Worker):
             for key, value in record.items():
                 df.at[int(record['id']), key] = value
         self.db_tables[db_class] = df
-        df.to_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle'))
+        dest = os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle') 
+        tmp = f"{dest}.tmp"
+        df.to_pickle(tmp)
+        shutil.move(tmp, dest)
         return record['id']
 
 
@@ -177,8 +180,10 @@ class Storage(worker.Worker):
 
     def delete_db(self, db_class, filter=None):
         df = self.db_tables[db_class]
-        if filter != None:
-            df = df.drop(index = df.loc[df.apply(filter, axis = 1)].index)
+        if filter != None and len(df) > 0:
+            to_del = df.loc[df.apply(filter, axis = 1)]
+            if len(to_del)>0:
+              df = df.drop(index = to_del.index)
         self.db_tables[db_class] = df
         df.to_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle'))
         return df

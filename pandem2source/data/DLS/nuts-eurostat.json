@@ -2,7 +2,7 @@
     "scope":{
       "source":"nuts-eurostat",
       "source_description":"",
-      "tags":[],
+      "tags":["Eurostats NUTS"],
       "frequency":"daily",
       "reference_user":"",
       "reporting_email":"",

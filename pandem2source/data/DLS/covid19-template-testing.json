@@ -2,7 +2,7 @@
     "scope":{
       "source":"testing",
       "source_description":"Testing dataset from a local excel file sheet",
-      "tags":[],
+      "tags":["COVID19 Template"],
       "frequency":"every 30 seconds",
       "reference_user":"",
       "reporting_email":"",
