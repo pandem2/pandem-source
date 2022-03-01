@@ -260,8 +260,6 @@ class DataframeReader(worker.Worker):
         # instantiating update scope based on existing values on tuple
         if "scope" in dls and "update_scope" in dls["scope"]:
           ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, variables = variables, issues = issues, dls = dls, job = job, file_name = file_name)
-        #for t in issues[0:50]:
-        #  print(t)
         ret["tuples"] = tuples
         self._pipeline_proxy.read_df_end(tuples = ret, issues = issues, path = path, job = job)
     

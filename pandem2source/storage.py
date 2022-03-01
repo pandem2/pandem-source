@@ -64,8 +64,6 @@ class Storage(worker.Worker):
 
              
     def write_file(self, path, bytes, mode): #absolute path here
-        
-        
         with open(path, mode) as f:
             f.write(bytes) 
     
@@ -144,6 +142,9 @@ class Storage(worker.Worker):
                 return 'no files founded' 
         else:
             raise FileNotFoundError("folder {0} does not exist!".format(path))  
+    
+    def exists(self, path):
+        return os.path.exists(path)
     
     def delete_dir(self, path):
         if os.path.exists(path):

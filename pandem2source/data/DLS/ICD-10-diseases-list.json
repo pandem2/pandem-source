@@ -3,8 +3,9 @@
       "source":"icd-diseases",
       "source_description":"",
       "tags":["ICD-10"],
+      "data_quality":"Official",
       "frequency":"every 8 hours",
-      "reference_user":"",
+      "reference_user":"Centers for Disease Control and Prevention, the national public health agency of the United States",
       "reporting_email":"",
       "globals":[
       ],

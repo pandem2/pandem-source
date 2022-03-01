@@ -3,8 +3,9 @@
       "source":"nuts-eurostat",
       "source_description":"",
       "tags":["Eurostats NUTS"],
+      "data_quality":"Official",
       "frequency":"daily",
-      "reference_user":"",
+      "reference_user":"Eurostat",
       "reporting_email":"",
       "globals":[
       ],

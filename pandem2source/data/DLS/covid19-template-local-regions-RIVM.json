@@ -1,10 +1,11 @@
 {
     "scope":{
       "source":"local-regions-rivm",
-      "source_description":"Local regions from RIVM",
+      "source_description":"TESTING dataset provided for the deveolopment of PANDEM-2 delivarable on month 12.",
       "tags":["RIVM COVID-19 manual"],
+      "data_quality":"Draft",
       "frequency":"every 30 seconds",
-      "reference_user":"",
+      "reference_user":"RIVM (Berend Beishuizen)",
       "reporting_email":"",
       "globals":[
         {"variable":"source"},

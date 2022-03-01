@@ -7,19 +7,19 @@ if(!require("shiny")) {
 }
 
  
-ui <- function(source_list, logo_path) {
+ui <- function(source_list, timeseries, logo_path) {
   shiny::navbarPage("PANDEM II: Data Surveillance"
     , shiny::tabPanel("Integration progress", integration_page())
     , shiny::tabPanel("Data sources", data_sources_page(source_list))
     , shiny::tabPanel("Data dictionary", variables_page())
-    , shiny::tabPanel("Query", query_page())
+    , shiny::tabPanel("Time series", query_page(timeseries))
     , shiny::tabPanel("About", about_page(logo_path))
   )
 }
 
 
 integration_page <- function() {
-  fluidPage(
+  shiny::fluidPage(
     shiny::fluidRow(
       shiny::column(12, 
         shiny::h4("Data Surveillance") 
@@ -66,7 +66,7 @@ integration_page <- function() {
 }
 
 data_sources_page <- function(sources) {
-  fluidPage(
+  shiny::fluidPage(
     shiny::fluidRow(
       shiny::column(12, 
         shiny::h4("Data Sources") 
@@ -106,7 +106,7 @@ data_sources_page <- function(sources) {
 }
 
 variables_page <- function() {
-  fluidPage(
+  shiny::fluidPage(
     shiny::fluidRow(
       shiny::column(12, 
         shiny::h4("Variables") 
@@ -124,19 +124,48 @@ variables_page <- function() {
 
 
 
-query_page <- function() {
-  fluidPage(
-    shiny::fluidRow(
-      shiny::column(12, 
-        shiny::h4("Query") 
+query_page <- function(timeseries) {
+  cols = colnames(timeseries)
+  namedorder = setNames(cols, sapply(1:length(cols), function(i) {
+    if(cols[[i]] == "source__source_name") -10 
+    else if(cols[[i]] == "indicator__family") -8 
+    else if(cols[[i]] == "indicator__indicator") -6 
+    else if(cols[[i]] == "source__reference_user") -4 
+    else if(cols[[i]] == "pathogen_code") -2
+    else if(cols[[i]] == "source__table") 10000 
+    else i
+  }))
+  cols <- unname(namedorder[sort(names(namedorder))])
+
+  code_cols = cols[!grepl(".*_label$", cols) & !(cols %in% c("source", "source__source_description", "indicator__description", "indicator__unit"))] 
+  filters <- lapply(code_cols, function(col) {
+      label <- sapply(strsplit(col, "__"), function(t) tail(t, 1))[[1]]
+      label <- sapply(strsplit(label, "_"), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), substr(w, 2, nchar(w)), sep = "")), collapse = " "))[[1]]
+      if(grepl('.* Code$', label))
+        label = substr(label, 1, nchar(label)-5)
+      control_id <- paste("ts_filter",col, sep = "_")
+
+      shiny::conditionalPanel(
+        condition=paste("Object.keys(document.getElementById('",control_id,"').selectize.options).length > 1 || Object.keys(document.getElementById('",control_id,"').selectize.options)[0] != 'NA' ", sep = ""),
+        shiny::selectInput(control_id, label = label, multiple = TRUE, choices = unique(timeseries[col]), selected = NULL)
       )
-    ),
+    })
+
+  shiny::fluidPage(
     shiny::fluidRow(
-      shiny::column(1),
-      shiny::column(10, 
+      shiny::column(3, 
+        c(
+          list(shiny::h4("Filters"))
+          ,filters
+          )
       ),
-      shiny::column(1)
-    ) 
+      shiny::column(9, 
+        shiny::h4("Time Series"),
+        shiny::h5(shiny::htmlOutput("timeseries_count")),
+        shiny::actionButton("plot_series", "Visualize time series"),
+        plotly::plotlyOutput("timeseries_chart")
+      )
+    )
   )
 }
 
@@ -161,7 +190,7 @@ about_page <- function(logo_path) {
 
 server <- function(input, output, session, ...) {
   `%>%` <- magrittr::`%>%`
- 
+  
   rv_reload_sources <- shiny::reactiveVal(0)
   rv_sources <- shiny::reactive({
     shiny::invalidateLater(10000)
@@ -200,6 +229,114 @@ server <- function(input, output, session, ...) {
     jsonlite::fromJSON(paste("http://localhost:8000/jobs?source=",URLencode(source_name, reserved=TRUE), sep = ""))
   })
   
+  rv_timeseries <- shiny::reactive({
+    ts <- jsonlite::fromJSON(url("http://localhost:8000/timeseries"))
+    tibble::as_tibble(data.frame(ts$timeseries))
+  })
+ 
+  # filters reactivity
+  shiny::observe({
+    df <- rv_timeseries()
+    cols = colnames(df)
+    filters = cols[!grepl(".*_label$", cols) & !(cols %in% c("source", "source_description", "description", "unit"))]
+    #updating filters
+    for(col in filters) {
+      dff <- df
+      for(ocol in filters) {
+        if(ocol != col) {
+          other_select = paste("ts_filter",ocol, sep = "_") 
+          oselection = input[[other_select]]
+          if(!is.null(oselection))
+            dff <- dff[dff[[ocol]] %in% oselection,]
+        }
+      }
+      this_select = paste("ts_filter",col, sep = "_") 
+      label_col = paste(col, "label", sep = "_")
+      if(label_col %in% colnames(dff)) {
+        values = setNames(dff[[col]], dff[[label_col]])
+        values = values[sort(unique(names(values)), na.last = TRUE)]
+      }
+      else
+        values = sort(unique(dff[[col]]))
+      # Updating the select with the respective values
+      shiny::updateSelectInput(session, this_select,
+        choices = values,
+        selected = shiny::isolate(input[[this_select]])
+      )
+    }
+  })
+
+  # Count of filtered series 
+  output$timeseries_count <- shiny::renderText({
+    df <- rv_timeseries()
+    cols = colnames(df)
+    filters = cols[!grepl(".*_label$", cols) & !(cols %in% c("source", "source_description", "description", "unit"))]
+    #updating series count
+    for(col in filters) {
+        select = paste("ts_filter",col, sep = "_") 
+        selection = input[[select]]
+        if(!is.null(selection))
+          df <- df[df[[col]] %in% selection,]
+    }
+    paste(nrow(df), "time series found")
+  })
+
+  # Plot action
+  shiny::observeEvent(input$plot_series, {
+    df <- rv_timeseries()
+    cols = colnames(df)
+    filters = cols[!grepl(".*_label$", cols) & !(cols %in% c("source", "source_description", "description", "unit"))]
+    # filtering series
+    for(col in filters) {
+        select = paste("ts_filter",col, sep = "_") 
+        selection = input[[select]]
+        if(!is.null(selection))
+          df <- df[df[[col]] %in% selection,]
+    }
+    # we have a dataframe with the sources to get
+    # getting the series combination
+    keys = cols[!grepl(".*_label$", cols) & !grepl("^source__.*", cols) & !grepl("^indicator__.*", cols)]
+    if(nrow(df) > 0) {
+      rep = new.env()
+      progress_start("Obtaining time series data", rep) 
+      series_data = list()
+      results <- lapply(1:nrow(df), function(i) {
+         progress_set(value = 0.8*i/nrow(df), message = "Getting time series data", rep)
+         post_data <- jsonlite::toJSON(as.list(sapply(keys, function(f) df[[f]][[i]])), auto_unbox = TRUE)
+         resp <- httr::POST('http://localhost:8000/timeserie', body = post_data, encode="json")
+         
+         if(resp$status_code == 200) {
+            data = httr::content(resp)$timeserie
+            as.data.frame(jsonlite::fromJSON(jsonlite::toJSON(data, auto_unbox=T), simplifyDataFrame=T))
+         } else {
+           stop("Error while obatining data series")
+         }
+      })
+      progress_set(value = 0.9, message = "Joining results", rep)
+      ts_df <- jsonlite::rbind_pages(results)
+      progress_set(value = 0.9, message = "Plotting time series", rep)
+      
+      output$timeseries_chart <- plotly::renderPlotly({
+         # Validate if minimal requirements for rendering are met 
+         progress_set(value = 0.15, message = "Generating line chart", rep)
+         ts_df$date <- as.Date(ts_df$date)
+         chart <- plot_timeseries(ts_df)
+         
+         # Setting size based on container size
+         height <- session$clientData$output_line_chart_height
+         width <- session$clientData$output_line_chart_width
+	       
+         # returning empty chart if no data is found on chart
+         chart_not_empty(chart)
+         
+         # transforming chart on plotly
+         gg <- plotly::ggplotly(chart, height = height, width = width, tooltip = c("label")) %>% plotly::config(displayModeBar = FALSE) 
+      }) 
+      progress_close(env = rep)
+    }
+  })
+
+  # Listing source progress
   output$sources_df <- DT::renderDataTable({
       observed <- rv_reload_sources()
       sources = shiny::isolate(rv_sources())
@@ -236,7 +373,7 @@ server <- function(input, output, session, ...) {
       DT::formatPercentage(c("Progress"), 2)
     })
 
-    shiny::observe({
+  shiny::observe({
       sources = rv_sources()
       data <- tibble::as_tibble(data.frame(
         Name = sources$sources$name, 
@@ -254,181 +391,149 @@ server <- function(input, output, session, ...) {
       
       proxy <- DT::dataTableProxy('sources_df')
       DT::replaceData(proxy, data, clearSelection = "none")
-    }) 
+  }) 
     
-    output$source_name <- shiny::renderText({
+  output$source_name <- shiny::renderText({
       names(rv_source_details()$definitions)[[1]]
-    })
+  })
 
-    source_description <- shiny::renderText({
+  source_description <- shiny::renderText({
       details <- rv_source_details()$definitions[[1]]
       details$scope$source_description
-    })
+  })
 
-    source_tags <- shiny::renderText({
-      details <- rv_source_details()$definitions[[1]]
-      paste(details$scope$tags, collapse = ", ")
-    })
+  source_tags <- shiny::renderText({
+    details <- rv_source_details()$definitions[[1]]
+    paste(details$scope$tags, collapse = ", ")
+  })
 
-    output$source_user  <- shiny::renderText({
-      details <- rv_source_details()$definitions[[1]]
-      details$scope$reference_user
-    })
+  output$source_user  <- shiny::renderText({
+    details <- rv_source_details()$definitions[[1]]
+    details$scope$reference_user
+  })
 
-    output$source_email  <- shiny::renderText({
-      details <- rv_source_details()$definitions[[1]]
-      details$scope$reporting_email
-    })
+  output$source_email  <- shiny::renderText({
+    details <- rv_source_details()$definitions[[1]]
+    details$scope$reporting_email
+  })
 
-    output$source_channel <- shiny::renderText({
-      details <- rv_source_details()$definitions[[1]]
-      details$acquisition$channel$name
-    })
+  output$source_channel <- shiny::renderText({
+    details <- rv_source_details()$definitions[[1]]
+    details$acquisition$channel$name
+  })
 
-    output$source_channel_info <- shiny::renderText({
-      details <- rv_source_details()$definitions[[1]]
-      items <- names(details$acquisition$channel)
-      items <- items[items != "name"]
-      values <- details$acquisition$channel[items]
-      paste("<UL><LI>", paste(items, values, collapse = "</LI><LI>", sep = ": "), "</LI></UL>", sep = "")
-    })
-   
-    output$source_format <- shiny::renderText({
-      details <- rv_source_details()$definitions[[1]]
-      details$acquisition$format$name
-    })
+  output$source_channel_info <- shiny::renderText({
+    details <- rv_source_details()$definitions[[1]]
+    items <- names(details$acquisition$channel)
+    items <- items[items != "name"]
+    values <- details$acquisition$channel[items]
+    paste("<UL><LI>", paste(items, values, collapse = "</LI><LI>", sep = ": "), "</LI></UL>", sep = "")
+  })
+ 
+  output$source_format <- shiny::renderText({
+    details <- rv_source_details()$definitions[[1]]
+    details$acquisition$format$name
+  })
 
-    output$source_format_info <- shiny::renderText({
-      details <- rv_source_details()$definitions[[1]]
-      items <- names(details$acquisition$format)
-      items <- items[items != "name"]
-      values <- details$acquisition$format[items]
-      paste("<UL><LI>", paste(items, values, collapse = "</LI><LI>", sep = ": "), "</LI></UL>", sep = "")
-    })
+  output$source_format_info <- shiny::renderText({
+    details <- rv_source_details()$definitions[[1]]
+    items <- names(details$acquisition$format)
+    items <- items[items != "name"]
+    values <- details$acquisition$format[items]
+    paste("<UL><LI>", paste(items, values, collapse = "</LI><LI>", sep = ": "), "</LI></UL>", sep = "")
+  })
 
-    output$source_globals <- shiny::renderText({
-      details <- rv_source_details()$definitions[[1]]
-      items <- details$scope$globals$variable
-      values <- details$scope$globals$value
-      paste("<UL><LI>", paste(items, values, collapse = "</LI><LI>", sep = ": "), "</LI></UL>", sep = "")
-    })
+  output$source_globals <- shiny::renderText({
+    details <- rv_source_details()$definitions[[1]]
+    items <- details$scope$globals$variable
+    values <- details$scope$globals$value
+    paste("<UL><LI>", paste(items, values, collapse = "</LI><LI>", sep = ": "), "</LI></UL>", sep = "")
+  })
 
-    output$source_replace <- shiny::renderText({
-      details <- rv_source_details()$definitions[[1]]
-      items <- details$scope$update_scope$variable
-      values <- details$scope$upsate_scope$value
-      paste("<UL><LI>", paste(items, values, collapse = "</LI><LI>", sep = ": "), "</LI></UL>", sep = "")
-    })
-    
-    output$columns_df <- DT::renderDataTable({
-      details <- rv_source_details()$definitions[[1]]
-      items <- details$scope$update_scope$variable
+  output$source_replace <- shiny::renderText({
+    details <- rv_source_details()$definitions[[1]]
+    items <- details$scope$update_scope$variable
+    values <- details$scope$upsate_scope$value
+    paste("<UL><LI>", paste(items, values, collapse = "</LI><LI>", sep = ": "), "</LI></UL>", sep = "")
+  })
+  
+  output$columns_df <- DT::renderDataTable({
+    details <- rv_source_details()$definitions[[1]]
+    items <- details$scope$update_scope$variable
+    data <- tibble::as_tibble(data.frame(
+      Column = details$columns$name, 
+      Variable = details$columns$variable,
+      check.names = FALSE
+    ))  
+
+    DT::datatable(
+      data, 
+      escape = FALSE,
+      options = list(
+        searching = FALSE,
+        pageLength = 200
+        #dom = 't'
+      ),
+      rownames = FALSE,
+      selection = 'none'
+   ) 
+  })
+ 
+  shiny::observe({
+    observed <- input$sources_df_rows_selected
+    output$jobs_df <- DT::renderDataTable({
+      jobs = shiny::isolate(rv_jobs())$jobs
       data <- tibble::as_tibble(data.frame(
-        Column = details$columns$name, 
-        Variable = details$columns$variable,
+        Id = jobs$id, 
+        Source = jobs$source, 
+        Progress = jobs$progress, 
+        Step = jobs$step, 
+        Status = jobs$status,
+        Started = substr(jobs$start, 1, 19), 
+        Ended = substr(jobs$end, 1, 19), 
+        Files = jobs$files,  
+        Mb = round(jobs$size/1024, 1),  
+        Issues = jobs$issues,  
         check.names = FALSE
-      ))  
+      )) 
 
       DT::datatable(
         data, 
         escape = FALSE,
         options = list(
           searching = FALSE,
-          pageLength = 200
+          pageLength = 50 
           #dom = 't'
         ),
-        rownames = FALSE,
-        selection = 'none'
-     ) 
+        rownames = TRUE,
+        selection = 'single'
+     ) %>%
+      DT::formatStyle('Progress',
+        background = DT::styleColorBar(c(0,1), 'lightblue'),
+        backgroundSize = '98% 88%',
+        backgroundRepeat = 'no-repeat',
+        backgroundPosition = 'left') %>%
+      DT::formatPercentage(c("Progress"), 2)
     })
-   
-    shiny::observe({
-      observed <- input$sources_df_rows_selected
-      output$jobs_df <- DT::renderDataTable({
-        jobs = shiny::isolate(rv_jobs())$jobs
-        data <- tibble::as_tibble(data.frame(
-          Id = jobs$id, 
-          Source = jobs$source, 
-          Progress = jobs$progress, 
-          Step = jobs$step, 
-          Status = jobs$status,
-          Started = substr(jobs$start, 1, 19), 
-          Ended = substr(jobs$end, 1, 19), 
-          Files = jobs$files,  
-          Mb = round(jobs$size/1024, 1),  
-          Issues = jobs$issues,  
-          check.names = FALSE
-        )) 
+  })
 
-        DT::datatable(
-          data, 
-          escape = FALSE,
-          options = list(
-            searching = FALSE,
-            pageLength = 50 
-            #dom = 't'
-          ),
-          rownames = TRUE,
-          selection = 'single'
-       ) %>%
-        DT::formatStyle('Progress',
-          background = DT::styleColorBar(c(0,1), 'lightblue'),
-          backgroundSize = '98% 88%',
-          backgroundRepeat = 'no-repeat',
-          backgroundPosition = 'left') %>%
-        DT::formatPercentage(c("Progress"), 2)
-      })
-    })
-
-    shiny::observe({
-      observed <- input$jobs_df_rows_selected
-      output$issues_df <- DT::renderDataTable({
-        issues <- shiny::isolate(rv_issues())$issues
-        data <- tibble::as_tibble(data.frame(
-             Id = issues$id,
-             `Job Id` = issues$job_id,
-             Source = issues$tag,
-             Table = issues$source,
-             `Severity` = issues$issue_severity,
-             `Issue Type` = issues$issue_type,
-             Step = issues$step,
-             `Line Number` = issues$line,
-             File = issues$file,
-             Message = issues$message,
-             `Raised On` = substr(issues$raised_on, 1, 19),
-             check.names = FALSE
-        ))  
-
-        DT::datatable(
-          data, 
-          escape = FALSE,
-          options = list(
-            searching = TRUE,
-            pageLength = 200
-            #dom = 't'
-          ),
-          rownames = FALSE,
-          selection = 'none'
-       ) 
-      })
-    })
-
-    output$variables_df <- DT::renderDataTable({
-      variables <- rv_variable_list()$variables
+  shiny::observe({
+    observed <- input$jobs_df_rows_selected
+    output$issues_df <- DT::renderDataTable({
+      issues <- shiny::isolate(rv_issues())$issues
       data <- tibble::as_tibble(data.frame(
-        `Family` = variables$data_family,
-        `Type` = variables$type,
-        `Variable` = gsub("_", " ", variables$variable),
-        `Base Variable` = gsub("_", " ", variables$base_variable),
-        `Definition` = variables$description,
-         Unit = variables$unit,
-        `Partition` = 
-           paste("<UL>", sapply(variables$partition, function(r) paste(sapply(r, function(i) paste("<LI>", i, "</LI>", collapse = "", sep = "")), collapse = "")), "</UL>", sep = ""),
-        `Modifiers` = 
-           sapply(variables$modifiers, function(df) if(nrow(df) == 0) "" else paste("<UL><LI>", paste(df$variable, ": ", df$value, sep = "", collapse = "</LI><LI>"), sep = "", "</LI></UL>")),
-        `Links` = sapply(variables$linked_attributes, function(v) paste(v, collapse = ', ')),
-        `Formula` = variables$formula,
-        check.names = FALSE
+           Id = issues$id,
+           `Job Id` = issues$job_id,
+           Source = issues$tag,
+           Table = issues$source,
+           `Severity` = issues$issue_severity,
+           `Issue Type` = issues$issue_type,
+           Step = issues$step,
+           `Line Number` = issues$line,
+           File = issues$file,
+           Message = issues$message,
+           `Raised On` = substr(issues$raised_on, 1, 19),
+           check.names = FALSE
       ))  
 
       DT::datatable(
@@ -443,31 +548,149 @@ server <- function(input, output, session, ...) {
         selection = 'none'
      ) 
     })
+  })
 
-    shiny::observeEvent(input$job_delete, {
-      shiny::showModal(shiny::modalDialog(
-        title = "Confirm deletion",
-        "Are you sure you want to permanently delete the job",
-        footer = shiny::tagList(shiny::actionButton("job_do_delete", "Yes"), shiny::modalButton("Cancel"))
-      ))
-    })
+  output$variables_df <- DT::renderDataTable({
+    variables <- rv_variable_list()$variables
+    data <- tibble::as_tibble(data.frame(
+      `Family` = variables$data_family,
+      `Type` = variables$type,
+      `Variable` = gsub("_", " ", variables$variable),
+      `Base Variable` = gsub("_", " ", variables$base_variable),
+      `Definition` = variables$description,
+       Unit = variables$unit,
+      `Partition` = 
+         paste("<UL>", sapply(variables$partition, function(r) paste(sapply(r, function(i) paste("<LI>", i, "</LI>", collapse = "", sep = "")), collapse = "")), "</UL>", sep = ""),
+      `Modifiers` = 
+         sapply(variables$modifiers, function(df) if(nrow(df) == 0) "" else paste("<UL><LI>", paste(df$variable, ": ", df$value, sep = "", collapse = "</LI><LI>"), sep = "", "</LI></UL>")),
+      `Links` = sapply(variables$linked_attributes, function(v) paste(v, collapse = ', ')),
+      `Formula` = variables$formula,
+      check.names = FALSE
+    ))  
+
+    DT::datatable(
+      data, 
+      escape = FALSE,
+      options = list(
+        searching = TRUE,
+        pageLength = 200
+        #dom = 't'
+      ),
+      rownames = FALSE,
+      selection = 'none'
+   ) 
+  })
+
+  shiny::observeEvent(input$job_delete, {
+    shiny::showModal(shiny::modalDialog(
+      title = "Confirm deletion",
+      "Are you sure you want to permanently delete the job",
+      footer = shiny::tagList(shiny::actionButton("job_do_delete", "Yes"), shiny::modalButton("Cancel"))
+    ))
+  })
+  
+  shiny::observeEvent(input$job_do_delete, {
+    job_row <- input$jobs_df_rows_selected
+    job_id = rv_jobs()$jobs$id[[job_row]]
+    httr::DELETE(paste('http://localhost:8000/jobs?job_id=', job_id, sep = ""))
+    #rv_reload_sources(shiny::isolate(rv_reload_sources()) + 1)
+    source_row <- input$sources_df_rows_selected
+    proxy <- DT::dataTableProxy('sources_df')
+    DT::selectRows(proxy, NULL)
+    DT::selectRows(proxy, source_row)
+    shiny::removeModal()
+  })
     
-    shiny::observeEvent(input$job_do_delete, {
-      job_row <- input$jobs_df_rows_selected
-      job_id = rv_jobs()$jobs$id[[job_row]]
-      httr::DELETE(paste('http://localhost:8000/jobs?job_id=', job_id, sep = ""))
-      #rv_reload_sources(shiny::isolate(rv_reload_sources()) + 1)
-      source_row <- input$sources_df_rows_selected
-      proxy <- DT::dataTableProxy('sources_df')
-      DT::selectRows(proxy, NULL)
-      DT::selectRows(proxy, source_row)
-      shiny::removeModal()
-    })
-
-
 
 }
+
+# Plot the time series chart for shiny app
+plot_timeseries <- function(df) {
+  #Importing pipe operator
+  `%>%` <- magrittr::`%>%`
+  # getting regions and countries 
+  #turning off the scientific pen
+  old <- options()
+  on.exit(options(old))
+  options(scipen=999)
+
+  # adding hover texts
+  df$Details <- sapply(1:nrow(df), function(i) {
+    keys = jsonlite::fromJSON(df$key[[i]])
+    paste(
+      "",
+      df$value[[i]],
+      df$indicator[[i]],
+      paste("date:",  df$date[[i]]),
+      paste(sapply(names(keys), function(k) { paste(k,": ",keys[[k]], sep = "")  }), collapse = "\n"),
+      sep = "\n"
+    )
+
+  })
   
+  # Calculating breaks of y axis
+  y_breaks <- unique(floor(pretty(seq(0, (max(df$value) + 1) * 1.1))))
+
+  # plotting
+  fig_line <- ggplot2::ggplot(df, ggplot2::aes(x = .data$date, y = .data$value, color = .data$key, label = .data$Details)) +
+    ggplot2::geom_line() + #ggplot2::aes(colour=.data$key)) +
+    # Title
+    ggplot2::labs(
+     title= "Time series collected by PANDEM-Source",
+     fill="Key",
+     color="Key"
+    ) +
+    ggplot2::xlab("Date") + 
+    ggplot2::ylab('Value') +
+    ggplot2::scale_y_continuous(breaks = y_breaks, limits = c(0, max(y_breaks)), expand=c(0 ,0))+
+    ggplot2::theme_classic(base_family = get_font_family()) +
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 12, face = "bold",lineheight = 0.9),
+      axis.text = ggplot2::element_text(colour = "black", size = 8),
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, vjust = 0.5, 
+                                          margin = ggplot2::margin(-15, 0, 0, 0)),
+      axis.title.x = ggplot2::element_text(margin = ggplot2::margin(30, 0, 0, 0), size = 10),
+      axis.title.y = ggplot2::element_text(margin = ggplot2::margin(-25, 0, 0, 0), size = 10),
+      legend.position="none"
+    )
+  
+  fig_line
+
+}
+
+# Helper function to get the font family
+get_font_family <- function(){
+  if(.Platform$OS.type == "windows" && is.null(grDevices::windowsFonts("Helvetica")[[1]]))
+    grDevices::windowsFonts(Helvetica = grDevices::windowsFont("Helvetica"))
+  "Helvetica"
+}
+
+
+# Functions for managing calculation progress
+progress_start <- function(start_message = "processing", env = cd) {
+  progress_close(env = env)
+  env$progress <- shiny::Progress$new()
+  env$progress$set(message = start_message, value = 0)
+}
+progress_close <- function(env = cd) {
+  if(exists("progress", where = env)) {
+    env$progress$close()
+    rm("progress", envir = env)
+  }
+}
+
+progress_set <- function(value, message  = "processing", env = cd) {
+  if(!is.null(env$progress$set))
+    env$progress$set(value = value, detail = message)
+}
+  
+# validate that chart is not empty
+chart_not_empty <- function(chart) {
+  shiny::validate(
+     shiny::need(!("waiver" %in% class(chart$data)), chart$labels$title)
+  )
+} 
+
+# Shiny app initialization
 source_list <- NULL
 while(is.null(source_list)) {
   source_list = tryCatch(jsonlite::fromJSON("http://localhost:8000/source_details"), error = function(e) NULL)
@@ -476,6 +699,9 @@ while(is.null(source_list)) {
     Sys.sleep(2)
   }
 }
+
+ts <- jsonlite::fromJSON(url("http://localhost:8000/timeseries"))
+ts_df <- tibble::as_tibble(data.frame(ts$timeseries))
 
 # test if there is at least one argument: if not, return an error
 if (length(args)==0) {
@@ -489,5 +715,5 @@ if (length(args)>1) {
 } else {
   logo_path = ""
 }
-shiny::shinyApp(ui = ui(source_list, logo_path), server = server, options = options )
+shiny::shinyApp(ui = ui(source_list = source_list, timeseries = ts_df, logo_path = logo_path), server = server, options = options )
 

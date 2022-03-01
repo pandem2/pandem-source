@@ -1,11 +1,12 @@
 {
     "scope":{
       "source":"daily-voc-voi",
-      "source_description":"Daily voc-voi dataset from a local excel file sheet",
+      "source_description":"TESTING dataset provided for the deveolopment of PANDEM-2 delivarable on month 12.",
       "tags":["COVID19 Template"],
+      "data_quality":"Draft",
       "frequency":"every 30 seconds",
-      "reference_user":"",
-      "reporting_email":"",
+      "reference_user":"Please fill when used",
+      "reporting_email":"Please fill when used",
       "globals":[
         {"variable":"source"},
         {"variable":"pathogen_name", "value":"COVID-19"}

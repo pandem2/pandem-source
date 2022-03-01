@@ -3,8 +3,9 @@
       "source":"influenza-net",
       "source_description":"From http://www.influenzanet.info/\n. Influenzanet is a Europe-wide network to monitor the activity of influenza-like-illness (ILI) with the aid of volunteers via the internet. It is operational in nine countries. In contrast with the traditional system of sentinel networks of mainly primary care physicians, Influenzanet obtains its data directly from the population. This creates a fast and flexible monitoring system whose uniformity allows for direct comparison of ILI rates between countries.",
       "tags":["Influenza net"],
+      "data_quality":"Cohort",
       "frequency":"daily",
-      "reference_user":"",
+      "reference_user":"Influenza net http://influenzanet.info",
       "reporting_email":"",
       "globals":[
         {"variable":"pathogen_name", "value":"Influenza due to certain identified influenza viruses"}

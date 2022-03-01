@@ -3,8 +3,11 @@
       "source":"covid19-datahub",
       "source_description":"Unified dataset by collecting worldwide fine-grained case data, merged with exogenous variables helpful for a better understanding of COVID-19.",
       "tags":["COVID-19 Datahub"],
+      "data_quality":"Official (third-party compilation)",
       "frequency":"daily",
-      "reference_user":"",
+      "frequency_start_hour":2,
+      "frequency_end_hour":2,
+      "reference_user":"COVID-19 Data Hub (Emanuele Guidotti)",
       "reporting_email":"",
       "globals":[
         {"variable":"source"},

@@ -37,8 +37,8 @@ class Standardizer(worker.Worker):
         refs_alias={}
         refs_values={}
         ignore_check = set(c["variable"] for c in dls["columns"] if "action" in c and c["action"] == "insert")
-        type_translate=['referential_alias']
-        type_validate=['referential', 'geo_referential', 'referential_alias']
+        type_translate=['referential_alias', 'referential_label']
+        type_validate=['referential', 'geo_referential', 'referential_alias', 'referential_label']
         ref_matched = {}
         ref_failed = {}
         for i in range(-2, len(tuples['tuples'])):
@@ -53,6 +53,10 @@ class Standardizer(worker.Worker):
             else:
                 std_var=copy.deepcopy(tuples['tuples'][i])
             for var_name in std_var['attrs'].copy().keys():
+                if variables[var_name]['type'] in type_translate:
+                  code=variables[var_name]['linked_attributes'][0]
+                else:
+                  code = None
                 #retrieves the referentiel
                 if var_name not in refs_values and var_name in variables and variables[var_name]['type'] in type_validate:
                     referential=self._variables_proxy.get_referential(var_name).get()
@@ -66,7 +70,6 @@ class Standardizer(worker.Worker):
                 if var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
                     alias=self._variables_proxy.get_referential(var_name).get() 
                     if alias is not None:
-                        code=variables[var_name]['linked_attributes'][0]
                         refs_alias[var_name] = dict((x['attr'][var_name],x['attrs'][code]) for x in alias)
                         ref_matched[var_name] = False
                         ref_failed[var_name] = False
@@ -91,7 +94,7 @@ class Standardizer(worker.Worker):
                   if var_type in type_translate:
                     std_var['attrs'].pop(var_name)
                   for var_value in values:
-                    if  var_value is not None and var_value in var_ref:
+                    if var_value is not None and var_value in var_ref:
                       ref_matched[var_name] = True
                       if var_type in type_translate:
                         new_values.append(refs_alias[var_name][var_value])
@@ -143,7 +146,7 @@ class Standardizer(worker.Worker):
         std_tuples['scope']['update_scope']= [*({'variable':k, 'value':v} for k,v in update_tuple['attrs'].items())]
         #print("\n".join(util.pretty(std_tuples).split("\n")[0:100]))
         # delete potential issues if this is a repeated call
-        self._storage_proxy.delete_db('issue', lambda i:i['issue_type'] == "ref-not-found" and i['job_id'] == job['id']) 
+        self._storage_proxy.delete_db('issue', lambda i:i['issue_type'] == "ref-not-found" and int(i['job_id']) == int(job['id'])) 
         self._pipeline_proxy.standardize_end(tuples = std_tuples, issues = list_issues, path = path, job = job)
 
     def nothing_found_issue(self, file_name, job, var_name):

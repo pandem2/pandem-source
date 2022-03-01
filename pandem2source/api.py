@@ -12,7 +12,8 @@ import tornado.netutil
 import tornado.websocket
 from tornado_swagger.components import components
 from tornado_swagger.setup import setup_swagger
-
+import re
+import json
 
 l = logging.getLogger("pandem-api")
 
@@ -400,6 +401,149 @@ class VariableListHandler(tornado.web.RequestHandler):
         response = {'variables':ret}
         self.write(response)
 
+
+class TimeSerieHandler(tornado.web.RequestHandler):
+    def initialize(self, storage_proxy, variables_proxy):
+        self.storage_proxy = storage_proxy
+        self.variables_proxy = variables_proxy
+    def post(self):
+        """
+        ---
+        tags:
+          - Time series
+        summary: Retrieve infromation about time series avaiable in this PANDEM-2 instance
+        description: Time series available in PANDEM-2
+        operationId: getTimeSeries
+        parameters:
+        responses:
+            '200':
+              description: List of time series available
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/TimeSerieModel'
+                application/xml:
+                  schema:
+                    $ref: '#/components/schemas/TimeSerieModel'
+                text/plain:
+                  schema:
+                    type: string
+        """
+        storage_proxy = self.storage_proxy
+        variables_proxy = self.variables_proxy
+        var_dic = variables_proxy.get_variables().get()
+        query = tornado.escape.json_decode(self.request.body)
+        if query is not None:
+          ts = variables_proxy.get_timeseries().get()
+          comb = [(k, v) for (k,v) in query.items() if v is not None and k != 'indicator' and k != 'source']
+          comb.sort(key = lambda v: v[0])
+          source = query["source"]
+          indicator = query["indicator"]
+          variable = var_dic[indicator]["variable"]
+          datevars = [v for v, varinfo in var_dic.items() if varinfo['type']=='date' and varinfo['variable']==v]
+
+          data = variables_proxy.lookup([variable], source = source, combinations = [tuple(comb)], filter = {d:None for d in datevars}).get()
+          # making an aggregation at day level
+          resp = {}
+          for key, values in data.items():
+            for var, tuples in values.items():
+              for t in tuples:
+                value = t["value"]
+                for datevar, dtime in t["attrs"].items():
+                  date = dtime[0:10]
+                  if (date, datevar) not in resp:
+                    resp[(date, datevar)] = {'date':date, 'date_var':datevar, "key":json.dumps({k:v for k,v in key})}
+                    #resp[(date, datevar)].update({k:v for k,v in keys})
+                  if var not in resp[(date, datevar)]:
+                    resp[(date, datevar)]["indicator"] = indicator
+                    resp[(date, datevar)]["value"] = value
+                  else :
+                    # TODO: change the aggregation function depending on the unit
+                    resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + value
+                    
+        response = {"timeserie":list(resp.values())}
+        self.write(response)
+
+class TimeSeriesHandler(tornado.web.RequestHandler):
+    def initialize(self, storage_proxy, variables_proxy):
+        self.storage_proxy = storage_proxy
+        self.variables_proxy = variables_proxy
+    def get(self):
+        """
+        ---
+        tags:
+          - Time series
+        summary: Retrieve data of a particular time serie defined by its combination filer passed as json port
+        description: Get time serie data
+        operationId: getTimeSerie
+        parameters:
+        responses:
+            '200':
+              description: Data of time serie
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/TimeSeriesModel'
+                application/xml:
+                  schema:
+                    $ref: '#/components/schemas/TimeSeriesModel'
+                text/plain:
+                  schema:
+                    type: string
+        """
+        storage_proxy = self.storage_proxy
+        variables_proxy = self.variables_proxy
+
+        dlss = [storage_proxy.read_file(f["path"]).get() for f in storage_proxy.list_files(util.pandem_path("files", "source-definitions")).get() if f["name"].endswith(".json")]
+        source_names = {dls["scope"]["source"]:dls["scope"]["tags"][0] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else dls["scope"]["name"] for dls in dlss}
+        reference_users = {dls["scope"]["source"]:dls["scope"]["reference_user"] if "reference_user" in dls["scope"] else "" for dls in dlss}
+        data_quality = {dls["scope"]["source"]:dls["scope"]["data_quality"] if "data_quality" in dls["scope"] else "" for dls in dlss}
+        source_descriptions = {dls["scope"]["source"]:dls["scope"]["source_description"] if "source_description" in dls["scope"] else "" for dls in dlss}
+        var_dic = variables_proxy.get_variables().get()
+        
+        # getting referential aliases
+        ref_labels = {code:k for k, varinfo in var_dic.items() if varinfo["type"] == "referential_label" for code in varinfo["linked_attributes"]}
+        code_labels = {}
+        no_labels = ["indicator__description", "source__reference_user", "source__source_description"]
+        ts = variables_proxy.get_timeseries().get()
+        ts_values = [{k:v for k, v in key} for key in ts.keys()]
+        # Adding nice to have information on time series
+        for values in ts_values:
+          # Adding indivator associated values
+          if "indicator" in values:
+            values["indicator__family"] = var_dic[values["indicator"]]["data_family"]
+            values["indicator__description"] = var_dic[values["indicator"]]["description"]
+            values["indicator__unit"] = var_dic[values["indicator"]]["unit"]
+          # Adding source (DLS) associated values
+          if "source" in values:
+            values["source__table"] = values["source"]
+            values["source__source_name"] = source_names[values["source"]]
+            values["source__reference_user"] = reference_users[values["source"]]
+            values["source__source_description"] = source_descriptions[values["source"]]
+            values["source__data_quality"] = data_quality[values["source"]]
+          # Adding frienly labels
+          for var, value in list(values.items()):
+            label_name = f"{var}_label"
+            if var in ref_labels:
+              # Loading referential labels if present 
+              label = ref_labels[var]
+              if var not in code_labels:
+                labels = variables_proxy.get_referential(label).get()
+                if labels is not None:
+                  code_labels[var] = {t['attrs'][var]:t['attr'][label] for t in labels if 'attrs' in t and 'attr' in t and label in t['attr'] and var in t['attrs']}
+              # Taking label from referential
+              if var in code_labels and value in code_labels[var]:
+                values[label_name] = code_labels[var][value]
+
+            if not label_name in values:
+              values[label_name] = str(value) if value is not None else "Not Available"
+            if values[label_name] is not None and len(values[label_name])>2 and var not in no_labels:
+              values[label_name] = " ".join([(word[0].upper()+word[1:].lower() if len(word)>2 else word)  for word in re.split("_", values[label_name])])
+
+
+        response = {"timeseries":ts_values}
+        self.write(response)
+
 @components.schemas.register
 class SourcesModel(object):
     """
@@ -457,6 +601,18 @@ class VariableListModel(object):
             type: array
     """
 
+@components.schemas.register
+class TimeSeriesModel(object):
+    """
+    ---
+    type: array
+    description: List of variables characterizing all time series
+    properties:
+        timeseries:
+            type: array
+    """
+
+
 class Application(tornado.web.Application):
 
     def __init__(self, storage_proxy, variables_proxy, pipeline_proxy):
@@ -466,7 +622,9 @@ class Application(tornado.web.Application):
           tornado.web.url(r"/sources", SourcesHandler, {'storage_proxy': storage_proxy}),
           tornado.web.url(r"/issues", IssuesHandler, {'storage_proxy': storage_proxy}),
           tornado.web.url(r"/source_details", SourceDetailsHandler, {'storage_proxy': storage_proxy}),
-          tornado.web.url(r"/variable_list", VariableListHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy})
+          tornado.web.url(r"/variable_list", VariableListHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
+          tornado.web.url(r"/timeseries", TimeSeriesHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
+          tornado.web.url(r"/timeserie", TimeSerieHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy})
         ]
         setup_swagger(
             self._routes,

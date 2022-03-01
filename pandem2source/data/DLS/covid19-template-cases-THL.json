@@ -1,10 +1,11 @@
 {
     "scope":{
       "source":"cases-sheet-THL",
-      "source_description":"Cases dataset from a local excel file sheet",
+      "source_description":"TESTING dataset provided for the deveolopment of PANDEM-2 delivarable on month 12.",
       "tags":["THL COVID-19 manual"],
+      "data_quality":"Draft",
       "frequency":"every 30 seconds",
-      "reference_user":"",
+      "reference_user":"THL (Voutilainen Liina)",
       "reporting_email":"",
       "globals":[
         {"variable":"source"},

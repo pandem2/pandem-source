@@ -42,7 +42,7 @@ class NLPAnnotator(worker.Worker):
       alias_vars = {
         var["variable"]:var["linked_attributes"][0] 
         for var in variables.values() 
-        if var["type"] == "referential_alias" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos
+        if var["type"] in ["referential_alias", "referential_label"] and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos
       }
       aliases = {}
       for alias_var, code_var in alias_vars.items():

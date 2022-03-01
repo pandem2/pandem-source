@@ -3,8 +3,9 @@
       "source":"twitter",
       "source_description":"",
       "tags":["Twitter"],
+      "data_quality":"Algorithm estimation",
       "frequency":"every 5 minutes",
-      "reference_user":"",
+      "reference_user":"Twitter",
       "reporting_email":"",
       "globals":[
         {"variable":"source"}

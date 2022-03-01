@@ -1,4 +1,5 @@
 data_family,variable,description,type,unit,linked_attributes,partition,formula,base_variable,modifiers
+13_referentials,source,,not characteristic,,,,,,[]
 01_cases,number_of_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","cum_to_daily(reporting_period, cumulative_cases)",,[]
 01_cases,cumulative_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","daily_to_cum(reporting_period, number_of_cases)",,[]
 01_cases,confirmed_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
@@ -11,16 +12,15 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,imported_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""imported""}]"
 01_cases,cases_at_onset_of_symptoms_date,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""period_type"", ""value"": ""onset_of_symptoms_date""}]"
 01_cases,pathogen_code,,referential,,,,,,[]
-01_cases,pathogen_name,,referential_alias,,pathogen_code,,,,[]
+01_cases,pathogen_name,,referential_label,,pathogen_code,,,,[]
 01_cases,pathogen_alias,,referential_alias,,pathogen_code,,,,[]
 13_referentials,geo_code,,geo_referential,,,source,,,[]
 13_referentials,iso_country_code_2,,referential,,,source,,geo_code,"[{""variable"": ""geo_level"", ""value"": ""country""}]"
-13_referentials,geo_name,,referential_alias,,geo_code,source,,,[]
+13_referentials,geo_name,,referential_label,,geo_code,source,,,[]
 13_referentials,country_name,,referential_alias,,geo_code,source,,geo_name,"[{""variable"": ""geo_level"", ""value"": ""country""}]"
 13_referentials,geo_parent,,characteristic,,geo_code,source,,,[]
 13_referentials,geo_level,"Country, NUTS_1, NUTS_2, NUTS_3",characteristic,,,source,,,[]
 13_referentials,geo_local_code,,referential_alias,,geo_code,source,,,[]
-13_referentials,source,,not characteristic,,,,,,[]
 13_referentials,file,,not characteristic,,,,,,[]
 13_referentials,line_number,,not characteristic,,,,,,[]
 13_referentials,tag,,characteristic,,,,,,[]
@@ -196,7 +196,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 13_referentials,symptoms_&_signs_by_pathogen,,referential,,,,,,[]
 13_referentials,care_procedures_(for_new_diseases),,referential,,,,,,[]
 13_referentials,variant,,referential,,,,,,[]
-13_referentials,variant_who_label,,referential_alias,,variant,,,,[]
+13_referentials,variant_who_label,,referential_label,,variant,,,,[]
 13_referentials,variant_introduction_date,,observation,date,,,,,[]
 13_referentials,sequenced_samples,,observation,,,,,,[]
 13_referentials,denominators_and_maps_for_different_geographic_location_(local_to_international),,referential,,,,,,[]
@@ -214,7 +214,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 14_metadata,gdpr_compliance,,referential,,,,,,[]
 07_lab,number_detections_variant,,observation,people,,"source, geo_code",,,[]
 13_referentials,gender_code,,referential,,,,,,[]
-13_referentials,gender_name,,referential_alias,,gender_code,,,,[]
+13_referentials,gender_name,,referential_label,,gender_code,,,,[]
 13_referentials,age_group,,characteristic,range,,,,,[]
 01_cases,effective_growth_potential,,indicator,number,,,,,[]
 01_cases,number_of_alerts,,observation,,,"source, alert_topic",,,[]
