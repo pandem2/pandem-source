@@ -18,6 +18,7 @@ class FormatReaderXML(formatreader.FormatReader):
         for row in root.xpath(dls['acquisition']['format']['row'], namespaces=nsmap):
             dict_col = dict()
             for col in dls['columns']:
+              if 'xpath' in col: 
                 ltext = row.xpath(col['xpath'], namespaces=nsmap)
                 if ltext: 
                     if 'find' in col:

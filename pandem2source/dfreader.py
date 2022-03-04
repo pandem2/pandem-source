@@ -206,7 +206,7 @@ class DataframeReader(worker.Worker):
               (
                 (variables[col_vars[col]]["linked_attributes"] is not None and  
                 v in variables[col_vars[col]]["linked_attributes"]) or
-                  col_types[k] in ["characteristic", "not_characteristic", "private", "date"]
+                  col_types[k] in ["characteristic", "not_characteristic", "private", "date", "referential_parent"]
               )
             ]
         tuples = []

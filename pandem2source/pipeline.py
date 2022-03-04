@@ -121,6 +121,8 @@ class Pipeline(worker.Worker):
         # Jobs after standardize ends
         for job in self.job_steps['standardize_ended'].copy().values():
             tuples = self.job_stdtuples[job["id"]]
+            # non standardized tuples can be deleted
+            self.job_tuples.pop(job["id"])
             if self.job_to_annotate(job):
                 self.update_job_step(job, 'annotate_started', 0.5)
                 self.send_to_annotate(tuples, job)
@@ -136,13 +138,18 @@ class Pipeline(worker.Worker):
         
         # Jobs after aggregate ends
         for job in self.job_steps['aggregate_ended'].copy().values():
+            # standardized tuples can be deleted
+            self.job_stdtuples.pop(job["id"])
             tuples = self.job_aggrtuples[job["id"]]
             self.update_job_step(job, 'precalculate_started', 0.7)
             self.send_to_precalculate(tuples, job)
         
         # Jobs after precalculate ends
         for job in self.job_steps['precalculate_ended'].copy().values():
-            tuples = self.job_aggrtuples[job["id"]]  
+            tuples = self.job_aggrtuples[job["id"]]
+            # aggregated tuples are not necessary anymore
+            self.job_aggrtuples.pop(job["id"])
+
             self.update_job_step(job, 'publish_started', 0.9)
             self.send_to_publish(tuples, job)
 
@@ -270,7 +277,11 @@ class Pipeline(worker.Worker):
         if job["status"] == "failed":
           return
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        self.job_stdtuples[job["id"]][path] = tuples
+        self.job_stdtuples[job["id"]][path] = tuples 
+        # deleting existing ref-not-found issue types since they come from a previous execution
+        self.job_issues[job["id"]] = [i for i in self.job_issues[job['id']] if i['issue_type'] != "ref-not-found"]
+        self._storage_proxy.delete_db("issue", lambda i: int(i["job_id"]) == int(job['id']) and i['issue_type'] == "ref-not-found").get()
+        
         self.job_issues[job["id"]].extend(issues)
         
         progress =  (1.0/10) * len(self.job_stdtuples[job["id"]]) / (self.pending_count[job["id"]] + len(self.job_stdtuples[job["id"]]))

@@ -232,7 +232,7 @@ def are_twitter_credentials_missing():
 def run_pandem2app():
   settings = util.settings()
   cmd = ["Rscript", util.pandem_path("files", "scripts", "R", "pandem-source-app.R"), str(settings["pandem"]["source"]["app"]["port"]), util.pandem_path("files", "img", "Partner-map_PANDEM-2.jpg")]
-  l.debug(f"Launching app for nlp model server: {cmd}")
+  l.debug(f"Launching app server: {cmd}")
   def run_app(): 
     subprocess.run(cmd)
   threading.Thread(target=run_app).start()

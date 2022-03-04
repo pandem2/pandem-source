@@ -9,6 +9,7 @@ from collections import defaultdict
 from .util import JsonEncoder
 import logging as l
 import pickle
+import copy
 
 class Variables(worker.Worker):
     def __init__(self, name, orchestrator_ref, settings): 
@@ -45,7 +46,7 @@ class Variables(worker.Worker):
                   if aliases:
                       for alias in aliases:
                           alias_dict = base_dict.copy()
-                          alias_dict['formula'] = alias['formula'] if alias['formula'] is not None else None
+                          alias_dict['formula'] = alias['formula'] if alias['formula'] is not None else None #base_dict['formula']
                           alias_dict['modifiers'] = alias['modifiers']
                           alias_dict['description'] = alias['description'] if alias['description'] is not None else alias_dict['description']
                           alias_dict['type'] = alias['type'] if alias['type'] is not None else alias_dict['type']
@@ -120,16 +121,32 @@ class Variables(worker.Worker):
         else:
           return '.'.join([key + '=' + str(val) for key, val in tuple['attrs'].items() if key in partition]) + '.json'
 
-    def remove_private(self, tuples, variables):
-        private_attrs = {k for k, v in variables.items() if v["type"] == "private"}
-        for t in tuples:
-          if "attrs" in t:
-            if t["attrs"].keys().isdisjoint(private_attrs):
-              yield t
-            else:
-              tt = t.copy()
-              tt["attrs"] = {k:v for k,v in t["attrs"].items() if k not in private_attrs}
-              yield tt
+    def remove_attrs(self, t, private_attrs):
+        if "attrs" in t:
+          if t["attrs"].keys().isdisjoint(private_attrs):
+            return t
+          else:
+            tt = t.copy()
+            tt["attrs"] = {k:v for k,v in t["attrs"].items() if k not in private_attrs}
+            return tt
+
+    def apply_aliases(self, t, aliases):
+        applied = False
+        if "obs" not in t or t["obs"].keys().isdisjoint(aliases.keys()):
+          return t
+        else:
+          for var, value in t["obs"].items():
+              tt = copy.deepcopy(t)
+              if "attrs" not in tt:
+                 tt["attrs"] = {}
+              # renaming the observation to its base variable
+              if var != aliases[var]["variable"]:
+                tt["obs"][aliases[var]["variable"]] = tt["obs"].pop(var)
+              
+              # applyting modifiers
+              for modifier in aliases[var]["modifiers"]:
+                tt["attrs"][modifier['variable']] = modifier['value']
+          return tt
  
     def write_variable(self, input_tuples, step, job):
         variables = self.get_variables()
@@ -139,18 +156,28 @@ class Variables(worker.Worker):
 
         if input_tuples['tuples']:
             # building a dictionary with destination files for tuples depending on variable name at their partitioning schema
-            for tuple in self.remove_private(input_tuples['tuples'], variables):
+            private_attrs = {k for k, v in variables.items() if v["type"] == "private"}
+            aliases = {v:vardic for v, vardic in variables.items() if "modifiers" in vardic and len(vardic["modifiers"]) > 0}
+            for t in input_tuples['tuples']:
+                # removing private attributes
+                t = self.remove_attrs(t, private_attrs)
+                # applying modifiers if tuple pbservation contains modifiers
+                t = self.apply_aliases(t, aliases)
+                # associating this tuple tuple to its destination variable
                 var_name = None
-                for key, var in tuple.items():
-                    if key != "attrs" and len(tuple[key].keys()) > 0:
-                        var_name = list(tuple[key].keys())[0]
+                for key, var in t.items():
+                    if key != "attrs" and len(t[key].keys()) > 0:
+                        var_name = list(t[key].keys())[0]
                 if var_name is not None:
-                  partition_dict[var_name].append(tuple) 
+                  partition_dict[var_name].append(t)
+
+            # building the dict tuples per destination files
             partition_dict_final = defaultdict(lambda: defaultdict(list))
             for var, tuple_list in partition_dict.items():
-                for tuple in tuple_list:
-                    file_name = self.get_partition(tuple, variables[var]["partition"])
-                    partition_dict_final[var][file_name].append(tuple)
+                for t in tuple_list:
+                    file_name = self.get_partition(t, variables[var]["partition"])
+                    partition_dict_final[var][file_name].append(t)
+            
             # identifying the scope of data that will be replaced by current tuples
             update_filter = []
             for filter in input_tuples['scope']['update_scope']:
@@ -170,16 +197,16 @@ class Variables(worker.Worker):
                         # this is for avoiding having duplicates on referentials (attr instead of obs)
                         # TODO: Improve this using the variable type
                         unique_values = {}
-                        for index, tuple in enumerate(tuples_list):
-                            if tuple['attr'][var] not in unique_values.values():
-                                unique_values[index] = tuple['attr'][var]
+                        for index, t in enumerate(tuples_list):
+                            if t['attr'][var] not in unique_values.values():
+                                unique_values[index] = t['attr'][var]
                         tuples_list = [tuples_list[key] for key in unique_values.keys()]
 
                    
                     file_path = util.pandem_path(var_dir, file_name)
                     # If file does not exists then we can just dump the tuples (no need to delete) 
-                    if not os.path.exists(file_path):
-                        
+                    tuples_to_dump = {'tuples': tuples_list}
+                    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
                         with open(file_path, 'w+') as f:
                             json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
                     # If file exists already then we need to remove lines on the replacement scope
@@ -187,8 +214,6 @@ class Variables(worker.Worker):
                     else:
                         with open(file_path, 'r') as f:
                             last_tuples = json.load(f)
-                        #tuple_list = []
-                        tuples_to_dump = {'tuples': tuples_list}
                         for tup in last_tuples['tuples']:
                             cond_count = len(update_filter)
                             for filt in update_filter: 
@@ -200,12 +225,13 @@ class Variables(worker.Worker):
                         # replacing the file
                         with open(file_path, 'w') as f:
                             json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
-                    
+                   
+                    # TODO: get deleted files and remove from time series before adding new ones
                     # Now that we have updated the file we can update the time series cache
-                    self.get_timeseries(tuples=tuples_to_dump, tuples_path=tuples_list, save_changes = False)
+                    self.get_timeseries(tuples=tuples_to_dump['tuples'], tuples_path=file_path, save_changes = False)
 
         # saving changes done on the time series cache
-        self.get_timeseries(tuples=tuples_to_dump, tuples_path=tuples_list, save_changes = True)
+        self.get_timeseries(save_changes = True)
         if step is not None:
             self._pipeline_proxy.publish_end(job = job)
                     
@@ -274,16 +300,17 @@ class Variables(worker.Worker):
         if tuples is not None:
           for t in tuples:
             keys = sorted(attr for attr in t["attrs"].keys() if dico_vars[attr]["type"] in types)
-            key = key_map[tuple((k, t["attrs"][k]) for k in keys)]
-            filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
-            if key in indexed_comb:
-              if not key in res:
-                res[key] = {}
-              if "obs" in t:
-                obs_name =  next(iter(t["obs"].keys()))
-                if not obs_name in res[key]:
-                  res[key][obs_name] = []
-                res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
+            if tuple((k, t["attrs"][k]) for k in keys) in key_map:
+              key = key_map[tuple((k, t["attrs"][k]) for k in keys)]
+              filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
+              if key in indexed_comb:
+                if not key in res:
+                  res[key] = {}
+                if "obs" in t:
+                  obs_name =  next(iter(t["obs"].keys()))
+                  if not obs_name in res[key]:
+                    res[key][obs_name] = []
+                  res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
       return res
       
 
@@ -323,7 +350,6 @@ class Variables(worker.Worker):
       
       # If no new tuples no analyze return cache 
       if tuples is not None:
-          # TODO: remove the existing file from the cache
           for t in tuples:
             if "obs" in t and len(t["obs"]) > 0 and "attrs" in t:
               var_name = next(iter(t["obs"]))
@@ -347,7 +373,7 @@ class Variables(worker.Worker):
           
           
                 # getting dates
-                dates = [v for k,v in t["attrs"].items() if k in var_dic and var_dic[k]["type"] == "date"]
+                dates = [str(v) for k,v in t["attrs"].items() if k in var_dic and var_dic[k]["type"] == "date"]
                 if len(dates)>0:
                   min_date = min(dates)
                   max_date = max(dates)
@@ -375,4 +401,5 @@ class Variables(worker.Worker):
       if self._timeseries_outdated and save_changes:
         with open(cache_path, 'wb') as f:
           pickle.dump(cache, f)
+        self._timeseries_outdated = False
       return cache  

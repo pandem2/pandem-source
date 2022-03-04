@@ -145,8 +145,6 @@ class Standardizer(worker.Worker):
             return
         std_tuples['scope']['update_scope']= [*({'variable':k, 'value':v} for k,v in update_tuple['attrs'].items())]
         #print("\n".join(util.pretty(std_tuples).split("\n")[0:100]))
-        # delete potential issues if this is a repeated call
-        self._storage_proxy.delete_db('issue', lambda i:i['issue_type'] == "ref-not-found" and int(i['job_id']) == int(job['id'])) 
         self._pipeline_proxy.standardize_end(tuples = std_tuples, issues = list_issues, path = path, job = job)
 
     def nothing_found_issue(self, file_name, job, var_name):

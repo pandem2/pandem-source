@@ -8,8 +8,10 @@ import gzip
 from datetime import datetime
 import os
 from math import inf
-import logging as l
 import re
+import logging
+
+l = logging.getLogger("pandem.twitter")
 
 class AcquisitionTwitter(acquisition.Acquisition):
     def __init__(self, name, orchestrator_ref, settings): 
@@ -34,6 +36,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
         raise ValueError("Twitter aqquisition support only a singlr DLS, others will be ignored")
       if "acquisition" in dls and "channel" in dls["acquisition"] and "topics" in dls["acquisition"]["channel"]:
         self._topics  = dls["acquisition"]["channel"]["topics"].keys()
+        self._maingroup  = dls["acquisition"]["channel"]["main_group"]
         self._phrases = []
         self._included_regex = {}
         self._topic_groups = {}
@@ -41,11 +44,12 @@ class AcquisitionTwitter(acquisition.Acquisition):
           self._included_regex[topic] = ""
           if "phrases" in dls["acquisition"]["channel"]["topics"][topic]:
             phrases = dls["acquisition"]["channel"]["topics"][topic]["phrases"]
+            in_maingroup = dls["acquisition"]["channel"]["topics"][topic]["group"] == self._maingroup
             self._included_regex[topic] = "|".join(map(lambda v: re.escape(v.lower()), phrases))  
             for kw in phrases:
-              if len(kw.encode("utf-8")) > 60:
-                raise ValueError(f"Twitter filter endpoint cannot contain phrases bigger than 60 bytes and {kw} has {len(kw.encode('utf-8'))}")
-              if not kw in self._phrases:
+              if not kw in self._phrases and in_maingroup:
+                if len(kw.encode("utf-8")) > 60:
+                  raise ValueError(f"Twitter filter endpoint cannot contain phrases bigger than 60 bytes and {kw} has {len(kw.encode('utf-8'))}")
                 self._phrases.append(kw)
           else:
             raise ValueError("Twitter DLS topics needs to have a phrases property with a list of phrases to use")
@@ -151,7 +155,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
             l.debug(f"languages{self._languages}")
             l.debug(f"included regex {self._included_regex}")
             l.debug(f"excluded regex {self._excluded_regex}")
-            l.debug(f"excluded groups {self._topic_groups}")
+            l.debug(f"topic groups {self._topic_groups}")
             l.debug(f"include retweets {self._include_retweets}")
             self.filter(follow=None, track=self._track, locations=None, filter_level=None, languages=self._languages, stall_warnings=False)
             l.warning("Tweet filter failed, trying again in 1 minute")

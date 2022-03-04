@@ -31,7 +31,7 @@
     },
     "columns":[
       {"name":"Date", "variable":"reporting_week"}, 
-      {"name":"ID_NUTS2/3/country", "variable":"geo_name"},
+      {"name":"ID_NUTS2/3/country", "variable":"geo_local_code"},
       {"name":"Age group", "variable":"age_group"},
       {"name":"Population", "variable":"population"},
       {"name":"Vaccinated individuals with 1 dose", "variable":"one_dose_vaccinated"},

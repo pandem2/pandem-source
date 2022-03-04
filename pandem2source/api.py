@@ -503,12 +503,62 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
         
         # getting referential aliases
         ref_labels = {code:k for k, varinfo in var_dic.items() if varinfo["type"] == "referential_label" for code in varinfo["linked_attributes"]}
+        ref_attrs = {}
+        ref_link = {}
+        for k, varinfo in var_dic.items(): 
+          if varinfo["type"] in ["characteristic", "referential_parent" ] and varinfo['linked_attributes'] is not None: 
+            for code in varinfo["linked_attributes"]:
+              if code not in ref_attrs:
+                ref_attrs[code]= []
+              ref_attrs[code].append(k)
+              ref_link[k]=code
+              
         code_labels = {}
+        code_attrs = {}
         no_labels = ["indicator__description", "source__reference_user", "source__source_description"]
         ts = variables_proxy.get_timeseries().get()
         ts_values = [{k:v for k, v in key} for key in ts.keys()]
         # Adding nice to have information on time series
         for values in ts_values:
+          # Adding related attribute characteristics
+          for var, value in list(values.items()):
+            if var in ref_attrs:
+              # Loading referential attrs if present 
+              for attr in  ref_attrs[var]:
+                if attr not in code_attrs:
+                   link = variables_proxy.get_referential(var).get()
+                if link is not None:
+                  code_attrs[attr] = {t['attr'][var]:t['attrs'][attr] for t in link if 'attrs' in t and 'attr' in t and attr in t['attrs'] and var in t['attr']}
+                # Taking label from referential
+                if attr in code_attrs and value in code_attrs[attr]:
+                  values[f"ref__{attr}"] = code_attrs[attr][value]
+
+          # Adding frienly labels
+          for var, value in list(values.items()):
+            var = var.split("__")[-1]
+            if var in ref_labels:
+              # if variable is a characteristic with a link to a referential we have to use the referential as query table
+              if var not in ref_link:
+                label_name = f"{var}_label"
+                ref_var = var 
+              else:
+                ref_var = ref_link[var]
+                label_name = f"ref__{var}_label"
+
+              # Loading referential labels if present 
+              label = ref_labels[ref_var]
+              if ref_var not in code_labels:
+                labels = variables_proxy.get_referential(label).get()
+                if labels is not None:
+                  code_labels[ref_var] = {t['attrs'][ref_var]:t['attr'][label] for t in labels if 'attrs' in t and 'attr' in t and label in t['attr'] and ref_var in t['attrs']}
+              # Taking label from referential
+              if ref_var in code_labels and value in code_labels[ref_var]:
+                values[label_name] = code_labels[ref_var][value]
+
+              if not label_name in values:
+                values[label_name] = str(value) if value is not None else "Not Available"
+              if values[label_name] is not None and len(values[label_name])>2 and ref_var not in no_labels:
+                values[label_name] = " ".join([(word[0].upper()+word[1:].lower() if len(word)>2 else word)  for word in re.split("_", values[label_name])])
           # Adding indivator associated values
           if "indicator" in values:
             values["indicator__family"] = var_dic[values["indicator"]]["data_family"]
@@ -521,24 +571,6 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
             values["source__reference_user"] = reference_users[values["source"]]
             values["source__source_description"] = source_descriptions[values["source"]]
             values["source__data_quality"] = data_quality[values["source"]]
-          # Adding frienly labels
-          for var, value in list(values.items()):
-            label_name = f"{var}_label"
-            if var in ref_labels:
-              # Loading referential labels if present 
-              label = ref_labels[var]
-              if var not in code_labels:
-                labels = variables_proxy.get_referential(label).get()
-                if labels is not None:
-                  code_labels[var] = {t['attrs'][var]:t['attr'][label] for t in labels if 'attrs' in t and 'attr' in t and label in t['attr'] and var in t['attrs']}
-              # Taking label from referential
-              if var in code_labels and value in code_labels[var]:
-                values[label_name] = code_labels[var][value]
-
-            if not label_name in values:
-              values[label_name] = str(value) if value is not None else "Not Available"
-            if values[label_name] is not None and len(values[label_name])>2 and var not in no_labels:
-              values[label_name] = " ".join([(word[0].upper()+word[1:].lower() if len(word)>2 else word)  for word in re.split("_", values[label_name])])
 
 
         response = {"timeseries":ts_values}

@@ -24,5 +24,6 @@ est_rt_last <- function(ts, GT=4L) {
 if(length(confirmed_cases)<9) { 
   sapply(confirmed_cases, function(v) NA)
 } else {
-  est_rt_last(confirmed_cases, GT=4L)
+  # using GT = 7 to limit dayofthe week impact
+  est_rt_last(confirmed_cases, GT=7L)
 }

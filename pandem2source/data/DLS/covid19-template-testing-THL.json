@@ -31,7 +31,7 @@
     },
     "columns":[
       {"name":"Date", "variable":"reporting_week"}, 
-      {"name":"NUTS2/3/country", "variable":"geo_name"},
+      {"name":"NUTS2/3/country", "variable":"geo_local_code"},
       {"name":"Test Type (active cases)", "variable":"test_type"},
       {"name":"number of test performed", "variable":"performed_tests"},
       {"name":"Positive results", "variable":"positive_results"}

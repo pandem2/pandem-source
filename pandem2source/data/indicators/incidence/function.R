@@ -1,1 +1,1 @@
-number_of_cases/population
+100000*confirmed_cases/population

@@ -86,6 +86,8 @@ data_sources_page <- function(sources) {
     shiny::fluidRow(shiny::column(3, shiny::h5("Tags")), shiny::column(9,shiny::htmlOutput("source_tags"))), 
     shiny::fluidRow(shiny::column(3, shiny::h5("Reference User")), shiny::column(9,shiny::htmlOutput("source_user"))), 
     shiny::fluidRow(shiny::column(3, shiny::h5("Reference Email")), shiny::column(9,shiny::htmlOutput("source_email"))), 
+    shiny::fluidRow(shiny::column(3, shiny::h5("Data Quality")), shiny::column(9,shiny::htmlOutput("source_quality"))), 
+    shiny::fluidRow(shiny::column(3, shiny::h5("Frequency")), shiny::column(9,shiny::htmlOutput("source_frequency"))), 
 
     shiny::fluidRow(shiny::column(12, shiny::h3("Acquisition"))),
     shiny::fluidRow(shiny::column(3, shiny::h5("Channel")), shiny::column(9,shiny::htmlOutput("source_channel"))), 
@@ -126,17 +128,21 @@ variables_page <- function() {
 
 query_page <- function(timeseries) {
   cols = colnames(timeseries)
-  namedorder = setNames(cols, sapply(1:length(cols), function(i) {
-    if(cols[[i]] == "source__source_name") -10 
-    else if(cols[[i]] == "indicator__family") -8 
-    else if(cols[[i]] == "indicator__indicator") -6 
-    else if(cols[[i]] == "source__reference_user") -4 
-    else if(cols[[i]] == "pathogen_code") -2
-    else if(cols[[i]] == "source__table") 10000 
-    else i
-  }))
-  cols <- unname(namedorder[sort(names(namedorder))])
-
+  if(length(cols) > 0) {
+    namedorder = setNames(cols, sapply(1:length(cols), function(i) {
+      if(cols[[i]] == "source__source_name") -10 
+      else if(cols[[i]] == "indicator__family") -8 
+      else if(cols[[i]] == "indicator") -7 
+      else if(cols[[i]] == "geo_code") -6
+      else if(cols[[i]] == "ref__geo_parent") -5 
+      else if(cols[[i]] == "ref__geo_level") -4 
+      else if(cols[[i]] == "source__reference_user") -2 
+      else if(cols[[i]] == "pathogen_code") -1
+      else if(cols[[i]] == "source__table") 10000 
+      else i
+    }))
+    cols <- unname(namedorder[as.character(sort(as.integer(names(namedorder))))])
+  }
   code_cols = cols[!grepl(".*_label$", cols) & !(cols %in% c("source", "source__source_description", "indicator__description", "indicator__unit"))] 
   filters <- lapply(code_cols, function(col) {
       label <- sapply(strsplit(col, "__"), function(t) tail(t, 1))[[1]]
@@ -160,10 +166,13 @@ query_page <- function(timeseries) {
           )
       ),
       shiny::column(9, 
-        shiny::h4("Time Series"),
-        shiny::h5(shiny::htmlOutput("timeseries_count")),
-        shiny::actionButton("plot_series", "Visualize time series"),
-        plotly::plotlyOutput("timeseries_chart")
+        shiny::fluidRow(shiny::column(12, shiny::h4("Time Series"))),
+        shiny::fluidRow(shiny::column(12, shiny::h5(shiny::htmlOutput("timeseries_count")))),
+        shiny::fluidRow(
+          shiny::column(6,shiny::actionButton("load_series", "Load time series")),
+          shiny::column(6,shiny::actionButton("plot_series", "Visualize time series"))
+        ),
+        shiny::fluidRow(shiny::column(12, plotly::plotlyOutput("timeseries_chart")))
       )
     )
   )
@@ -230,8 +239,12 @@ server <- function(input, output, session, ...) {
   })
   
   rv_timeseries <- shiny::reactive({
+    # Adding a dependency to the reload series button
+    x = input$load_series
+    #getting the data
     ts <- jsonlite::fromJSON(url("http://localhost:8000/timeseries"))
-    tibble::as_tibble(data.frame(ts$timeseries))
+    df <- tibble::as_tibble(data.frame(ts$timeseries))
+    df
   })
  
   # filters reactivity
@@ -280,7 +293,7 @@ server <- function(input, output, session, ...) {
     }
     paste(nrow(df), "time series found")
   })
-
+  
   # Plot action
   shiny::observeEvent(input$plot_series, {
     df <- rv_timeseries()
@@ -295,7 +308,7 @@ server <- function(input, output, session, ...) {
     }
     # we have a dataframe with the sources to get
     # getting the series combination
-    keys = cols[!grepl(".*_label$", cols) & !grepl("^source__.*", cols) & !grepl("^indicator__.*", cols)]
+    keys = cols[!grepl(".*_label$", cols) & !grepl("^source__.*", cols) & !grepl("^indicator__.*", cols) & !grepl("^ref__.*", cols)]
     if(nrow(df) > 0) {
       rep = new.env()
       progress_start("Obtaining time series data", rep) 
@@ -304,10 +317,11 @@ server <- function(input, output, session, ...) {
          progress_set(value = 0.8*i/nrow(df), message = "Getting time series data", rep)
          post_data <- jsonlite::toJSON(as.list(sapply(keys, function(f) df[[f]][[i]])), auto_unbox = TRUE)
          resp <- httr::POST('http://localhost:8000/timeserie', body = post_data, encode="json")
-         
+          
          if(resp$status_code == 200) {
-            data = httr::content(resp)$timeserie
-            as.data.frame(jsonlite::fromJSON(jsonlite::toJSON(data, auto_unbox=T), simplifyDataFrame=T))
+            data <- httr::content(resp)$timeserie
+            json <- jsonlite::toJSON(data, auto_unbox=T, null = "null")
+            as.data.frame(jsonlite::fromJSON(json, simplifyDataFrame=T))
          } else {
            stop("Error while obatining data series")
          }
@@ -397,12 +411,21 @@ server <- function(input, output, session, ...) {
       names(rv_source_details()$definitions)[[1]]
   })
 
-  source_description <- shiny::renderText({
+  output$source_description <- shiny::renderText({
       details <- rv_source_details()$definitions[[1]]
       details$scope$source_description
   })
 
-  source_tags <- shiny::renderText({
+  output$source_frequency <- shiny::renderText({
+      details <- rv_source_details()$definitions[[1]]
+      details$scope$frequency
+  })
+  output$source_quality <- shiny::renderText({
+      details <- rv_source_details()$definitions[[1]]
+      details$scope$data_quality
+  })
+
+  output$source_tags <- shiny::renderText({
     details <- rv_source_details()$definitions[[1]]
     paste(details$scope$tags, collapse = ", ")
   })
@@ -627,9 +650,9 @@ plot_timeseries <- function(df) {
     )
 
   })
-  
   # Calculating breaks of y axis
-  y_breaks <- unique(floor(pretty(seq(0, (max(df$value) + 1) * 1.1))))
+  print(df$value[1:300])
+  y_breaks <- unique(floor(pretty(seq(0, (max(df$value, na.rm=T) + 1) * 1.1))))
 
   # plotting
   fig_line <- ggplot2::ggplot(df, ggplot2::aes(x = .data$date, y = .data$value, color = .data$key, label = .data$Details)) +

@@ -6,6 +6,7 @@ import functools
 import requests
 import json
 import re
+import copy
 
 l = logging.getLogger("pandem-nlp")
 
@@ -58,7 +59,8 @@ class NLPAnnotator(worker.Worker):
 
       text_field = "article_text"
       lang_field = "article_language"
-
+      
+      annotated = []
       for lang in self._model_languages:
         to_annotate = [ t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang ]
         if len(to_annotate) > 0:
@@ -71,21 +73,29 @@ class NLPAnnotator(worker.Worker):
               annotations = json.loads(result)["predictions"]
               for t, pred in zip(to_annotate, annotations):
                 best = functools.reduce(lambda a, b: a if a[1]>b[1] else b, enumerate(pred))[0]
-                t["attrs"][f"article_cat_{m}"] = categories[m][best]
+                at = copy.deepcopy(t)
+                at["attrs"][f"article_cat_{m}"] = categories[m][best]
+                annotated.append(at)
       
       # Annotating geographically using extra simplistic approach
       to_annotate = [ t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"]]
       for geo_var, regex in alias_regex.items():
         texts = [t["attrs"][text_field] for t in to_annotate]
-        for t in to_annotate:
+        for t in to_annotate + annotated:
           if not geo_var in t["attrs"]:
             text = t["attrs"][text_field].lower()
             match = re.search(alias_regex[geo_var], text)
             if match is not None:
               matched_alias = match.group()
               t["attrs"][geo_var] = aliases[geo_var][matched_alias]
-
-
+      
+      # Adding annotated tuples
+      list_of_tuples['tuples'].extend(annotated)
+      
+      # Removing language field since it is not interesting for generating separated time series
+      for t in list_of_tuples['tuples']:
+        if 'attrs' in t and lang_field in t['attrs']:
+          t['attrs'].pop(lang_field)
       
       self._pipeline_proxy.annotate_end(list_of_tuples, path = path, job = job)
 

@@ -1,11 +1,11 @@
 {
     "scope":{
-      "source":"twitter",
-      "source_description":"Twitter is an American microblogging and social networking service on which users post and interact with messages known as \"tweets\". Registered users can post, like, and retweet tweets, but unregistered users can only read those that are publicly available. Users interact with Twitter through browser or mobile frontend software, or programmatically via its APIs. The service is provided by Twitter, Inc., a corporation based in San Francisco, California. Tweets were originally restricted to 140 characters, but the limit was doubled to 280 for non-CJK languages in November 2017.[16] Audio and video tweets remain limited to 140 seconds for most accounts.",
-      "tags":["Twitter"],
+      "source":"medisys",
+      "source_description":"Medical Information System. The Medical Information System MedISys displays only those articles with interest to Public Health, grouped by disease or disease type. It analyses the news and warns users with automatically generated alerts.\nMedISys is an internet monitoring and analysis system developed at the JRC in collaboration with EC Directorate General SANCO to rapidly identify potential threats to the public health using information from the internet. These threats include the outbreak of Communicable Diseases, risks linked to Chemical and Nuclear accidents and Terrorist Attacks, i.e. events that could have a widespread impact on the health of the European Community.\nMedISys continuously monitors about 900 specialist medical sites plus all the generic EMM news, i.e. over 20000 RSS feeds and HTML pages sites from 7000 generic news portals and 20 commercial news wires in altogether 70 languages.",
+      "tags":["MediSys"],
       "data_quality":"Algorithm estimation",
-      "frequency":"every 5 minutes",
-      "reference_user":"Twitter",
+      "frequency":"every 20 minutes",
+      "reference_user":"MedySis",
       "reporting_email":"",
       "globals":[
         {"variable":"source"}
@@ -17,23 +17,21 @@
     },
     "acquisition":{
       "channel":{
-        "name":"twitter",
-        "endpoint":"filter",
-        "version":"1.1",
-        "languages":["fr", "en", "es"],
+        "name":"medisys",
+        "languages":["en"],
         "main_group":"disease",
         "topics": {
           "COVID-19":{
-            "phrases":["covid-19", "covid"],
+            "categories":["CoronavirusInfection"],
             "group":"disease"
           },
           "Dengue fever [classical dengue]":{ 
-            "phrases":["dengue"],
+            "categories":["DengueFever"],
             "group":"disease"
           },
           "Ebola virus disease":{
-            "phrases":["ebola"],
-            "group":"disease"
+            "categories":["DengueFever"],
+            "group":"EbolaHemorrhagicFever"
           },
           "lock-down":{
             "phrases":["lock down", "confinamiento", "confinnement"],
@@ -48,7 +46,7 @@
             "group":"government_measure"
           },
           "masks":{
-            "phrases":["masks", "FFP2", "mascarillas", "masque", "masques"],
+            "phrases":["masks", "FFP2", "mascarillas", "porter masque"],
             "group":"government_measure"
           },
           "tests":{
@@ -68,12 +66,12 @@
       }
     },
     "columns":[
-      {"name":"id", "variable":"article_id", "path":"@id"},
-      {"name":"created_at", "variable":"article_created_at", "path":"@created_at"},
+      {"name":"guid", "variable":"article_id", "path":"@guid"},
       {"name":"topic_disease", "variable":"pathogen_name", "path":"@topic_disease/*"},
       {"name":"topic_government_measure", "variable":"topic", "path":"@topic_government_measure/*"},
       {"name":"text", "variable":"article_text", "path":"@text"},
-      {"name":"reporting_time", "variable":"reporting_time", "path":"@reporting_time"},
+      {"name":"publish_time", "variable":"article_created_at", "path":"@pub_date"},
+      {"name":"reporting_time", "variable":"reporting_time", "path":"@rep_date"},
       {"name":"lang", "variable":"article_language", "path":"@lang"},
       {"name":"article_count", "variable":"article_count", "path":"@article_count"}
     ]

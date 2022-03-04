@@ -244,9 +244,9 @@ class Evaluator(worker.Worker):
                     var_date, base_date = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] == "date"))
                     main_par, main_base = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"] ))
                     attrs = {p:vars_dic[p]["variable"] for p in params[ind] if p not in set(obs.keys())}
-                    data = self._variables_proxy.lookup(list(obs.values()), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
                     # iterating though each combination and launching the scripts to calculate the results
                     for comb in combis:
+                      data = self._variables_proxy.lookup(list(obs.values()), [comb], source, {base_date:None} , include_source = True, include_tag = True).get()
                       #sorting values per date
                       if comb in data:
                         row = data[comb]

@@ -31,7 +31,7 @@
     },
     "columns":[
       {"name":"Date", "variable":"reporting_week"}, 
-      {"name":"NUTS2/3/country", "variable":"geo_name"},
+      {"name":"NUTS2/3/country", "variable":"geo_local_code"},
       {"name":"Age group", "variable":"age_group", "action":"insert"},
       {"name":"Confirmed cases", "variable":"confirmed_cases"},
       {"name":"Population", "variable":"population"}

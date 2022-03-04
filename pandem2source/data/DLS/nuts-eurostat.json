@@ -27,6 +27,7 @@
     "columns":[
       {"name":"name", "variable":"geo_name", "xpath":"skos:prefLabel/text()", "action":"insert"},
       {"name":"code", "variable":"geo_code", "xpath":"skos:notation/text()", "action":"insert"},
-      {"name":"parent", "variable":"geo_parent", "xpath":"skos:broader/@rdf:resource", "find":"([^/]+)/?$", "action":"insert"}
+      {"name":"parent", "variable":"geo_parent", "xpath":"skos:broader/@rdf:resource", "find":"([^/]+)/?$", "action":"insert"},
+      {"name":"level", "variable":"geo_level", "action":"insert"}
     ]
   }

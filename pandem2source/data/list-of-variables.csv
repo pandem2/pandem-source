@@ -1,25 +1,25 @@
 data_family,variable,description,type,unit,linked_attributes,partition,formula,base_variable,modifiers
 13_referentials,source,,not characteristic,,,,,,[]
-01_cases,number_of_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","cum_to_daily(reporting_period, cumulative_cases)",,[]
-01_cases,cumulative_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","daily_to_cum(reporting_period, number_of_cases)",,[]
+01_cases,number_of_cases,Number of cases for the respective pathogen and reporting period depending on the case status,observation,people,,"source, case_status, geo_code","cum_to_daily(reporting_period, cumulative_cases)",,[]
+01_cases,cumulative_cases,Cumulative Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,,[]
 01_cases,confirmed_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
-01_cases,cumulative_confirmed_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,cumulative_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
-01_cases,recovered_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""recovered""}]"
-01_cases,active_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","active_cases(reporting_date, confirmed_cases, pathogen_code)",number_of_cases,"[{""variable"": ""case_status"", ""value"": ""active""}]"
-01_cases,reinfection_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""reinfection""}]"
-01_cases,possible_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""possible""}]"
-01_cases,probable_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""probable""}]"
-01_cases,imported_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""imported""}]"
-01_cases,cases_at_onset_of_symptoms_date,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""period_type"", ""value"": ""onset_of_symptoms_date""}]"
+01_cases,cumulative_confirmed_cases,Cumulative Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,cumulative_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
+01_cases,recovered_cases,Number of recovered cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,cumulative_cases,"[{""variable"": ""case_status"", ""value"": ""recovered""}]"
+01_cases,active_cases,Number of active cases at the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","active_cases(reporting_date, confirmed_cases, pathogen_code)",number_of_cases,"[{""variable"": ""case_status"", ""value"": ""active""}]"
+01_cases,reinfection_cases,Number of reinfections at the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""reinfection""}]"
+01_cases,possible_cases,Number of possible cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""possible""}]"
+01_cases,probable_cases,Number of probable cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""probable""}]"
+01_cases,imported_cases,Number of imported cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""imported""}]"
+01_cases,cases_at_onset_of_symptoms_date,Number of confirmed cases for the respective pathogen at onset of symptoms date ,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""period_type"", ""value"": ""onset_of_symptoms_date""}]"
 01_cases,pathogen_code,,referential,,,,,,[]
 01_cases,pathogen_name,,referential_label,,pathogen_code,,,,[]
 01_cases,pathogen_alias,,referential_alias,,pathogen_code,,,,[]
 13_referentials,geo_code,,geo_referential,,,source,,,[]
 13_referentials,iso_country_code_2,,referential,,,source,,geo_code,"[{""variable"": ""geo_level"", ""value"": ""country""}]"
-13_referentials,geo_name,,referential_label,,geo_code,source,,,[]
+13_referentials,geo_name,,referential_label,,"geo_code, geo_parent",source,,,[]
 13_referentials,country_name,,referential_alias,,geo_code,source,,geo_name,"[{""variable"": ""geo_level"", ""value"": ""country""}]"
-13_referentials,geo_parent,,characteristic,,geo_code,source,,,[]
-13_referentials,geo_level,"Country, NUTS_1, NUTS_2, NUTS_3",characteristic,,,source,,,[]
+13_referentials,geo_parent,,referential_parent,,geo_code,source,,,[]
+13_referentials,geo_level,"Country, NUTS_1, NUTS_2, NUTS_3",characteristic,,geo_code,source,,,[]
 13_referentials,geo_local_code,,referential_alias,,geo_code,source,,,[]
 13_referentials,file,,not characteristic,,,,,,[]
 13_referentials,line_number,,not characteristic,,,,,,[]
@@ -31,12 +31,13 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 13_referentials,reporting_time,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""instant""}]"
 13_referentials,reporting_week,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""isoweek""}]"
 13_referentials,period_type,,characteristic,,,,,,[]
-01_cases,incidence,,indicator,people/people,,"source, case_status, geo_code","incidence(reporting_period, number_of_cases, population, pathogen_code)",,[]
+01_cases,incidence,Number of confirmed cases each 100.000 people,indicator,people/people,,"source, case_status, geo_code","incidence(reporting_period, confirmed_cases, population, pathogen_code)",,[]
 01_cases,rt_number,,indicator,qty,,"source, case_status, geo_code","rt_number(reporting_period, confirmed_cases, pathogen_code)",,[]
 01_cases,number_of_ppe_protective_equipment,,resource,units/time,,,,,[]
 01_cases,needs_of_ppe_protective_equipment,,resource,units/time,,,,,[]
 01_cases,outbreak_id_(if_associated_to_known_outbreak),,observation,id,,,,,[]
-02_deaths,number_of_deaths,,observation,people,,"Source, care_type, geo_code",,,[]
+02_deaths,number_of_deaths,,observation,people,,"Source, care_type, geo_code","cum_to_daily(reporting_period, cumulative_cases)",,[]
+02_deaths,cumulative_deaths,,observation,people,,"Source, care_type, geo_code",,,[]
 02_deaths,deaths_infected,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
 02_deaths,deaths_infected_hospitalised,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}]"
 02_deaths,deaths_infected_in_icu,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}, {""variable"": ""bed_type"", ""value"": ""icu""}]"

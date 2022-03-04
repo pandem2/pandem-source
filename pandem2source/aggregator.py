@@ -23,7 +23,7 @@ class Aggregator(worker.Worker):
     cumm = {}
     untouched = []
     geos = {var["variable"] for var in variables.values() if var["type"] == "geo_referential"}
-    geo_parents = {var["linked_attributes"][0]:var["variable"] for var in variables.values() if var["type"] == "characteristic" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos}
+    geo_parents = {var["linked_attributes"][0]:var["variable"] for var in variables.values() if var["type"] == "referential_parent" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos}
 
     var_asc = {code:self.rel_ascendants(self.descendants(code, parent)) for code, parent in geo_parents.items()}
     for t in [t for t in list_of_tuples['tuples'] if "attr" in t or "obs" in t]:
@@ -100,7 +100,7 @@ class Aggregator(worker.Worker):
     if not "attrs" in t or len(t["attrs"].keys()) == 0:
       yield ('', t)
     else:
-      keys = [attr for attr in t["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential", "geo_referential", "date"]]
+      keys = [attr for attr in t["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential", "geo_referential", "date", "referential_parent"]]
       keys.sort()
       # adding identity aggregation 
       yield (json.dumps({list(t["obs"].keys())[0]:[(key,t["attrs"][key]) for key in keys]}, cls=JsonEncoder), t)
@@ -112,7 +112,7 @@ class Aggregator(worker.Worker):
           for asc in ascendants[code]:
             c = copy.deepcopy(t)
             c["attrs"][code_var] = asc
-            keys = [attr for attr in c["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential", "geo_referential", "date"]]
+            keys = [attr for attr in c["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential", "geo_referential", "date", "referential_parent"]]
             keys.sort()
             if(code != asc): # we have to remove the idenntity since it was already added
               yield (json.dumps({list(t["obs"].keys())[0]:[(key,c["attrs"][key]) for key in keys]}, cls=JsonEncoder), c)
