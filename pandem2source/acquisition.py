@@ -58,7 +58,7 @@ class Acquisition(worker.Worker):
         ).get()  
 
 
-    def add_datasource(self, dls):
+    def add_datasource(self, dls, force_acquire):
         source_dir = self.source_path(dls)
         if not os.path.exists(source_dir):
             os.makedirs(source_dir)
@@ -74,8 +74,17 @@ class Acquisition(worker.Worker):
                 'source'
             ).get()
         else:
+            if force_acquire:
+                for s in find_source.to_dict(orient='records'):
+                  s["last_hash"] = ""
+                  s["last_exec"] = None
+                  s["next_exec"] = None
+                  self._storage_proxy.write_db(s, "source").get()
+
             last_exec = find_source["last_exec"].values[0]
             id_source = find_source["id"].values[0]
+
+       # reseting the last_hash if force acquire is requested
        # updating the internal variable current sources
         self.current_sources[id_source] = dls 
         

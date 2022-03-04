@@ -77,7 +77,7 @@ class Pipeline(worker.Worker):
               j["dls_json"] = new_dls[j["source"]]
               # deleting issues on jobs we are restarting
               self._storage_proxy.delete_db('issue', filter = lambda i: int(i['job_id']) == int(j["id"])) 
-            
+
             self.job_steps['submitted_ended'] = dict([(j["id"], j) for j in jobs])  
         process_repeat = worker.Repeat(datetime.timedelta(seconds=1))
         self.register_action(process_repeat, self.process_jobs) 

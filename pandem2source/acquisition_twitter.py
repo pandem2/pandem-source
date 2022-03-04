@@ -31,7 +31,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
         if not os.path.exists(self._filter_arc_dir):
           os.makedirs(name = self._filter_arc_dir)
 
-    def add_datasource(self, dls):
+    def add_datasource(self, dls, force_acquire):
       if len(self.current_sources) > 0:
         raise ValueError("Twitter aqquisition support only a singlr DLS, others will be ignored")
       if "acquisition" in dls and "channel" in dls["acquisition"] and "topics" in dls["acquisition"]["channel"]:
@@ -89,7 +89,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
       )
       self.create_new_gz()
       threading.Thread(target=self.tweet_filter.run).start()
-      super().add_datasource(dls)
+      super().add_datasource(dls, force_acquire)
 
     def create_new_gz(self):
        lfile = f"{datetime.now().strftime('%Y.%m.%d.%H.%M.%S')}.json.gz"

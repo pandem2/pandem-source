@@ -30,8 +30,8 @@
             "group":"disease"
           },
           "Ebola virus disease":{
-            "categories":["DengueFever"],
-            "group":"EbolaHemorrhagicFever"
+            "categories":["EbolaHemorrhagicFever"],
+            "group":"disease"
           },
           "lock-down":{
             "phrases":["lock down", "confinamiento", "confinnement"],
@@ -59,7 +59,7 @@
       },
       "format": {
         "name":"json",
-        "new_line_ended":true,
+        "new_line_ended":false,
         "encoding":"UTF-8",
         "row":"*",
         "date_format":"%Y-%m-%d %H:%M:%S"

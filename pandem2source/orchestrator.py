@@ -27,7 +27,7 @@ from itertools import chain
 
 class Orchestration(pykka.ThreadingActor):
 
-    def __init__(self, settings, start_acquisition = True, retry_failed = False, restart_job = 0, retry_active = True):
+    def __init__(self, settings, start_acquisition = True, retry_failed = False, restart_job = 0, retry_active = True, force_acquire = True):
         super(Orchestration, self).__init__()
         self.settings = settings
         self.current_actors = dict()
@@ -35,6 +35,7 @@ class Orchestration(pykka.ThreadingActor):
         self.retry_failed = retry_failed
         self.retry_active = retry_active
         self.restart_job = restart_job
+        self.force_acquire = force_acquire
 
 
     def on_start(self):
@@ -127,7 +128,7 @@ class Orchestration(pykka.ThreadingActor):
             dls_label = [dls for dls in dls_dicts if dls['acquisition']['channel']['name'] == label]
             for dls in dls_label:
                 if self.start_acquisition:
-                   acquisition_proxy.add_datasource(dls)
+                   acquisition_proxy.add_datasource(dls, self.force_acquire)
         
             self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label}
 

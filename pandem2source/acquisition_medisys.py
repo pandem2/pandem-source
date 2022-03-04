@@ -24,7 +24,7 @@ class AcquisitionMedisys(acquisition.Acquisition):
     def on_start(self):
         super().on_start()
     
-    def add_datasource(self, dls):
+    def add_datasource(self, dls, force_acquire):
       if len(self.current_sources) > 0:
         raise ValueError("Medisys aqquisition support only a singlr DLS, others will be ignored")
       if "acquisition" in dls and "channel" in dls["acquisition"] and "topics" in dls["acquisition"]["channel"]:
@@ -72,20 +72,15 @@ class AcquisitionMedisys(acquisition.Acquisition):
       else:
         self._excluded_regex = None
 
-      super().add_datasource(dls)
+      super().add_datasource(dls, force_acquire)
 
 
     def new_files(self, dls, last_hash):
-        if last_hash is not None and last_hash !=  "":
-          to_archive = list(filter(lambda v: v <=last_hash, existing_files))
-        else: 
-          to_archive = []
-        
         # last_hash is the last until timespamp we captured
         if last_hash is None or last_hash == '':
           # If no last_hash is provided then 'until' = now and 'old_target' = a very early date
           until = datetime.strftime(datetime.utcnow(), "%Y-%m-%dT%H:%M:%SZ")
-          old_target = "2022-03-03T00:00:00Z"
+          old_target = "2000-00-00T00:00:00Z"
         else: 
           # If a hash is provided then then 'until' = now and 'old_target' = last_hash + 1sec
           until = datetime.strftime(datetime.datetime.utcnow(), "%Y-%m-%dT%H:%M:%SZ")

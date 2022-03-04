@@ -46,6 +46,11 @@ def main(a):
     action="store_true", 
     help="If present the pandem2-source app will not be lauched" 
   )
+  start_parser.add_argument(
+    "--force-acquire", 
+    action="store_true", 
+    help="Reset the concerned data sources to force a fresh acquire" 
+  )
 
   start_parser.add_argument(
     "-r",
@@ -128,9 +133,9 @@ def main(a):
     args.func(args, parser)
 
 # handlers
-def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart_job = 0, not_retry_active = False, no_app = True):
+def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart_job = 0, not_retry_active = False, no_app = True, force_acquire = False):
   from types import SimpleNamespace
-  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None, "restart_job":restart_job, "no_app":no_app, "not_retry_active":not_retry_active}))
+  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None, "restart_job":restart_job, "no_app":no_app, "not_retry_active":not_retry_active, "force_acquire":force_acquire}))
 
 # handlers
 def do_start(args, *other):
@@ -162,10 +167,10 @@ def do_start(args, *other):
     return None
   
   if args.restart_job > 0:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = False, restart_job = args.restart_job, retry_active = True)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = False, restart_job = args.restart_job, retry_active = True, force_acquire = self._force_acquire)
     orch = orchestrator_ref.proxy()
   elif args.limit_collection is not None:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed, restart_job = args.restart_job, retry_active = not args.not_retry_active)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed, restart_job = args.restart_job, retry_active = not args.not_retry_active, force_acquire = args.force_acquire)
     orch = orchestrator_ref.proxy()
     storage_proxy = orch.get_actor("storage").get().proxy()
     dls_files = storage_proxy.list_files('source-definitions').get()
@@ -174,9 +179,9 @@ def do_start(args, *other):
     for source_name in args.limit_collection.split(","):
       dls = list(filter(lambda dls: dls['scope']['source'] == source_name, dls_dicts))[0]
       acquisition_proxy = orch.get_actor(f"acquisition_{dls['acquisition']['channel']['name']}").get().proxy()
-      acquisition_proxy.add_datasource(dls)
+      acquisition_proxy.add_datasource(dls, args.force_acquire)
   else:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed, retry_active = not args.not_retry_active)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed, retry_active = not args.not_retry_active, force_acquire = force_acquire)
     orch = orchestrator_ref.proxy()
 
   # launching pandem2source app
