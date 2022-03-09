@@ -7,6 +7,7 @@ import requests
 import json
 import re
 import copy
+import itertools
 
 l = logging.getLogger("pandem-nlp")
 
@@ -62,22 +63,25 @@ class NLPAnnotator(worker.Worker):
       
       annotated = []
       for lang in self._model_languages:
-        to_annotate = [ t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang ]
-        if len(to_annotate) > 0:
+        for to_annotate in self.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), 10000):
           # Annotating using tensorflow categories
           for m in categories.keys():
             if m in self._model_languages[lang]: 
-              texts = [t["attrs"][text_field] for t in to_annotate]
+              texts = (t["attrs"][text_field] for t in to_annotate)
               data = json.dumps({"instances": [[t] for t in texts]})
               result = requests.post(f"{endpoints[m]}:predict", data = data, headers = {'content-type': "application/json"}).content
               annotations = json.loads(result)["predictions"]
               for t, pred in zip(to_annotate, annotations):
                 best = functools.reduce(lambda a, b: a if a[1]>b[1] else b, enumerate(pred))[0]
                 at = copy.deepcopy(t)
+                # creating a new tuple with the best category for this model
                 at["attrs"][f"article_cat_{m}"] = categories[m][best]
                 annotated.append(at)
+                # updating exitsting tuple with category ALL
+                t["attrs"][f"article_cat_{m}"] = "All"
       
       # Annotating geographically using extra simplistic approach
+      geo_annotated = []
       to_annotate = [ t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"]]
       for geo_var, regex in alias_regex.items():
         texts = [t["attrs"][text_field] for t in to_annotate]
@@ -87,10 +91,14 @@ class NLPAnnotator(worker.Worker):
             match = re.search(alias_regex[geo_var], text)
             if match is not None:
               matched_alias = match.group()
-              t["attrs"][geo_var] = aliases[geo_var][matched_alias]
+              at = copy.deepcopy(t)
+              at["attrs"][geo_var] = aliases[geo_var][matched_alias]
+              geo_annotated.append(at)
+            t["attrs"][geo_var] = "All"
       
       # Adding annotated tuples
       list_of_tuples['tuples'].extend(annotated)
+      list_of_tuples['tuples'].extend(geo_annotated)
       
       # Removing language field since it is not interesting for generating separated time series
       for t in list_of_tuples['tuples']:
@@ -99,6 +107,11 @@ class NLPAnnotator(worker.Worker):
       
       self._pipeline_proxy.annotate_end(list_of_tuples, path = path, job = job)
 
+    def slices(self, iterable, size):
+       head = list(itertools.islice(iterable, size))
+       while len(head) > 0:
+         yield head
+         head = list(itertools.islice(iterable, size))
 
     def get_models(self):
       if os.path.exists(self._models_path):

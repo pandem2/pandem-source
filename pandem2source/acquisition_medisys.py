@@ -83,7 +83,7 @@ class AcquisitionMedisys(acquisition.Acquisition):
           old_target = "2000-00-00T00:00:00Z"
         else: 
           # If a hash is provided then then 'until' = now and 'old_target' = last_hash + 1sec
-          until = datetime.strftime(datetime.datetime.utcnow(), "%Y-%m-%dT%H:%M:%SZ")
+          until = datetime.strftime(datetime.utcnow(), "%Y-%m-%dT%H:%M:%SZ")
           old_target = datetime.strftime(datetime.strptime(last_hash, "%Y-%m-%dT%H:%M:%SZ") + timedelta(0,1), "%Y-%m-%dT%H:%M:%SZ")
 
         # looping over results until the endpoint produces no more articles

@@ -167,7 +167,7 @@ def do_start(args, *other):
     return None
   
   if args.restart_job > 0:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = False, restart_job = args.restart_job, retry_active = True, force_acquire = self._force_acquire)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = False, restart_job = args.restart_job, retry_active = True, force_acquire = args.force_acquire)
     orch = orchestrator_ref.proxy()
   elif args.limit_collection is not None:
     orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed, restart_job = args.restart_job, retry_active = not args.not_retry_active, force_acquire = args.force_acquire)
@@ -181,7 +181,7 @@ def do_start(args, *other):
       acquisition_proxy = orch.get_actor(f"acquisition_{dls['acquisition']['channel']['name']}").get().proxy()
       acquisition_proxy.add_datasource(dls, args.force_acquire)
   else:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed, retry_active = not args.not_retry_active, force_acquire = force_acquire)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed, retry_active = not args.not_retry_active, force_acquire = args.force_acquire)
     orch = orchestrator_ref.proxy()
 
   # launching pandem2source app

@@ -544,22 +544,26 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
               else:
                 ref_var = ref_link[var]
                 label_name = f"ref__{var}_label"
-
+              
               # Loading referential labels if present 
               label = ref_labels[ref_var]
               if ref_var not in code_labels:
                 labels = variables_proxy.get_referential(label).get()
                 if labels is not None:
                   code_labels[ref_var] = {t['attrs'][ref_var]:t['attr'][label] for t in labels if 'attrs' in t and 'attr' in t and label in t['attr'] and ref_var in t['attrs']}
-              # Taking label from referential
+              # Taking label from referential if exists
               if ref_var in code_labels and value in code_labels[ref_var]:
                 values[label_name] = code_labels[ref_var][value]
+              # Taking code as value if not Nont 
+              elif value is not None:
+                values[label_name] = str(value) 
+              else:
+                values[label_name] = None
+              # Making case correction when possible
+              #if values[label_name] is not None and len(values[label_name])>2: #and ref_var not in no_labels:
+              #  values[label_name] = " ".join([(word[0].upper()+word[1:].lower() if len(word)>2 else word)  for word in re.split("_| |\\-", values[label_name])])
 
-              if not label_name in values:
-                values[label_name] = str(value) if value is not None else "Not Available"
-              if values[label_name] is not None and len(values[label_name])>2 and ref_var not in no_labels:
-                values[label_name] = " ".join([(word[0].upper()+word[1:].lower() if len(word)>2 else word)  for word in re.split("_", values[label_name])])
-          # Adding indivator associated values
+          # Adding indicator associated values
           if "indicator" in values:
             values["indicator__family"] = var_dic[values["indicator"]]["data_family"]
             values["indicator__description"] = var_dic[values["indicator"]]["description"]

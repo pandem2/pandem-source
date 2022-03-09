@@ -186,7 +186,7 @@ def nlp_docker_launch_command():
     cmd = ["sudo"]
   else: 
     cmd = []
-  cmd.extend(["docker", "run", "-p", f"{tf_port}:8501", "-it"]) 
+  cmd.extend(["docker", "run", "-p", f"{tf_port}:8501"]) 
   
   for model in models:
     cmd.extend(["-v",  f"{models_path}{os.sep}{model}:/models/{model}/1/"]) 

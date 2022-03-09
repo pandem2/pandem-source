@@ -138,12 +138,11 @@ query_page <- function(timeseries) {
       else if(cols[[i]] == "ref__geo_level") -4 
       else if(cols[[i]] == "source__reference_user") -2 
       else if(cols[[i]] == "pathogen_code") -1
-      else if(cols[[i]] == "source__table") 10000 
       else i
     }))
     cols <- unname(namedorder[as.character(sort(as.integer(names(namedorder))))])
   }
-  code_cols = cols[!grepl(".*_label$", cols) & !(cols %in% c("source", "source__source_description", "indicator__description", "indicator__unit"))] 
+  code_cols = cols[!grepl(".*_label$", cols) & !(cols %in% c("source", "source__table", "source__source_description", "indicator__description", "indicator__unit"))] 
   filters <- lapply(code_cols, function(col) {
       label <- sapply(strsplit(col, "__"), function(t) tail(t, 1))[[1]]
       label <- sapply(strsplit(label, "_"), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), substr(w, 2, nchar(w)), sep = "")), collapse = " "))[[1]]
@@ -255,22 +254,38 @@ server <- function(input, output, session, ...) {
     #updating filters
     for(col in filters) {
       dff <- df
+      this_select <- paste("ts_filter",col, sep = "_") 
+      this_selection <- shiny::isolate(input[[this_select]])
       for(ocol in filters) {
-        if(ocol != col) {
+        if(ocol != col && is.null(this_selection)) {
           other_select = paste("ts_filter",ocol, sep = "_") 
           oselection = input[[other_select]]
-          if(!is.null(oselection))
+          if(!is.null(oselection)) {
+            oselection <- ifelse(oselection == "NA", NA, oselection)
             dff <- dff[dff[[ocol]] %in% oselection,]
+          }
         }
       }
-      this_select = paste("ts_filter",col, sep = "_") 
-      label_col = paste(col, "label", sep = "_")
+      label_col <- paste(col, "label", sep = "_")
+      values <- dff[[col]]
       if(label_col %in% colnames(dff)) {
-        values = setNames(dff[[col]], dff[[label_col]])
-        values = values[sort(unique(names(values)), na.last = TRUE)]
+        labels <- dff[[label_col]]
       }
       else
-        values = sort(unique(dff[[col]]))
+        labels <- values
+      values <- setNames(values, labels)
+      values <- values[sort(unique(names(values)), na.last = TRUE)]
+      no_navalues <- values[!is.na(values)]
+      no_navalues <- setNames(
+        no_navalues,
+        sapply(strsplit(names(no_navalues), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), substr(w, 2, nchar(w)), sep = "")), collapse = " "))
+      )
+      if(NA %in% values) {
+        # Setting NA as not available and put it at the end 
+        values <- setNames(c(no_navalues, NA), c(names(no_navalues), "Not Available"))
+      } else {
+        values <- no_navalues 
+      }
       # Updating the select with the respective values
       shiny::updateSelectInput(session, this_select,
         choices = values,
@@ -288,8 +303,10 @@ server <- function(input, output, session, ...) {
     for(col in filters) {
         select = paste("ts_filter",col, sep = "_") 
         selection = input[[select]]
-        if(!is.null(selection))
+        if(!is.null(selection)) {
+          selection <- ifelse(selection == "NA", NA, selection)
           df <- df[df[[col]] %in% selection,]
+        }
     }
     paste(nrow(df), "time series found")
   })
@@ -303,8 +320,10 @@ server <- function(input, output, session, ...) {
     for(col in filters) {
         select = paste("ts_filter",col, sep = "_") 
         selection = input[[select]]
-        if(!is.null(selection))
+        if(!is.null(selection)) {
+          selection <- ifelse(selection == "NA", NA, selection)
           df <- df[df[[col]] %in% selection,]
+        }
     }
     # we have a dataframe with the sources to get
     # getting the series combination
@@ -651,7 +670,6 @@ plot_timeseries <- function(df) {
 
   })
   # Calculating breaks of y axis
-  print(df$value[1:300])
   y_breaks <- unique(floor(pretty(seq(0, (max(df$value, na.rm=T) + 1) * 1.1))))
 
   # plotting
