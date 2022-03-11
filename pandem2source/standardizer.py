@@ -27,6 +27,9 @@ class Standardizer(worker.Worker):
             OUT:        if issues not null list of issue
                         else list of tuples standardize
         """
+        # getting tuples from cache
+        tuples = tuples.value()
+
         std_tuples={'scope':{}, 'tuples':[]}
         std_var={}
         variables=self._variables_proxy.get_variables().get()
@@ -65,7 +68,7 @@ class Standardizer(worker.Worker):
                         ref_matched[var_name] = False
                         ref_failed[var_name] = False
                     elif var_name not in ignore_check : 
-                        self._pipeline_proxy.standardize_end(tuples = None, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
+                        self._pipeline_proxy.standardize_end(tuples = None, n_tuples = 0, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
                         return
                 if var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
                     alias=self._variables_proxy.get_referential(var_name).get() 
@@ -74,7 +77,7 @@ class Standardizer(worker.Worker):
                         ref_matched[var_name] = False
                         ref_failed[var_name] = False
                     elif var_name not in ignore_check : 
-                        self._pipeline_proxy.standardize_end(tuples = None, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
+                        self._pipeline_proxy.standardize_end(tuples = None, n_tuples = 0, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
                         return
 
                 var_type = variables[var_name]['type']
@@ -141,11 +144,13 @@ class Standardizer(worker.Worker):
         # the source will be delayed if there referentials with some failures and no success
         for ref, failed in ref_failed.items():
           if failed and not ref_matched[ref]:
-            self._pipeline_proxy.standardize_end(tuples = None, issues = list_issues, path = path, job = job)
+            self._pipeline_proxy.standardize_end(tuples = None, n_tuples = 0, issues = list_issues, path = path, job = job)
             return
         std_tuples['scope']['update_scope']= [*({'variable':k, 'value':v} for k,v in update_tuple['attrs'].items())]
         #print("\n".join(util.pretty(std_tuples).split("\n")[0:100]))
-        self._pipeline_proxy.standardize_end(tuples = std_tuples, issues = list_issues, path = path, job = job)
+        
+        ret = self._storage_proxy.to_job_cache(job["id"], f"std_{path}", std_tuples).get()
+        self._pipeline_proxy.standardize_end(tuples = ret, n_tuples = len(std_tuples['tuples']), issues = list_issues, path = path, job = job)
 
     def nothing_found_issue(self, file_name, job, var_name):
       return { "step":job['step'], 

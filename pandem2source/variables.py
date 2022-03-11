@@ -1,6 +1,7 @@
 from . import worker
 import os
 from . import util 
+from .storage import CacheValue
 import itertools
 import json
 import datetime
@@ -149,6 +150,10 @@ class Variables(worker.Worker):
           return tt
  
     def write_variable(self, input_tuples, step, job):
+        # if input_tuples is in cache get its value
+        if type(input_tuples) == CacheValue:
+          input_tuples = input_tuples.value()
+
         variables = self.get_variables()
         partition_dict = defaultdict(list)
         if step ==0:

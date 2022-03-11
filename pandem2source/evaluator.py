@@ -77,6 +77,9 @@ class Evaluator(worker.Worker):
       return True
 
     def plan_calculate(self, list_of_tuples, job):
+        # getting tuples from cache
+        list_of_tuples = list_of_tuples.value()['tuples']
+        
         var_dic = self._dict_of_variables
         modifiers = self._modifiers
         params_set = self._params_set
@@ -301,7 +304,9 @@ class Evaluator(worker.Worker):
             
             result['scope'] = {}            
             result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
-            self._pipeline_proxy.calculate_end(result, job = job).get()
+
+            ret = self._storage_proxy.to_job_cache(job["id"], f"calc", result).get()
+            self._pipeline_proxy.calculate_end(ret, job = job).get()
         except Exception as e: 
             l.warning(f"Error during calculation, job {job['id']} will fail")
             issue = { "step":job['step'], 

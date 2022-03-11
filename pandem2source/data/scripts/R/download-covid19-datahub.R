@@ -14,9 +14,10 @@ df <- covid19(country = c(
 )
 
 df$key_nuts <- ifelse(is.na(df$key_nuts), df$iso_alpha_2, df$key_nuts)
-for(n in unique(df$key_nuts)) {
+df$part <- paste(df$iso_alpha_2, substr(df$date, 1, 7), sep = "_")
+for(n in unique(df$part)) {
   ddf <- df %>% 
-    filter(key_nuts == n)
+    filter(part == n)
   write.csv(ddf, paste(n, ".csv", sep = ""), row.names = FALSE)
 }
 message("getting covid-19 datahub data done")

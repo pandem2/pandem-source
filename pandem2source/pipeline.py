@@ -123,6 +123,7 @@ class Pipeline(worker.Worker):
             tuples = self.job_stdtuples[job["id"]]
             # non standardized tuples can be deleted
             self.job_tuples.pop(job["id"])
+            self.job_df.pop(job["id"])
             if self.job_to_annotate(job):
                 self.update_job_step(job, 'annotate_started', 0.5)
                 self.send_to_annotate(tuples, job)
@@ -215,8 +216,9 @@ class Pipeline(worker.Worker):
     def read_format_end(self, job, path, df):
         if job["status"] == "failed":
           return
-        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        self.job_df[job["id"]][path] = df
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1 
+        
+        self.job_df[job["id"]][path] = df 
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'read_format_ended', 0.25)
 
@@ -246,7 +248,7 @@ class Pipeline(worker.Worker):
         for path, df in dfs.items():
             self._dfreader_proxy.df2tuple(df, path, job, job["dls_json"])
 
-    def read_df_end(self, tuples, issues, path, job): 
+    def read_df_end(self, tuples, n_tuples, issues, path, job): 
         if job["status"] == "failed":
           return
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
@@ -259,9 +261,10 @@ class Pipeline(worker.Worker):
             self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
             warning_number = sum(issue['issue_severity']=='warning' for issue in self.job_issues[job["id"]])
-            if errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
+            if errors_number == 0 and (n_tuples > 0 or warning_number == 0):
                 self.update_job_step(job, 'read_df_ended', 0.3 + progress)
             else:
+                breakpoint()
                 self.fail_job(job)
         else:
             self.update_job_step(job, job["step"], 0.3 + progress)
@@ -273,7 +276,7 @@ class Pipeline(worker.Worker):
         for path, ttuples in tuples.items():
             self._standardizer_proxy.standardize(ttuples, path, job, job["dls_json"])
 
-    def standardize_end(self, tuples, issues, path, job): 
+    def standardize_end(self, tuples, n_tuples, issues, path, job): 
         if job["status"] == "failed":
           return
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
@@ -294,9 +297,10 @@ class Pipeline(worker.Worker):
                 # If all tuples returnes are None means that some referential were missing and that this source needs to be delayed
                 l.debug(f"Source {job['dls_json']['scope']['source']} has been reversed to read format end since some referential failed completely, probably some depending source is missing")
                 self.update_job_step(job, 'read_df_ended',  0.4)
-            elif errors_number == 0 and (len(tuples["tuples"]) > 0 or warning_number == 0):
+            elif errors_number == 0 and (n_tuples > 0 or warning_number == 0):
                 self.update_job_step(job, 'standardize_ended',  0.4 + progress)
             else:
+                breakpoint()
                 self.fail_job(job)
         else:
             self.update_job_step(job, job["step"], 0.4 + progress)
@@ -315,22 +319,7 @@ class Pipeline(worker.Worker):
             self.update_job_step(job, 'annotate_ended', 0.55)
 
     def send_to_aggregate(self, tuples, job):
-        tts = {
-          "tuples":[],
-          "scope":{"update_scope":{}}
-        }
-        for p, tt in tuples.items():
-          if tt is not None:
-            tts['tuples'].extend(tt['tuples'])
-            for u in tt['scope']['update_scope']:
-              v = u["value"] if type(u["value"]) in [list, set] else [u["value"]]
-              if u['variable'] in tts['scope']['update_scope'] :
-                 tts['scope']['update_scope'][u['variable']].update(v)
-              else:
-                 tts['scope']['update_scope'][u['variable']] = set(v)
-
-        tts['scope']['update_scope'] = [{"variable":k, "value":list(v)} for k, v in tts['scope']['update_scope'].items()]
-        self._aggregate_proxy.aggregate(tts, job)
+        self._aggregate_proxy.aggregate(tuples, job)
 
     def aggregate_end(self, tuples, job): 
         if job["status"] == "failed":
@@ -339,7 +328,7 @@ class Pipeline(worker.Worker):
         self.update_job_step(job, 'aggregate_ended', 0.65)
     
     def send_to_precalculate(self, tuples, job):
-        self._evaluator_proxy.plan_calculate(tuples['tuples'], job)
+        self._evaluator_proxy.plan_calculate(tuples, job)
 
     def precalculate_end(self, indicators_to_calculate, job): 
         if job["status"] == "failed":
@@ -358,7 +347,6 @@ class Pipeline(worker.Worker):
         self.update_job_step(job, 'calculate_ended', 0.85)
 
     def send_to_publish(self, tuples, job):
-        self.pending_count[job["id"]] = len(tuples)
         calc_step = self.job_precalstep[job['id']]
         self._variables_proxy.write_variable(tuples, calc_step, job)
     
@@ -392,6 +380,7 @@ class Pipeline(worker.Worker):
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def fail_job(self, job, delete_job = False, issue = None):
+        breakpoint()
         if type(job) == int :
           for stepjobs in self.job_steps.values():
             if job in stepjobs:

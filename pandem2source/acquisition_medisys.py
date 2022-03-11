@@ -153,7 +153,7 @@ class AcquisitionMedisys(acquisition.Acquisition):
                     col_name = f"topic_{self._topic_groups[t]}"
                   else:
                     col_name = "topic"
-                  if col_name in res:
+                  if col_name in art:
                     art[col_name].append(t)
                   else:
                     art[col_name] = [t]
@@ -187,8 +187,8 @@ class AcquisitionMedisys(acquisition.Acquisition):
     def matching_topics(self, text, categories):
         return list(filter(
           lambda topic: 
-            (re.search(self._included_regex[topic], text.lower()) is not None and re.search(self._excluded_regex, text.lower()) is None)
-            or (topic in self._topic_categories and not self._topic_categories[topic].is_disjoint(categories)),
+            (len(self._included_regex[topic]) > 0 and re.search(self._included_regex[topic], text.lower()) is not None and re.search(self._excluded_regex, text.lower()) is None)
+            or (topic in self._topic_categories and not self._topic_categories[topic].isdisjoint(categories)),
           self._topics
         ))
         

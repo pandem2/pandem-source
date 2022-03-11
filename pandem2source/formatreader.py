@@ -4,6 +4,7 @@ from . import util
 from abc import ABC, abstractmethod, ABCMeta
 import logging
 from datetime import datetime
+import traceback
 
 l = logging.getLogger("pandem.formatreader")
 
@@ -51,9 +52,13 @@ class FormatReader(worker.Worker):
 
           # reseting index
           df.reset_index(drop=True, inplace=True)
+          df = self._storage_proxy.to_job_cache(job["id"], f"df_{file_path}", df).get()
           self._pipeline_proxy.read_format_end(job, file_path, df).get()
         except Exception as e: 
           l.warning(f"Error during dataframe reading, job {job['id']} will fail")
+          for line in traceback.format_exc().split("\n"):
+            l.debug(line)
+
           issue = { "step":job['step'], 
                    "line":0, 
                    "source":job['source'], 

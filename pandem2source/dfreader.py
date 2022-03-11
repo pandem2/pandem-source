@@ -179,6 +179,8 @@ class DataframeReader(worker.Worker):
 
     def df2tuple(self, df, path, job, dls):
         variables = self.get_variables()
+        # getting df from cache
+        df = df.value()
         dls_col_list=[]
         file_name = util.absolute_to_relative(path, "files/staging/")
 
@@ -261,7 +263,9 @@ class DataframeReader(worker.Worker):
         if "scope" in dls and "update_scope" in dls["scope"]:
           ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, variables = variables, issues = issues, dls = dls, job = job, file_name = file_name)
         ret["tuples"] = tuples
-        self._pipeline_proxy.read_df_end(tuples = ret, issues = issues, path = path, job = job)
+
+        ret = self._storage_proxy.to_job_cache(job["id"], f"tup_{path}", ret).get()
+        self._pipeline_proxy.read_df_end(tuples = ret, n_tuples = len(tuples), issues = issues, path = path, job = job)
     
 
     def add_values(self, var_list, tuples, variables, issues, dls, job, file_name):

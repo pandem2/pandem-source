@@ -19,6 +19,8 @@ class Aggregator(worker.Worker):
       self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
 
   def aggregate(self, list_of_tuples, job):
+    list_of_tuples = self.prepare_tuples(list_of_tuples)
+
     variables = self._variables_proxy.get_variables().get()
     cumm = {}
     untouched = []
@@ -40,7 +42,9 @@ class Aggregator(worker.Worker):
 
     result = list_of_tuples.copy()
     result['tuples'] = untouched + [*cumm.values()]
-    self._pipeline_proxy.aggregate_end(result, job = job)
+    
+    ret = self._storage_proxy.to_job_cache(job["id"], f"agg", result).get()
+    self._pipeline_proxy.aggregate_end(ret, job = job)
 
   def descendants(self, code, parent):
     codes = self._variables_proxy.get_referential(code).get()
@@ -116,3 +120,23 @@ class Aggregator(worker.Worker):
             keys.sort()
             if(code != asc): # we have to remove the idenntity since it was already added
               yield (json.dumps({list(t["obs"].keys())[0]:[(key,c["attrs"][key]) for key in keys]}, cls=JsonEncoder), c)
+
+  def prepare_tuples(self, tuples):
+    tts = {
+      "tuples":[],
+      "scope":{"update_scope":{}}
+    }
+    for p, tt in tuples.items():
+      if tt is not None:
+        # getting tuples from cache
+        tt = tt.value()
+        tts['tuples'].extend(tt['tuples'])
+        for u in tt['scope']['update_scope']:
+          v = u["value"] if type(u["value"]) in [list, set] else [u["value"]]
+          if u['variable'] in tts['scope']['update_scope'] :
+             tts['scope']['update_scope'][u['variable']].update(v)
+          else:
+             tts['scope']['update_scope'][u['variable']] = set(v)
+
+    tts['scope']['update_scope'] = [{"variable":k, "value":list(v)} for k, v in tts['scope']['update_scope'].items()]
+    return tts

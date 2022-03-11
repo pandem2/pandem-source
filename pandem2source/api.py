@@ -138,12 +138,14 @@ class SourcesHandler(tornado.web.RequestHandler):
             
             if tag["last_import_start"] is None or tag['last_import_start'] < str(j['start_on']):
                 tag["last_import_start"] = str(j["start_on"])
+            if tag["last_import_end"] is None or (j["end_on"] is not None and str(j["end_on"]) > tag["last_import_end"]):
+              tag['last_import_end'] = str(j['end_on'])
             if ("step" not in tag) or tag["progress"] < j["progress"]:
                 tag['status'] = j['status']
                 tag['step'] = j["step"]
           else:
             if tag["last_import_end"] is None or (j["end_on"] is not None and str(j["end_on"]) > tag["last_import_end"]):
-              source['last_import_end'] = str(j['end_on'])
+              tag['last_import_end'] = str(j['end_on'])
               
         res = list(tags.values())
         res.sort(key = lambda s:s["name"]) 
@@ -201,7 +203,7 @@ class JobsBySourceHandler(tornado.web.RequestHandler):
                 #'dls': j['dls_json'],
                 'progress': j['progress'],
                 'files': len(j['source_files']) if type(j["source_files"]) == list else None,
-                'size': len(j['file_sizes']) if type(j["file_sizes"]) == list else None,
+                'size': sum(j['file_sizes']) if type(j["file_sizes"]) == list else None,
                 'issues': len(df_issues[(df_issues['source']==j['source']) & (df_issues['job_id']==j['id'])]) if df_issues is not None else 0
               } 
             )

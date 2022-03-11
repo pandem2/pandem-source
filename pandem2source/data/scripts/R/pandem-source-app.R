@@ -158,20 +158,31 @@ query_page <- function(timeseries) {
 
   shiny::fluidPage(
     shiny::fluidRow(
-      shiny::column(3, 
+      shiny::column(2, 
         c(
           list(shiny::h4("Filters"))
           ,filters
           )
       ),
-      shiny::column(9, 
+      shiny::column(6, 
         shiny::fluidRow(shiny::column(12, shiny::h4("Time Series"))),
         shiny::fluidRow(shiny::column(12, shiny::h5(shiny::htmlOutput("timeseries_count")))),
         shiny::fluidRow(
-          shiny::column(6,shiny::actionButton("load_series", "Load time series")),
-          shiny::column(6,shiny::actionButton("plot_series", "Visualize time series"))
+          shiny::column(12,shiny::radioButtons("timeseries_scale",label="Y-scale", choices = list(`Standard`="std", `Normalized`="normalized", `Log`="log"), selected = "std", inline = TRUE))
         ),
-        shiny::fluidRow(shiny::column(12, plotly::plotlyOutput("timeseries_chart")))
+        shiny::fluidRow(
+          shiny::column(2,shiny::actionButton("plot_series", "Visualize")),
+          shiny::column(2,shiny::actionButton("load_series", "Synchronize")),
+          shiny::column(8)
+        ),
+        shiny::fluidRow(
+          shiny::column(12,
+            shiny::fluidRow(shiny::column(12, plotly::plotlyOutput("timeseries_chart")))
+          )
+        )
+      ),
+      shiny::column(4, 
+        shiny::h5(shiny::htmlOutput("timeseries_title"))
       )
     )
   )
@@ -348,12 +359,87 @@ server <- function(input, output, session, ...) {
       progress_set(value = 0.9, message = "Joining results", rep)
       ts_df <- jsonlite::rbind_pages(results)
       progress_set(value = 0.9, message = "Plotting time series", rep)
+      label_list = list()
+
+      title = paste(unique(ts_df$indicator), collapse = ", ")
+      singles = list()
+      ts_df$legend <- sapply(ts_df$key, function(v) "")
+      # creating labels and title
+      for(col in filters) {
+        label_col <- paste(col, "label", sep = "_")
+        values <- df[[col]]
+        if(label_col %in% colnames(df)) {
+          labels <- df[[label_col]]
+        }
+        else
+          labels <- values
+        values <- setNames(values, labels)
+        values <- values[sort(unique(names(values)), na.last = TRUE)]
+        labels <- setNames(
+          sapply(strsplit(names(values), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), substr(w, 2, nchar(w)), sep = "")), collapse = " ")),
+          values
+        )
+        label_list[[col]] = values
+        label_col <- sapply(ts_df$key, function(json) {
+          keys = jsonlite::fromJSON(json)
+          if(col %in% names(keys)) {
+            label = labels[[as.character(keys[[col]])]]
+          }
+          else 
+            label = NA
+          label
+        })
+        if(length(unique(label_col))==1 && !is.na(label_col)) {
+          if(unique(label_col) != "All" && col != "period_type")
+            title = paste(title, ", ", unique(label_col), sep = "") 
+          singles[[col]] = unique(label_col) 
+        } else if(length(unique(label_col))>1) {
+          ts_df$legend = sapply(1:nrow(ts_df), function(i) {
+            leg = ts_df[["legend"]][[i]]
+            if(nchar(leg)>0)
+              leg = paste(leg, ", ")
+            leg = paste(leg, label_col[[i]])
+          })
+        }
+      }
+      output$timeseries_title <- shiny::renderText({
+        elements = c(
+          list(
+            Sources = unique(df[["source__source_name"]]),
+            `Data Quality` = unique(df[["source__data_quality"]]),
+            `Sources Description` = unique(df[["source__source_description"]]),
+            `Reported By` = unique(df[["source__reference_user"]]),
+            `Indicator` = unique(df[["indicator"]]),
+            `Indicator Family` = unique(df[["indicator__family"]]),
+            `Indicator Description` = unique(df[["indicator__description"]]),
+            `Indicator Unit` = unique(df[["indicator__unit"]])
+          ),
+          singles
+        )
+        paste(
+          "<UL>",
+          paste(
+            "<LI><B>",
+            names(elements),
+            "</B>:",
+            "<UL>",
+            sapply(elements, function(e){
+               paste("<LI>",e,"</LI>")
+            }),
+            "</UL></LI>",
+            sep ="", 
+            collapse = ""
+          ),
+          "</UL>",
+          sep = ""
+        )
+      })
       
       output$timeseries_chart <- plotly::renderPlotly({
          # Validate if minimal requirements for rendering are met 
          progress_set(value = 0.15, message = "Generating line chart", rep)
          ts_df$date <- as.Date(ts_df$date)
-         chart <- plot_timeseries(ts_df)
+         chart <- plot_timeseries(ts_df, title = title, scale = input$timeseries_scale)
          
          # Setting size based on container size
          height <- session$clientData$output_line_chart_height
@@ -362,6 +448,7 @@ server <- function(input, output, session, ...) {
          # returning empty chart if no data is found on chart
          chart_not_empty(chart)
          
+
          # transforming chart on plotly
          gg <- plotly::ggplotly(chart, height = height, width = width, tooltip = c("label")) %>% plotly::config(displayModeBar = FALSE) 
       }) 
@@ -647,7 +734,7 @@ server <- function(input, output, session, ...) {
 }
 
 # Plot the time series chart for shiny app
-plot_timeseries <- function(df) {
+plot_timeseries <- function(df, title, scale = "std") {
   #Importing pipe operator
   `%>%` <- magrittr::`%>%`
   # getting regions and countries 
@@ -658,32 +745,44 @@ plot_timeseries <- function(df) {
 
   # adding hover texts
   df$Details <- sapply(1:nrow(df), function(i) {
-    keys = jsonlite::fromJSON(df$key[[i]])
     paste(
       "",
       df$value[[i]],
-      df$indicator[[i]],
       paste("date:",  df$date[[i]]),
-      paste(sapply(names(keys), function(k) { paste(k,": ",keys[[k]], sep = "")  }), collapse = "\n"),
+      paste(strsplit(df$legend[[i]], ", ")[[1]], collapse = "\n"),
       sep = "\n"
     )
 
   })
+  df$y <- if(scale == "std") {
+    df$value
+  } else if(scale == "log") {
+    log(df$value)
+  } else if(nrow(df)>0) {
+    maxs = list()
+    for(i in 1:nrow(df)) {
+      if(!exists(df$key[[i]], where = maxs))
+        maxs[[df$key[[i]]]] = df[["value"]]
+      else
+        maxs[[df$key[[i]]]] = max(maxs[[df$key[[i]]]], df[["value"]])
+    }
+    sapply(1:nrow(df), function(i) {if(maxs[[df$key[[i]]]] != 0) df$value[[i]]/maxs[[df$key[[i]]]] else 0})
+  } else 
+    numeric(0)
   # Calculating breaks of y axis
   y_breaks <- unique(floor(pretty(seq(0, (max(df$value, na.rm=T) + 1) * 1.1))))
 
   # plotting
-  fig_line <- ggplot2::ggplot(df, ggplot2::aes(x = .data$date, y = .data$value, color = .data$key, label = .data$Details)) +
+  fig_line <- ggplot2::ggplot(df, ggplot2::aes(x = .data$date, y = .data$value, color = .data$legend, label = .data$Details)) +
     ggplot2::geom_line() + #ggplot2::aes(colour=.data$key)) +
     # Title
     ggplot2::labs(
-     title= "Time series collected by PANDEM-Source",
-     fill="Key",
-     color="Key"
+     title= title,
+     color="Legend"
     ) +
     ggplot2::xlab("Date") + 
-    ggplot2::ylab('Value') +
-    ggplot2::scale_y_continuous(breaks = y_breaks, limits = c(0, max(y_breaks)), expand=c(0 ,0))+
+    ggplot2::ylab(if(scale == "std") "Indicator" else if(scale == "log") "Log" else "[0-1] Max Normalized") +
+    #ggplot2::scale_y_continuous(breaks = y_breaks, limits = c(0, max(y_breaks)), expand=c(0 ,0))+
     ggplot2::theme_classic(base_family = get_font_family()) +
     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 12, face = "bold",lineheight = 0.9),
       axis.text = ggplot2::element_text(colour = "black", size = 8),
@@ -691,7 +790,7 @@ plot_timeseries <- function(df) {
                                           margin = ggplot2::margin(-15, 0, 0, 0)),
       axis.title.x = ggplot2::element_text(margin = ggplot2::margin(30, 0, 0, 0), size = 10),
       axis.title.y = ggplot2::element_text(margin = ggplot2::margin(-25, 0, 0, 0), size = 10),
-      legend.position="none"
+      legend.position= if(length(unique(df$legend)) < 10) "right" else "none"
     )
   
   fig_line

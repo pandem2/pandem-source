@@ -31,9 +31,10 @@ class NLPAnnotator(worker.Worker):
         self._models = None
 
     def annotate(self, list_of_tuples, path, job):
+      # getting tuples from cache
+      list_of_tuples = list_of_tuples.value() 
       if self._models is None:
           self._models = self.get_models()
-      
       # gathering information about nlp categories
       endpoints = self.model_endpoints()
       categories = {m:self._model_categories[m] for m in endpoints.keys() if (m in self._model_categories) }
@@ -60,8 +61,11 @@ class NLPAnnotator(worker.Worker):
 
       text_field = "article_text"
       lang_field = "article_language"
+     
       
+      l.debug("Evaluatig NLP models")
       annotated = []
+      count = 0
       for lang in self._model_languages:
         for to_annotate in self.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), 10000):
           # Annotating using tensorflow categories
@@ -79,22 +83,37 @@ class NLPAnnotator(worker.Worker):
                 annotated.append(at)
                 # updating exitsting tuple with category ALL
                 t["attrs"][f"article_cat_{m}"] = "All"
-      
+          count = count + len(to_annotate)
+          l.debug(f"{count} articles annotated")
+      l.debug("Evaluating geolocation")
+
       # Annotating geographically using extra simplistic approach
+      count = 0
       geo_annotated = []
+      geo_annotation = {}
       to_annotate = [ t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"]]
       for geo_var, regex in alias_regex.items():
         texts = [t["attrs"][text_field] for t in to_annotate]
         for t in to_annotate + annotated:
           if not geo_var in t["attrs"]:
             text = t["attrs"][text_field].lower()
-            match = re.search(alias_regex[geo_var], text)
+            if text not in geo_annotation:
+              match = re.search(alias_regex[geo_var], text)
+              geo_annotation[text] = match
+            else :
+              match = geo_annotation[text]
+
             if match is not None:
               matched_alias = match.group()
               at = copy.deepcopy(t)
               at["attrs"][geo_var] = aliases[geo_var][matched_alias]
               geo_annotated.append(at)
             t["attrs"][geo_var] = "All"
+          count = count + 1
+          if count % 10000 == 0:
+            l.debug(f"{count} articles geo annotated")
+      l.debug(f"{count} articles geo annotated")
+      l.debug("Removing language from tuples")
       
       # Adding annotated tuples
       list_of_tuples['tuples'].extend(annotated)
@@ -104,8 +123,9 @@ class NLPAnnotator(worker.Worker):
       for t in list_of_tuples['tuples']:
         if 'attrs' in t and lang_field in t['attrs']:
           t['attrs'].pop(lang_field)
-      
-      self._pipeline_proxy.annotate_end(list_of_tuples, path = path, job = job)
+            
+      ret = self._storage_proxy.to_job_cache(job["id"], f"std_{path}", list_of_tuples).get()
+      self._pipeline_proxy.annotate_end(ret, path = path, job = job)
 
     def slices(self, iterable, size):
        head = list(itertools.islice(iterable, size))

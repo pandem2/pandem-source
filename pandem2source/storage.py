@@ -4,7 +4,8 @@ import json
 import shutil
 from io import BytesIO
 from . import worker
-
+from . import util
+import shelve
 
 class Storage(worker.Worker):
    
@@ -21,7 +22,11 @@ class Storage(worker.Worker):
            os.makedirs(self.pandem_path("database"))
         if not os.path.exists(self.pandem_path("files")):
            os.makedirs(self.pandem_path("files"))
-        #create empty dataframes in self.db_tables if pickle files doesn't exist
+        if not os.path.exists(self.pandem_path("files", "staging")):
+           os.makedirs(self.pandem_path("files", "staging"))
+        # create dict of job cached objects
+        # self.job_cache = {}
+        # create empty dataframes in self.db_tables if pickle files doesn't exist
         self.db_tables = dict()
         test_bool = os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle'))
         if os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle')):
@@ -189,9 +194,42 @@ class Storage(worker.Worker):
         df.to_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle'))
         return df
 
+    def get_job_cache(self, job_id):
+      job_id = int(job_id)
+      shelve_path = util.pandem_path("files", "staging", str(job_id), "cache")
+      #if job_id in self.job_cache:
+      #  self.job_cache[job_id] =  shelve.open(shelve_path,  writeback=False)
+      #else:
+      if not os.path.exists(util.pandem_path("files", "staging", str(job_id))):
+          os.makedirs(util.pandem_path("files", "staging", str(job_id)))
+      #  self.job_cache[job_id] =  
+      return shelve.open(shelve_path,  writeback=False)
+      #return self.job_cache[job_id]
+
+    def to_job_cache(self, job_id, key, data):
+      job_id = int(job_id)
+      key = str(key)
+      with self.get_job_cache(job_id) as cache:
+        cache[key] = data
+      return CacheValue(job_id, key, self._self_proxy)
+
+    def from_job_cache(self, job_id, key):
+      job_id = int(job_id)
+      key = str(key)
+      with self.get_job_cache(job_id) as cache:
+        return cache[key]
 
 
 
-
+   
  
+class CacheValue:
+  def __init__(self, job_id, key, storage_proxy):
+    self.job_id = job_id
+    self.key = key
+    self._storage_proxy = storage_proxy
+
+  def value(self):
+    return self._storage_proxy.from_job_cache(self.job_id, self.key).get()
+
 
