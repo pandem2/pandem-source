@@ -32,7 +32,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 13_referentials,reporting_week,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""isoweek""}]"
 13_referentials,period_type,,characteristic,,,,,,[]
 01_cases,incidence,Number of confirmed cases each 100.000 people,indicator,people/people,,"source, case_status, geo_code","incidence(reporting_period, confirmed_cases, population, pathogen_code)",,[]
-01_cases,rt_number,,indicator,qty,,"source, case_status, geo_code","rt_number(reporting_period, confirmed_cases, pathogen_code)",,[]
+01_cases,rt_number,"R_t is the expected number of secondary cases produced by infected individuals, who turns infectious on day t. If a source does not provide this number it will be estimated as the ratio of confirmed cases between last 7 days against the previous seven days.",indicator,qty,,"source, case_status, geo_code","rt_number(reporting_period, confirmed_cases, pathogen_code)",,[]
 01_cases,number_of_ppe_protective_equipment,,resource,units/time,,,,,[]
 01_cases,needs_of_ppe_protective_equipment,,resource,units/time,,,,,[]
 01_cases,outbreak_id_(if_associated_to_known_outbreak),,observation,id,,,,,[]

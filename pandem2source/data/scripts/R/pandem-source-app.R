@@ -168,7 +168,8 @@ query_page <- function(timeseries) {
         shiny::fluidRow(shiny::column(12, shiny::h4("Time Series"))),
         shiny::fluidRow(shiny::column(12, shiny::h5(shiny::htmlOutput("timeseries_count")))),
         shiny::fluidRow(
-          shiny::column(12,shiny::radioButtons("timeseries_scale",label="Y-scale", choices = list(`Standard`="std", `Normalized`="normalized", `Log`="log"), selected = "std", inline = TRUE))
+          shiny::column(6,shiny::radioButtons("timeseries_scale",label="Y-scale", choices = list(`Standard`="std", `Normalized`="normalized", `Log`="log"), selected = "std", inline = TRUE)),
+          shiny::column(6,shiny::radioButtons("timeseries_period",label="Time", choices = list(`1 Year`="12", `6 months`="6", `3 months`="3", `1 month`="1", `All`="all"), selected = "12", inline = TRUE))
         ),
         shiny::fluidRow(
           shiny::column(2,shiny::actionButton("plot_series", "Visualize")),
@@ -268,7 +269,7 @@ server <- function(input, output, session, ...) {
       this_select <- paste("ts_filter",col, sep = "_") 
       this_selection <- shiny::isolate(input[[this_select]])
       for(ocol in filters) {
-        if(ocol != col && is.null(this_selection)) {
+        if(ocol != col) {# && is.null(this_selection)) {
           other_select = paste("ts_filter",ocol, sep = "_") 
           oselection = input[[other_select]]
           if(!is.null(oselection)) {
@@ -359,13 +360,12 @@ server <- function(input, output, session, ...) {
       progress_set(value = 0.9, message = "Joining results", rep)
       ts_df <- jsonlite::rbind_pages(results)
       progress_set(value = 0.9, message = "Plotting time series", rep)
-      label_list = list()
 
       title = paste(unique(ts_df$indicator), collapse = ", ")
       singles = list()
       ts_df$legend <- sapply(ts_df$key, function(v) "")
       # creating labels and title
-      for(col in filters) {
+      for(col in c(keys)) {
         label_col <- paste(col, "label", sep = "_")
         values <- df[[col]]
         if(label_col %in% colnames(df)) {
@@ -379,26 +379,29 @@ server <- function(input, output, session, ...) {
           sapply(strsplit(names(values), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), substr(w, 2, nchar(w)), sep = "")), collapse = " ")),
           values
         )
-        label_list[[col]] = values
-        label_col <- sapply(ts_df$key, function(json) {
-          keys = jsonlite::fromJSON(json)
-          if(col %in% names(keys)) {
+        df_labels <- sapply(1:nrow(ts_df), function(i) {
+          json <- ts_df$key[[i]]
+          keys <-  jsonlite::fromJSON(json)
+          if(col == "indicator")
+            label = ts_df$indicator[[i]]
+          else if(col %in% names(keys)) {
             label = labels[[as.character(keys[[col]])]]
           }
           else 
             label = NA
           label
         })
-        if(length(unique(label_col))==1 && !is.na(label_col)) {
-          if(unique(label_col) != "All" && col != "period_type")
-            title = paste(title, ", ", unique(label_col), sep = "") 
-          singles[[col]] = unique(label_col) 
-        } else if(length(unique(label_col))>1) {
+        if(length(unique(labels))==1 && !is.na(values)) {
+          if(unique(labels) != "All" && col != "period_type")
+            title = paste(title, ", ", unique(labels), sep = "") 
+          singles[[col]] = unique(labels) 
+        } else if(length(unique(labels))>1) {
           ts_df$legend = sapply(1:nrow(ts_df), function(i) {
             leg = ts_df[["legend"]][[i]]
             if(nchar(leg)>0)
               leg = paste(leg, ", ")
-            leg = paste(leg, label_col[[i]])
+            leg = paste(leg, df_labels[[i]])
+            leg
           })
         }
       }
@@ -424,7 +427,7 @@ server <- function(input, output, session, ...) {
             "</B>:",
             "<UL>",
             sapply(elements, function(e){
-               paste("<LI>",e,"</LI>")
+               paste("<LI>",e,"</LI>", collapse = "")
             }),
             "</UL></LI>",
             sep ="", 
@@ -439,7 +442,7 @@ server <- function(input, output, session, ...) {
          # Validate if minimal requirements for rendering are met 
          progress_set(value = 0.15, message = "Generating line chart", rep)
          ts_df$date <- as.Date(ts_df$date)
-         chart <- plot_timeseries(ts_df, title = title, scale = input$timeseries_scale)
+         chart <- plot_timeseries(ts_df, title = title, scale = input$timeseries_scale, period = input$timeseries_period)
          
          # Setting size based on container size
          height <- session$clientData$output_line_chart_height
@@ -734,7 +737,7 @@ server <- function(input, output, session, ...) {
 }
 
 # Plot the time series chart for shiny app
-plot_timeseries <- function(df, title, scale = "std") {
+plot_timeseries <- function(df, title, scale = "std", period = "12") {
   #Importing pipe operator
   `%>%` <- magrittr::`%>%`
   # getting regions and countries 
@@ -743,6 +746,10 @@ plot_timeseries <- function(df, title, scale = "std") {
   on.exit(options(old))
   options(scipen=999)
 
+  # deleting old dates depending on period
+  if(period != "all") {
+    df <- df[as.numeric(difftime(max(df$date), df$date, units = "days")) < as.numeric(period)*30,]
+  }
   # adding hover texts
   df$Details <- sapply(1:nrow(df), function(i) {
     paste(
@@ -762,18 +769,18 @@ plot_timeseries <- function(df, title, scale = "std") {
     maxs = list()
     for(i in 1:nrow(df)) {
       if(!exists(df$key[[i]], where = maxs))
-        maxs[[df$key[[i]]]] = df[["value"]]
+        maxs[[df$key[[i]]]] = max(0, df$value[[i]], na.rm = TRUE)
       else
-        maxs[[df$key[[i]]]] = max(maxs[[df$key[[i]]]], df[["value"]])
+        maxs[[df$key[[i]]]] = max(maxs[[df$key[[i]]]], df$value[[i]], na.rm = TRUE)
     }
-    sapply(1:nrow(df), function(i) {if(maxs[[df$key[[i]]]] != 0) df$value[[i]]/maxs[[df$key[[i]]]] else 0})
+    sapply(1:nrow(df), function(i) {if(!is.na(maxs[[df$key[[i]]]]) && maxs[[df$key[[i]]]] != 0) df$value[[i]]/maxs[[df$key[[i]]]] else 0})
   } else 
     numeric(0)
   # Calculating breaks of y axis
   y_breaks <- unique(floor(pretty(seq(0, (max(df$value, na.rm=T) + 1) * 1.1))))
 
   # plotting
-  fig_line <- ggplot2::ggplot(df, ggplot2::aes(x = .data$date, y = .data$value, color = .data$legend, label = .data$Details)) +
+  fig_line <- ggplot2::ggplot(df, ggplot2::aes(x = .data$date, y = .data$y, color = .data$legend, label = .data$Details)) +
     ggplot2::geom_line() + #ggplot2::aes(colour=.data$key)) +
     # Title
     ggplot2::labs(
@@ -790,7 +797,7 @@ plot_timeseries <- function(df, title, scale = "std") {
                                           margin = ggplot2::margin(-15, 0, 0, 0)),
       axis.title.x = ggplot2::element_text(margin = ggplot2::margin(30, 0, 0, 0), size = 10),
       axis.title.y = ggplot2::element_text(margin = ggplot2::margin(-25, 0, 0, 0), size = 10),
-      legend.position= if(length(unique(df$legend)) < 10) "right" else "none"
+      legend.position= if(length(unique(df$legend)) < 50) "bottom" else "none"
     )
   
   fig_line
