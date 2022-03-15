@@ -219,7 +219,11 @@ class Storage(worker.Worker):
       with self.get_job_cache(job_id) as cache:
         return cache[key]
 
-
+    def delete_job_cache(self, job_id):
+      job_id = int(job_id)
+      shelve_path = util.pandem_path("files", "staging", str(job_id), "cache")
+      if os.path.exists(shelve_path):
+        os.remove(shelve_path)
 
    
  

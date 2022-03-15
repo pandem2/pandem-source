@@ -37,7 +37,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,number_of_ppe_protective_equipment,,resource,units/time,,,,,[]
 01_cases,needs_of_ppe_protective_equipment,,resource,units/time,,,,,[]
 01_cases,outbreak_id_(if_associated_to_known_outbreak),,observation,id,,,,,[]
-02_deaths,number_of_deaths,,observation,people,,"Source, care_type, geo_code","cum_to_daily(reporting_period, cumulative_deaths)",,[]
+02_deaths,number_of_deaths,,observation,people,,"Source, care_type, geo_code","cum_deaths_to_daily(reporting_period, cumulative_deaths)",,[]
 02_deaths,cumulative_deaths,,observation,people,,"Source, care_type, geo_code",,,[]
 02_deaths,deaths_infected,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
 02_deaths,deaths_infected_hospitalised,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}]"

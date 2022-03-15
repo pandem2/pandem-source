@@ -371,6 +371,7 @@ class Pipeline(worker.Worker):
           job["status"] = "success"
           job["end_on"] = datetime.datetime.now()
           job["progress"] = 1
+          self._storage_proxy.delete_job_cache(job["id"]).get()
         else:
           self.job_steps[step][job["id"]] = job
 
@@ -406,6 +407,7 @@ class Pipeline(worker.Worker):
           # writing and issue if required
           if issue is not None:
             self._storage_proxy.write_db(record=issue, db_class='issue').get() 
+          self._storage_proxy.delete_job_cache(job["id"]).get()
 
     def write_issues(self, issues):
         type_count = {issue['issue_type']:0 for issue in issues}

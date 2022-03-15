@@ -36,7 +36,7 @@
       {"name":"date", "variable":"reporting_date"},
       {"name":"confirmed", "variable":"cumulative_confirmed_cases"},
       {"name":"recovered", "variable":"recovered_cases"},
-      {"name":"deaths", "variable":"cumulative_deaths"},
+      {"name":"deaths", "variable":"cumulative_infected_deaths"},
       {"name":"tests", "variable":"performed_tests"},
       {"name":"vaccines", "variable":"doses_injected"},
       {"name":"people_vaccinated", "variable":"at_least_one_dose_vaccinated"},

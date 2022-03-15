@@ -290,7 +290,7 @@ server <- function(input, output, session, ...) {
       no_navalues <- values[!is.na(values)]
       no_navalues <- setNames(
         no_navalues,
-        sapply(strsplit(names(no_navalues), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), substr(w, 2, nchar(w)), sep = "")), collapse = " "))
+        sapply(strsplit(names(no_navalues), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), tolower(substr(w, 2, nchar(w))), sep = "")), collapse = " "))
       )
       if(NA %in% values) {
         # Setting NA as not available and put it at the end 
@@ -361,8 +361,9 @@ server <- function(input, output, session, ...) {
       ts_df <- jsonlite::rbind_pages(results)
       progress_set(value = 0.9, message = "Plotting time series", rep)
 
-      title = paste(unique(ts_df$indicator), collapse = ", ")
+      title <- ""#paste(sapply(strsplit(unique(ts_df$indicator), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), tolower(substr(w, 2, nchar(w))), sep = "")), collapse = " ")), collase = ", ")
       singles = list()
+      details = list()
       ts_df$legend <- sapply(ts_df$key, function(v) "")
       # creating labels and title
       for(col in c(keys)) {
@@ -376,7 +377,7 @@ server <- function(input, output, session, ...) {
         values <- setNames(values, labels)
         values <- values[sort(unique(names(values)), na.last = TRUE)]
         labels <- setNames(
-          sapply(strsplit(names(values), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), substr(w, 2, nchar(w)), sep = "")), collapse = " ")),
+          sapply(strsplit(names(values), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), tolower(substr(w, 2, nchar(w))), sep = "")), collapse = " ")),
           values
         )
         df_labels <- sapply(1:nrow(ts_df), function(i) {
@@ -391,9 +392,13 @@ server <- function(input, output, session, ...) {
             label = NA
           label
         })
+        if(col == "indicator")
+          title <- paste(unique(labels), collapse = ", ")
+        if(length(values)>0 && !all(is.na(values)))
+          details[[col]] = sort(unique(labels))
         if(length(unique(labels))==1 && !is.na(values)) {
-          if(unique(labels) != "All" && col != "period_type")
-            title = paste(title, ", ", unique(labels), sep = "") 
+          #if(unique(labels) != "All" && col != "period_type")
+          #  title = paste(title, ", ", unique(labels), sep = "") 
           singles[[col]] = unique(labels) 
         } else if(length(unique(labels))>1) {
           ts_df$legend = sapply(1:nrow(ts_df), function(i) {
@@ -417,7 +422,7 @@ server <- function(input, output, session, ...) {
             `Indicator Description` = unique(df[["indicator__description"]]),
             `Indicator Unit` = unique(df[["indicator__unit"]])
           ),
-          singles
+          details
         )
         paste(
           "<UL>",
