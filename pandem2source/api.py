@@ -470,6 +470,8 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
     def initialize(self, storage_proxy, variables_proxy):
         self.storage_proxy = storage_proxy
         self.variables_proxy = variables_proxy
+        self._timeseries_hash = ''
+        self._timeseries_cache = ''
     def get(self):
         """
         ---
@@ -495,92 +497,98 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
         """
         storage_proxy = self.storage_proxy
         variables_proxy = self.variables_proxy
+        # If no changes have been performed on timeseries and we have a let's try to reuse last value
+        if self._timeseries_cache != '' and self._timeseries_hash != '' and self._timeseries_hash == self.variables_proxy.timeseries_hash.get():
+            self.write(self._timeseries_cache)
+        else:
+            # recalculating time series
+            dlss = [storage_proxy.read_file(f["path"]).get() for f in storage_proxy.list_files(util.pandem_path("files", "source-definitions")).get() if f["name"].endswith(".json")]
+            source_names = {dls["scope"]["source"]:dls["scope"]["tags"][0] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else dls["scope"]["name"] for dls in dlss}
+            reference_users = {dls["scope"]["source"]:dls["scope"]["reference_user"] if "reference_user" in dls["scope"] else "" for dls in dlss}
+            data_quality = {dls["scope"]["source"]:dls["scope"]["data_quality"] if "data_quality" in dls["scope"] else "" for dls in dlss}
+            source_descriptions = {dls["scope"]["source"]:dls["scope"]["source_description"] if "source_description" in dls["scope"] else "" for dls in dlss}
+            var_dic = variables_proxy.get_variables().get()
+            
+            # getting referential aliases
+            ref_labels = {code:k for k, varinfo in var_dic.items() if varinfo["type"] == "referential_label" for code in varinfo["linked_attributes"]}
+            ref_attrs = {}
+            ref_link = {}
+            for k, varinfo in var_dic.items(): 
+              if varinfo["type"] in ["characteristic", "referential_parent" ] and varinfo['linked_attributes'] is not None: 
+                for code in varinfo["linked_attributes"]:
+                  if code not in ref_attrs:
+                    ref_attrs[code]= []
+                  ref_attrs[code].append(k)
+                  ref_link[k]=code
+                  
+            code_labels = {}
+            code_attrs = {}
+            no_labels = ["indicator__description", "source__reference_user", "source__source_description"]
+            ts = variables_proxy.get_timeseries().get()
+            self._timeseries_hash = variables_proxy.timeseries_hash.get()
+            ts_values = [{k:v for k, v in key} for key in ts.keys()]
+            # Adding nice to have information on time series
+            for values in ts_values:
+              # Adding related attribute characteristics
+              for var, value in list(values.items()):
+                if var in ref_attrs:
+                  # Loading referential attrs if present 
+                  for attr in  ref_attrs[var]:
+                    if attr not in code_attrs:
+                       link = variables_proxy.get_referential(var).get()
+                    if link is not None:
+                      code_attrs[attr] = {t['attr'][var]:t['attrs'][attr] for t in link if 'attrs' in t and 'attr' in t and attr in t['attrs'] and var in t['attr']}
+                    # Taking label from referential
+                    if attr in code_attrs and value in code_attrs[attr]:
+                      values[f"ref__{attr}"] = code_attrs[attr][value]
 
-        dlss = [storage_proxy.read_file(f["path"]).get() for f in storage_proxy.list_files(util.pandem_path("files", "source-definitions")).get() if f["name"].endswith(".json")]
-        source_names = {dls["scope"]["source"]:dls["scope"]["tags"][0] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else dls["scope"]["name"] for dls in dlss}
-        reference_users = {dls["scope"]["source"]:dls["scope"]["reference_user"] if "reference_user" in dls["scope"] else "" for dls in dlss}
-        data_quality = {dls["scope"]["source"]:dls["scope"]["data_quality"] if "data_quality" in dls["scope"] else "" for dls in dlss}
-        source_descriptions = {dls["scope"]["source"]:dls["scope"]["source_description"] if "source_description" in dls["scope"] else "" for dls in dlss}
-        var_dic = variables_proxy.get_variables().get()
-        
-        # getting referential aliases
-        ref_labels = {code:k for k, varinfo in var_dic.items() if varinfo["type"] == "referential_label" for code in varinfo["linked_attributes"]}
-        ref_attrs = {}
-        ref_link = {}
-        for k, varinfo in var_dic.items(): 
-          if varinfo["type"] in ["characteristic", "referential_parent" ] and varinfo['linked_attributes'] is not None: 
-            for code in varinfo["linked_attributes"]:
-              if code not in ref_attrs:
-                ref_attrs[code]= []
-              ref_attrs[code].append(k)
-              ref_link[k]=code
-              
-        code_labels = {}
-        code_attrs = {}
-        no_labels = ["indicator__description", "source__reference_user", "source__source_description"]
-        ts = variables_proxy.get_timeseries().get()
-        ts_values = [{k:v for k, v in key} for key in ts.keys()]
-        # Adding nice to have information on time series
-        for values in ts_values:
-          # Adding related attribute characteristics
-          for var, value in list(values.items()):
-            if var in ref_attrs:
-              # Loading referential attrs if present 
-              for attr in  ref_attrs[var]:
-                if attr not in code_attrs:
-                   link = variables_proxy.get_referential(var).get()
-                if link is not None:
-                  code_attrs[attr] = {t['attr'][var]:t['attrs'][attr] for t in link if 'attrs' in t and 'attr' in t and attr in t['attrs'] and var in t['attr']}
-                # Taking label from referential
-                if attr in code_attrs and value in code_attrs[attr]:
-                  values[f"ref__{attr}"] = code_attrs[attr][value]
+              # Adding frienly labels
+              for var, value in list(values.items()):
+                var = var.split("__")[-1]
+                if var in ref_labels:
+                  # if variable is a characteristic with a link to a referential we have to use the referential as query table
+                  if var not in ref_link:
+                    label_name = f"{var}_label"
+                    ref_var = var 
+                  else:
+                    ref_var = ref_link[var]
+                    label_name = f"ref__{var}_label"
+                  
+                  # Loading referential labels if present 
+                  label = ref_labels[ref_var]
+                  if ref_var not in code_labels:
+                    labels = variables_proxy.get_referential(label).get()
+                    if labels is not None:
+                      code_labels[ref_var] = {t['attrs'][ref_var]:t['attr'][label] for t in labels if 'attrs' in t and 'attr' in t and label in t['attr'] and ref_var in t['attrs']}
+                  # Taking label from referential if exists
+                  if ref_var in code_labels and value in code_labels[ref_var]:
+                    values[label_name] = code_labels[ref_var][value]
+                  # Taking code as value if not Nont 
+                  elif value is not None:
+                    values[label_name] = str(value) 
+                  else:
+                    values[label_name] = None
+                  # Making case correction when possible
+                  #if values[label_name] is not None and len(values[label_name])>2: #and ref_var not in no_labels:
+                  #  values[label_name] = " ".join([(word[0].upper()+word[1:].lower() if len(word)>2 else word)  for word in re.split("_| |\\-", values[label_name])])
 
-          # Adding frienly labels
-          for var, value in list(values.items()):
-            var = var.split("__")[-1]
-            if var in ref_labels:
-              # if variable is a characteristic with a link to a referential we have to use the referential as query table
-              if var not in ref_link:
-                label_name = f"{var}_label"
-                ref_var = var 
-              else:
-                ref_var = ref_link[var]
-                label_name = f"ref__{var}_label"
-              
-              # Loading referential labels if present 
-              label = ref_labels[ref_var]
-              if ref_var not in code_labels:
-                labels = variables_proxy.get_referential(label).get()
-                if labels is not None:
-                  code_labels[ref_var] = {t['attrs'][ref_var]:t['attr'][label] for t in labels if 'attrs' in t and 'attr' in t and label in t['attr'] and ref_var in t['attrs']}
-              # Taking label from referential if exists
-              if ref_var in code_labels and value in code_labels[ref_var]:
-                values[label_name] = code_labels[ref_var][value]
-              # Taking code as value if not Nont 
-              elif value is not None:
-                values[label_name] = str(value) 
-              else:
-                values[label_name] = None
-              # Making case correction when possible
-              #if values[label_name] is not None and len(values[label_name])>2: #and ref_var not in no_labels:
-              #  values[label_name] = " ".join([(word[0].upper()+word[1:].lower() if len(word)>2 else word)  for word in re.split("_| |\\-", values[label_name])])
-
-          # Adding indicator associated values
-          if "indicator" in values:
-            values["indicator__family"] = var_dic[values["indicator"]]["data_family"]
-            values["indicator__description"] = var_dic[values["indicator"]]["description"]
-            values["indicator__unit"] = var_dic[values["indicator"]]["unit"]
-          # Adding source (DLS) associated values
-          if "source" in values:
-            values["source__table"] = values["source"]
-            values["source__source_name"] = source_names[values["source"]]
-            values["source__reference_user"] = reference_users[values["source"]]
-            values["source__source_description"] = source_descriptions[values["source"]]
-            values["source__data_quality"] = data_quality[values["source"]]
+              # Adding indicator associated values
+              if "indicator" in values:
+                values["indicator__family"] = var_dic[values["indicator"]]["data_family"]
+                values["indicator__description"] = var_dic[values["indicator"]]["description"]
+                values["indicator__unit"] = var_dic[values["indicator"]]["unit"]
+              # Adding source (DLS) associated values
+              if "source" in values:
+                values["source__table"] = values["source"]
+                values["source__source_name"] = source_names[values["source"]]
+                values["source__reference_user"] = reference_users[values["source"]]
+                values["source__source_description"] = source_descriptions[values["source"]]
+                values["source__data_quality"] = data_quality[values["source"]]
 
 
-        response = {"timeseries":ts_values}
-        self.write(response)
+            response = {"timeseries":ts_values}
+            self._timeseries_cache = response
+            self.write(response)
 
 @components.schemas.register
 class SourcesModel(object):

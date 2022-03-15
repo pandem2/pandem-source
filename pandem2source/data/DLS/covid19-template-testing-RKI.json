@@ -1,44 +1,40 @@
 {
     "scope":{
-      "source":"testing",
+      "source":"testing-sheet-RKI",
       "source_description":"TESTING dataset provided for the deveolopment of PANDEM-2 delivarable on month 12.",
-      "tags":["COVID19 Template"],
+      "tags":["RKI COVID-19 manual"],
       "data_quality":"Draft",
       "frequency":"every 30 seconds",
-      "reference_user":"Please fill when used",
-      "reporting_email":"Please fill when used",
+      "reference_user":"RKI (Perseke, Knut)",
+      "reporting_email":"",
       "globals":[
         {"variable":"source"},
         {"variable":"pathogen_name", "value":"COVID-19"}
       ],
       "update_scope":[
-        {"variable":"source"},
-        {"variable":"reporting_date"}
+        {"variable":"source"}
       ]
     },
     "acquisition":{
       "channel":{
         "name":"input-local",
-        "xls_file":"M.12 Upload templates_end_users.xlsx",
+        "xls_file":"M.12 Upload templates_end_users_RKI.xlsx",
         "sheet":"Testing"
       },
       "format": {
         "name":"xls",
         "decimal_sign":".",
         "thousands_separator":"",
-        "date_format":"%Y-%m-%d",
+        "date_format":"isoweek",
         "encoding":"UTF-8"
       }
     },
     "columns":[
-      {"name":"Date", "variable":"reporting_date"}, 
+      {"name":"Date", "variable":"reporting_week"}, 
       {"name":"NUTS2/3/country", "variable":"geo_code"},
       {"name":"Test Type (active cases)", "variable":"test_type"},
-      {"name":"Num of available tests", "variable":"available_tests"},
       {"name":"number of test performed", "variable":"performed_tests"},
       {"name":"Positive results", "variable":"positive_results"},
-      {"name":"Negative results", "variable":"negative_results"},
-      {"name":"Inconclusive results", "variable":"inconclusive_results"},
-      {"name":"Unknown results", "variable":"unknown_results"}
+      {"name":"Negative results", "variable":"negative_results"}
     ]
 }

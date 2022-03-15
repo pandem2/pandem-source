@@ -24,7 +24,7 @@
         "name":"xls",
         "decimal_sign":".",
         "thousands_separator":"",
-        "date_format":"YYYY-MM-DD",
+        "date_format":"%Y-%m-%d",
         "encoding":"UTF-8"
       }
     },

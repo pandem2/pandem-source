@@ -30,13 +30,14 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 13_referentials,reporting_date,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""date""}]"
 13_referentials,reporting_time,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""instant""}]"
 13_referentials,reporting_week,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""isoweek""}]"
+13_referentials,reporting_month,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""month""}]"
 13_referentials,period_type,,characteristic,,,,,,[]
 01_cases,incidence,Number of confirmed cases each 100.000 people,indicator,people/people,,"source, case_status, geo_code","incidence(reporting_period, confirmed_cases, population, pathogen_code)",,[]
 01_cases,rt_number,"R_t is the expected number of secondary cases produced by infected individuals, who turns infectious on day t. If a source does not provide this number it will be estimated as the ratio of confirmed cases between last 7 days against the previous seven days.",indicator,qty,,"source, case_status, geo_code","rt_number(reporting_period, confirmed_cases, pathogen_code)",,[]
 01_cases,number_of_ppe_protective_equipment,,resource,units/time,,,,,[]
 01_cases,needs_of_ppe_protective_equipment,,resource,units/time,,,,,[]
 01_cases,outbreak_id_(if_associated_to_known_outbreak),,observation,id,,,,,[]
-02_deaths,number_of_deaths,,observation,people,,"Source, care_type, geo_code","cum_to_daily(reporting_period, cumulative_cases)",,[]
+02_deaths,number_of_deaths,,observation,people,,"Source, care_type, geo_code","cum_to_daily(reporting_period, cumulative_deaths)",,[]
 02_deaths,cumulative_deaths,,observation,people,,"Source, care_type, geo_code",,,[]
 02_deaths,deaths_infected,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
 02_deaths,deaths_infected_hospitalised,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}]"
@@ -141,7 +142,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 06_contact_tracing,case_origin,,characteristic,,,,,,[]
 06_contact_tracing,contact_tracing_policy,,referential,,,,,,[]
 06_contact_tracing,proportion_of_new_cases_that_are_part_of_known_transmission_chains,,indicator,,,,,,[]
-06_contact_tracing,"n?_of_contacts,secondary_and_terciary_cases_per_index_case",,indicator,,,,,,[]
+06_contact_tracing,"n_of_contacts,secondary_and_terciary_cases_per_index_case",,indicator,,,,,,[]
 06_contact_tracing,number_of_clusters_found_(and_cluster_type_-_definition),,characteristic,,,,,,[]
 06_contact_tracing,confirmed_cases_that_had_travel_during_infectious_period,,observation,,,,,,[]
 06_contact_tracing,types_of_contact,,characteristic,,,,,,[]
@@ -231,6 +232,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,posititivity_for_covid_ari_ili,,indicator,,,,,,[]
 01_cases,outbreak_setting,,referential,,,,,,[]
 01_cases,detection_mode,,referential,,,,,,[]
+01_cases,outbreak_cases,Number of imported cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""outbreak""}]"
 03_patient,comorbidity_code,,referential,,,,,,[]
 03_patient,comorbidity_name,,referential,,,,,,[]
 12_population_study,article_id,,observation,comma list,,,,,[]

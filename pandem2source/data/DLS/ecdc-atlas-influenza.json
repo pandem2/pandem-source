@@ -5,6 +5,8 @@
       "tags":["ECDC Atlas", "Influenza"],
       "data_quality":"Official",
       "frequency":"daily",
+      "frequency_start_hour":4,
+      "frequency_end_hour":4,
       "reference_user":"TESSy (ECDC)",
       "reporting_email":"surveillance@ecdc.europa.eu",
       "globals":[

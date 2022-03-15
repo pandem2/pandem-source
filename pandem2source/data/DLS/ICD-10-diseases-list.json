@@ -4,7 +4,9 @@
       "source_description":"",
       "tags":["ICD-10"],
       "data_quality":"Official",
-      "frequency":"every 8 hours",
+      "frequency":"daily",
+      "frequency_start_hour":1,
+      "frequency_end_hour":1,
       "reference_user":"Centers for Disease Control and Prevention, the national public health agency of the United States",
       "reporting_email":"",
       "globals":[

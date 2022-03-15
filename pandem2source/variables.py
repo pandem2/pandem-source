@@ -23,6 +23,7 @@ class Variables(worker.Worker):
         self._variables = None
         self._timeseries = None
         self._timeseries_outdated = False
+        self.timeseries_hash = ''
 
     def get_variables(self):
         if self._variables is None:
@@ -407,4 +408,5 @@ class Variables(worker.Worker):
         with open(cache_path, 'wb') as f:
           pickle.dump(cache, f)
         self._timeseries_outdated = False
+        self.timeseries_hash = str(datetime.datetime.now())
       return cache  

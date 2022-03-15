@@ -264,7 +264,6 @@ class Pipeline(worker.Worker):
             if errors_number == 0 and (n_tuples > 0 or warning_number == 0):
                 self.update_job_step(job, 'read_df_ended', 0.3 + progress)
             else:
-                breakpoint()
                 self.fail_job(job)
         else:
             self.update_job_step(job, job["step"], 0.3 + progress)
@@ -300,7 +299,6 @@ class Pipeline(worker.Worker):
             elif errors_number == 0 and (n_tuples > 0 or warning_number == 0):
                 self.update_job_step(job, 'standardize_ended',  0.4 + progress)
             else:
-                breakpoint()
                 self.fail_job(job)
         else:
             self.update_job_step(job, job["step"], 0.4 + progress)
@@ -380,7 +378,6 @@ class Pipeline(worker.Worker):
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def fail_job(self, job, delete_job = False, issue = None):
-        breakpoint()
         if type(job) == int :
           for stepjobs in self.job_steps.values():
             if job in stepjobs:

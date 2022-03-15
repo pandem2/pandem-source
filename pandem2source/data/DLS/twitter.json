@@ -4,7 +4,7 @@
       "source_description":"Twitter is an American microblogging and social networking service on which users post and interact with messages known as \"tweets\". Registered users can post, like, and retweet tweets, but unregistered users can only read those that are publicly available. Users interact with Twitter through browser or mobile frontend software, or programmatically via its APIs. The service is provided by Twitter, Inc., a corporation based in San Francisco, California. Tweets were originally restricted to 140 characters, but the limit was doubled to 280 for non-CJK languages in November 2017.[16] Audio and video tweets remain limited to 140 seconds for most accounts.",
       "tags":["Twitter"],
       "data_quality":"Algorithm estimation",
-      "frequency":"every 5 minutes",
+      "frequency":"every 20 minutes",
       "reference_user":"Twitter",
       "reporting_email":"",
       "globals":[

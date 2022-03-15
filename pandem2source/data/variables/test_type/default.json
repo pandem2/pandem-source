@@ -29,6 +29,16 @@
             "attr": {
                 "test_type": "Other"
             }
+        },
+        {
+            "attrs": {
+                "line_number": "4",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "test_type": "PCR"
+            }
         }
     ]
 }

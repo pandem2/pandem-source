@@ -1,40 +1,39 @@
 {
     "scope":{
-      "source":"voc-voi",
+      "source":"daily-voc-voi-RKI",
       "source_description":"TESTING dataset provided for the deveolopment of PANDEM-2 delivarable on month 12.",
-      "tags":["COVID19 Template"],
+      "tags":["RKI COVID-19 manual"],
       "data_quality":"Draft",
       "frequency":"every 30 seconds",
-      "reference_user":"Please fill when used",
-      "reporting_email":"Please fill when used",
+      "reference_user":"RKI (Perseke, Knut)",
+      "reporting_email":"",
       "globals":[
         {"variable":"source"},
         {"variable":"pathogen_name", "value":"COVID-19"}
       ],
       "update_scope":[
-        {"variable":"source"},
-        {"variable":"reporting_date"}
+        {"variable":"source"}
       ]
     },
     "acquisition":{
       "channel":{
         "name":"input-local",
-        "xls_file":"M.12 Upload templates_end_users.xlsx",
-        "sheet":"VOC_VOI"
+        "xls_file":"M.12 Upload templates_end_users_RKI.xlsx",
+        "sheet":"Daily VOC_VOI"
       },
       "format": {
         "name":"xls",
         "decimal_sign":".",
         "thousands_separator":"",
-        "date_format":"%Y-%m-%d",
+        "date_format":"isoweek",
         "encoding":"UTF-8"
       }
     },
     "columns":[
+      {"name":"Date / Week", "variable":"reporting_week"}, 
       {"name":"NUTS2/3/country", "variable":"geo_code"},
       {"name":"N cases, Pango linage", "variable":"variant"},
       {"name":"N cases, WHO label", "variable":"variant_who_label", "action":"insert"},
-      {"name":"date introduction in the country/region", "variable":"variant_introduction_date"}
-      
+      {"name":"N cases", "variable":"sequenced_samples"}
     ]
 }
