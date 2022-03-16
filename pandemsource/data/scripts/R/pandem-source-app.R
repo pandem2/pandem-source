@@ -130,12 +130,12 @@ query_page <- function(timeseries) {
   cols = colnames(timeseries)
   if(length(cols) > 0) {
     namedorder = setNames(cols, sapply(1:length(cols), function(i) {
-      if(cols[[i]] == "source__source_name") -10 
-      else if(cols[[i]] == "indicator__family") -8 
+      if(cols[[i]] == "source__source_name") -8 
+      else if(cols[[i]] == "indicator__family") -10 
       else if(cols[[i]] == "indicator") -7 
-      else if(cols[[i]] == "geo_code") -6
+      else if(cols[[i]] == "geo_code") -4
       else if(cols[[i]] == "ref__geo_parent") -5 
-      else if(cols[[i]] == "ref__geo_level") -4 
+      else if(cols[[i]] == "ref__geo_level") -6 
       else if(cols[[i]] == "source__reference_user") -2 
       else if(cols[[i]] == "pathogen_code") -1
       else i
@@ -174,7 +174,8 @@ query_page <- function(timeseries) {
         shiny::fluidRow(
           shiny::column(2,shiny::actionButton("plot_series", "Visualize")),
           shiny::column(2,shiny::actionButton("load_series", "Synchronize")),
-          shiny::column(8)
+          shiny::column(2,shiny::actionButton("clear_filters", "Clear")),
+          shiny::column(6)
         ),
         shiny::fluidRow(
           shiny::column(12,
@@ -268,13 +269,17 @@ server <- function(input, output, session, ...) {
       dff <- df
       this_select <- paste("ts_filter",col, sep = "_") 
       this_selection <- shiny::isolate(input[[this_select]])
+      this_selection <- ifelse(this_selection == "NA", NA, this_selection)
       for(ocol in filters) {
-        if(ocol != col) {# && is.null(this_selection)) {
+        if(ocol != col) { 
           other_select = paste("ts_filter",ocol, sep = "_") 
           oselection = input[[other_select]]
           if(!is.null(oselection)) {
             oselection <- ifelse(oselection == "NA", NA, oselection)
-            dff <- dff[dff[[ocol]] %in% oselection,]
+            if(is.null(this_selection))
+              dff <- dff[dff[[ocol]] %in% oselection,]
+            else
+              dff <- dff[dff[[ocol]] %in% oselection | dff[[col]] %in% this_selection,]
           }
         }
       }
@@ -323,6 +328,19 @@ server <- function(input, output, session, ...) {
     paste(nrow(df), "time series found")
   })
   
+  shiny::observeEvent(input$clear_filters, {
+    df <- shiny::isolate(rv_timeseries())
+    cols = colnames(df)
+    filters = cols[!grepl(".*_label$", cols) & !(cols %in% c("source", "source_description", "description", "unit"))]
+    for(col in filters) { 
+      select = paste("ts_filter",col, sep = "_")
+      selection = shiny::isolate(input[[select]])
+      if(!is.null(selection)) {
+        shiny::updateSelectInput(session, select, choices = NULL, selected = list())
+      }
+    }
+  })
+
   # Plot action
   shiny::observeEvent(input$plot_series, {
     df <- rv_timeseries()
@@ -339,7 +357,7 @@ server <- function(input, output, session, ...) {
     }
     # we have a dataframe with the sources to get
     # getting the series combination
-    keys = cols[!grepl(".*_label$", cols) & !grepl("^source__.*", cols) & !grepl("^indicator__.*", cols) & !grepl("^ref__.*", cols)]
+    keys = cols[(!grepl(".*_label$", cols) & !grepl("^source__.*", cols) & !grepl("^indicator__.*", cols) & !grepl("^ref__.*", cols))]
     if(nrow(df) > 0) {
       rep = new.env()
       progress_start("Obtaining time series data", rep) 
@@ -352,7 +370,9 @@ server <- function(input, output, session, ...) {
          if(resp$status_code == 200) {
             data <- httr::content(resp)$timeserie
             json <- jsonlite::toJSON(data, auto_unbox=T, null = "null")
-            as.data.frame(jsonlite::fromJSON(json, simplifyDataFrame=T))
+            res_df <- as.data.frame(jsonlite::fromJSON(json, simplifyDataFrame=T))
+            res_df$source <- df[["source__source_name"]][[i]]
+            res_df
          } else {
            stop("Error while obatining data series")
          }
@@ -761,11 +781,13 @@ plot_timeseries <- function(df, title, scale = "std", period = "12") {
       "",
       df$value[[i]],
       paste("date:",  df$date[[i]]),
+      df$source[[i]],
       paste(strsplit(df$legend[[i]], ", ")[[1]], collapse = "\n"),
       sep = "\n"
     )
 
   })
+  print(df)
   df$y <- if(scale == "std") {
     df$value
   } else if(scale == "log") {
@@ -773,17 +795,22 @@ plot_timeseries <- function(df, title, scale = "std", period = "12") {
   } else if(nrow(df)>0) {
     maxs = list()
     for(i in 1:nrow(df)) {
-      if(!exists(df$key[[i]], where = maxs))
-        maxs[[df$key[[i]]]] = max(0, df$value[[i]], na.rm = TRUE)
+      key = paste(df$indicator[[i]], df$source[[i]], df$key[[i]])
+      if(!exists(key, where = maxs))
+        maxs[[key]] = max(0, df$value[[i]], na.rm = TRUE)
       else
-        maxs[[df$key[[i]]]] = max(maxs[[df$key[[i]]]], df$value[[i]], na.rm = TRUE)
+        maxs[[key]] = max(maxs[[key]], df$value[[i]], na.rm = TRUE)
     }
-    sapply(1:nrow(df), function(i) {if(!is.na(maxs[[df$key[[i]]]]) && maxs[[df$key[[i]]]] != 0) df$value[[i]]/maxs[[df$key[[i]]]] else 0})
+    sapply(1:nrow(df), function(i) {
+      key = paste(df$indicator[[i]], df$source[[i]], df$key[[i]])
+      if(!is.na(maxs[[key]]) && maxs[[key]] != 0) 
+        df$value[[i]]/maxs[[key]] 
+      else 0
+    })
   } else 
     numeric(0)
   # Calculating breaks of y axis
   y_breaks <- unique(floor(pretty(seq(0, (max(df$value, na.rm=T) + 1) * 1.1))))
-
   # plotting
   fig_line <- ggplot2::ggplot(df, ggplot2::aes(x = .data$date, y = .data$y, color = .data$legend, label = .data$Details)) +
     ggplot2::geom_line() + #ggplot2::aes(colour=.data$key)) +

@@ -5,6 +5,8 @@
       "tags":["Influenza net"],
       "data_quality":"Cohort",
       "frequency":"daily",
+      "frequency_start_hour":4,
+      "frequency_end_hour":4,
       "reference_user":"Influenza net http://influenzanet.info",
       "reporting_email":"",
       "globals":[

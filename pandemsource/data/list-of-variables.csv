@@ -1,5 +1,5 @@
 data_family,variable,description,type,unit,linked_attributes,partition,formula,base_variable,modifiers
-13_referentials,source,,characteristic,,,,,,[]
+13_referentials,source,,not characteristic,,,,,,[]
 01_cases,number_of_cases,Number of cases for the respective pathogen and reporting period depending on the case status,observation,people,,"source, case_status, geo_code","cum_to_daily(reporting_period, cumulative_cases)",,[]
 01_cases,cumulative_cases,Cumulative Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,,[]
 01_cases,confirmed_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"

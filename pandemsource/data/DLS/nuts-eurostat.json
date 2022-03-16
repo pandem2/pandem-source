@@ -5,6 +5,8 @@
       "tags":["Eurostats NUTS"],
       "data_quality":"Official",
       "frequency":"daily",
+      "frequency_start_hour":1,
+      "frequency_end_hour":1,
       "reference_user":"Eurostat",
       "reporting_email":"",
       "globals":[
