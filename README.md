@@ -21,6 +21,11 @@ Pandem-Source is designed to be flexible and extensible so new sources can be ea
 - [Eurostats NUTS](https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/administrative-units-statistical-units/nuts) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/nuts-eurostat.json)
 - [Twitter](https://twitter.com) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/twitter.json)
 
+## User Interface - timeseries explorer
+![Time series](https://github.com/pandem2/pandem-source/raw/main/img/P2.timeseries.png)
+
+## User Interface - Integration dashboard
+![Integration dashboard](https://github.com/pandem2/pandem-source/raw/main/img/P2.Integration.png)
 
 ## Requirements
 - Python 3.7 or higher
