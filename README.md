@@ -39,7 +39,7 @@ pip install pandem2-source
 
 - Set the PANDEM\_HOME variable to a local foder
 ``` 
-export PANDEM\_HOME=your data folder here 
+export PANDEM_HOME=your data folder here 
 ```
 - Load defailt sources
 ```
