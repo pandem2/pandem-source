@@ -7,8 +7,8 @@ with open('README.md') as f:
 
 setup(
     name='pandem-source',
-    version='0.0.6',
-    description='Manage heterogeneous data sources for pandem 2 project',
+    version='0.0.7',
+    description='Manage heterogeneous data sources for PANDEM-2 project',
     long_description=readme,
     long_description_content_type='text/markdown',
     author='Francisco Orchard',
@@ -26,7 +26,6 @@ setup(
       "tornado",
       "asyncio",
       "tornado-rest-swagger"
-
     ],
     packages=find_packages(exclude=('tests', 'docs')),
     include_package_data=True
