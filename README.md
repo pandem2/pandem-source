@@ -20,6 +20,7 @@ Pandem-Source is designed to be flexible and extensible so new sources can be ea
 - [MediSys](https://medisys.newsbrief.eu/medisys/) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/medisys.json)
 - [Eurostats NUTS](https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/administrative-units-statistical-units/nuts) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/nuts-eurostat.json)
 - [Twitter](https://twitter.com) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/twitter.json)
+- [User provided data](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/input-local-defaults/M.12%20Upload%20templates_end_users.xlsx?raw=true). You can use this data template to easily integrate your own real or ficticious datasets.
 
 ## User Interface - timeseries explorer
 ![Time series](https://github.com/pandem2/pandem-source/raw/main/img/P2.timeseries.png)
