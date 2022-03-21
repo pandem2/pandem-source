@@ -49,7 +49,6 @@
       {"name":"count", "variable":"participants_declaring_symptoms"},
       {"name":"part", "variable":"number_of_participants"},
       {"name":"method"},
-      {"name":"muertos", "variable":"number_of_deathswX"},
       {"name":"country", "variable":"geo_code"}
     ]
 }

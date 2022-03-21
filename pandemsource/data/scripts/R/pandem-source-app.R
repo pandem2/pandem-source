@@ -366,7 +366,6 @@ server <- function(input, output, session, ...) {
          progress_set(value = 0.8*i/nrow(df), message = "Getting time series data", rep)
          post_data <- jsonlite::toJSON(as.list(sapply(keys, function(f) df[[f]][[i]])), auto_unbox = TRUE)
          resp <- httr::POST('http://localhost:8000/timeserie', body = post_data, encode="json")
-          
          if(resp$status_code == 200) {
             data <- httr::content(resp)$timeserie
             json <- jsonlite::toJSON(data, auto_unbox=T, null = "null")
@@ -787,7 +786,6 @@ plot_timeseries <- function(df, title, scale = "std", period = "12") {
     )
 
   })
-  print(df)
   df$y <- if(scale == "std") {
     df$value
   } else if(scale == "log") {

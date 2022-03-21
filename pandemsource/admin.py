@@ -15,7 +15,7 @@ l = logging.getLogger("pandem-admin")
 
 def reset_variables(in_package = False, in_home = True):
   if in_package:
-    write_json_variables( pkg_resources.resource_filename("pandem2source", "data/DLS/variables.json"))
+    write_json_variables( pkg_resources.resource_filename("pandemsource", "data/DLS/variables.json"))
   if in_home:
     dir_path = util.pandem_path("files", "variables")
     file_path = util.pandem_path("files", "variables", "variables.json")
@@ -27,15 +27,15 @@ def reset_variables(in_package = False, in_home = True):
 def reset_default_folders(*folders):
   # copy default data from data folder
   for folder in folders:
-    if pkg_resources.resource_exists("pandem2source", f"data/{folder}"):
-      var_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", folder))
+    if pkg_resources.resource_exists("pandemsource", f"data/{folder}"):
+      var_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", folder))
       var_to = util.pandem_path("files", folder)
       if os.path.exists(var_to):
         shutil.rmtree(var_to)
       shutil.copytree(var_from, var_to, copy_function = shutil.copy)
 
 def read_variables_definitions():
-  path = pkg_resources.resource_filename("pandem2source", "data/list-of-variables.csv")
+  path = pkg_resources.resource_filename("pandemsource", "data/list-of-variables.csv")
   df = pd.read_csv(path, encoding = "ISO-8859-1")
   df = df.rename(columns = {
     "Variable":"variable", 
@@ -70,7 +70,7 @@ def write_json_variables(dest):
   file.close()
 
 def reset_source(source_name):
-  dls_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", "DLS", f"{source_name}.json"))
+  dls_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "DLS", f"{source_name}.json"))
   if os.path.exists(dls_from):
     dls_to = util.pandem_path("files", "source-definitions", f"{source_name}.json")
     dls_to_dir = util.pandem_path("files", "source-definitions")
@@ -87,7 +87,7 @@ def reset_source(source_name):
   if "changed_by" in dls["acquisition"]["channel"] and  "script_type" in dls["acquisition"]["channel"]["changed_by"]:
     script_type = dls["acquisition"]["channel"]["changed_by"]["script_type"]
     script_name = dls["acquisition"]["channel"]["changed_by"]["script_name"]
-    script_from = pkg_resources.resource_filename("pandem2source", os.path.join("data", "scripts", script_type, f"{script_name}.{script_type}"))
+    script_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", script_type, f"{script_name}.{script_type}"))
     script_to = util.pandem_path("files", "scripts", script_type, f"{script_name}.{script_type}" )
     script_to_dir = util.pandem_path("files", "scripts", script_type)
     if not os.path.exists(script_to_dir):
