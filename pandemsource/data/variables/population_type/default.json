@@ -1,0 +1,246 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": 1,
+                "source": "pandem2",
+                "population_group":"Household and community samples",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "community_sample"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 2,
+                "source": "pandem2",
+                "population_group":"Essential non-healthcare workers",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "no_hc_essential_workers"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 3,
+                "source": "pandem2",
+                "population_group":"Patients seeking care for non-COVID-19 reasons",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "non_disease_patients"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 4,
+                "source": "pandem2",
+                "population_group":"Residual sera",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "residual_area"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 5,
+                "source": "pandem2",
+                "population_group":"Blood donors",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "blood_donors"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 6,
+                "source": "pandem2",
+                "population_group":"Persons experiencing homelessness",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "homeless"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 7,
+                "source": "pandem2",
+                "population_group":"Health care workers and caregivers",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "hcw"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 8,
+                "source": "pandem2",
+                "population_group":"Persons living in slums",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "in_slums"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 9,
+                "source": "pandem2",
+                "population_group":"Multiple general populations",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "multiple_general"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 10,
+                "source": "pandem2",
+                "population_group":"Contacts of COVID patients",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "case_contacts"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 11,
+                "source": "pandem2",
+                "population_group":"Pregnant or parturient women",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "pregnant"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 12,
+                "source": "pandem2",
+                "population_group":"Multiple populations",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "multiple"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 13,
+                "source": "pandem2",
+                "population_group":"Non-essential workers and unemployed persons",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "non_essential_workers_and_unemployed"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 14,
+                "source": "pandem2",
+                "population_group":"Students and Daycares",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "students"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 15,
+                "source": "pandem2",
+                "population_group":"Assisted living and long-term care facilities",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "lctf"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 16,
+                "source": "pandem2",
+                "population_group":"Representative patient population",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "patient_sample"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 17,
+                "source": "pandem2",
+                "population_group":"Persons who are incarcerated",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "incarcerated"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 18,
+                "source": "pandem2",
+                "population_group":"Hospital visitors",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "hospital_visitors"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 19,
+                "source": "pandem2",
+                "population_group":"Perinatal",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "perinatal"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 20,
+                "source": "pandem2",
+                "population_group":"Tissue donor",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "tissue_donor"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 21,
+                "source": "pandem2",
+                "population_group":"Family of essential workers",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "family_essential_worker"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 22,
+                "source": "pandem2",
+                "population_group":"Urgence Care workers",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "uhc"
+            }
+        }
+    ]
+}

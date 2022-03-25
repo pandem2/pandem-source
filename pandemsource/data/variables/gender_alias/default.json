@@ -4,50 +4,44 @@
             "attrs": {
                 "line_number": "1",
                 "source": "pandem2",
-                "file": ""
+                "file": "",
+                "gender_code": "M"
             },
             "attr": {
-                "test_type": "NAATs"
+                "gender_alias": "Male"
             }
         },
         {
             "attrs": {
                 "line_number": "2",
                 "source": "pandem2",
-                "file": ""
+                "file": "",
+                "gender_code": "F"
             },
             "attr": {
-                "test_type": "Antigen"
+                "gender_alias": "Female"
             }
         },
         {
             "attrs": {
                 "line_number": "3",
                 "source": "pandem2",
-                "file": ""
+                "file": "",
+                "gender_code": null
             },
             "attr": {
-                "test_type": "Other"
+                "gender_alias": "All"
             }
         },
         {
             "attrs": {
                 "line_number": "4",
                 "source": "pandem2",
-                "file": ""
+                "file": "",
+                "gender_code": "Unknown"
             },
             "attr": {
-                "test_type": "PCR"
-            }
-        },
-        {
-            "attrs": {
-                "line_number": "5",
-                "source": "pandem2",
-                "file": ""
-            },
-            "attr": {
-                "test_type": "Serological"
+                "gender_alias": "Other"
             }
         }
     ]

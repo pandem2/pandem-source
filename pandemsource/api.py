@@ -389,7 +389,7 @@ class VariableListHandler(tornado.web.RequestHandler):
 
         sources_path = util.pandem_path("files", "source-definitions")
         dls_paths = self.storage_proxy.list_files(sources_path).get()
-        dlss = [self.storage_proxy.read_file(f['path']).get() for f in dls_paths]
+        dlss = [self.storage_proxy.read_file(f['path']).get() for f in dls_paths if f['path'].endswith(".json")]
         used_vars = {col["variable"] for dls in dlss for col in dls['columns'] if "variable" in col}
         found_vars = {}
         for v in var_dic:
