@@ -102,7 +102,7 @@ def delete_all():
     if os.path.exists(util.pandem_path("database")):
       shutil.rmtree(util.pandem_path("database"))
 
-def install_issues():
+def install_issues(check_nlp = True):
   settings = util.settings()
   ret = []
   FNULL = open(os.devnull, 'w') 
@@ -120,7 +120,7 @@ def install_issues():
         install.packages("devtools")
         devtools::install_github(repo = "covid19datahub/COVID19", ref = "b941b66e59b7b0aec4807eb5b28208abba66de4a", upgrade = "never")
       If you prefer downloading data prepared by COVID data hub tem you can install it from CRAN, by running install.packages(c("COVID19"))""")
-  if settings["pandem"]["source"]["nlp"]["active"]:
+  if settings["pandem"]["source"]["nlp"]["active"] and check_nlp:
      models_path = settings["pandem"]["source"]["nlp"]["models_path"]
      if os.path.exists(models_path):
        if not nlp_models_up():

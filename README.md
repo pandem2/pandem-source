@@ -46,9 +46,12 @@ export PANDEM_HOME=your data folder here
 ```
 python -m pandemsource reset --restore-factory-defaults
 ```
-- Running monitoring and dashboard
+- Running monitoring and dashboard 
 ```
-python -m pandemsource start -d
+#If you do not have docker or NLP models you have to run pandem WITHOUT NLP without Twitter and without MediSys
+python -m pandemsource start -d --no-nlp  
+#If you have docker and NLP models the you can run without limitations
+python -m pandemsource start -d 
 ```
 - Accessing the dashboard from http://localhost:8001 to see the progress and integrated time series
 

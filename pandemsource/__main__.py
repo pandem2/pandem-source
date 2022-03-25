@@ -27,9 +27,15 @@ def main(a):
   start_parser.add_argument(
     "--no-acquire", 
     action="store_true", 
-    help="Whether to output debugging messages to the console", 
+    help="Prevent data acquisition from sources", 
   )
   
+  start_parser.add_argument(
+    "--no-nlp", 
+    action="store_true", 
+    help="Prevent NLP models and sources using them (Twitter, MediSys) pf being launched (Useful for instances without docker" 
+  )
+
   start_parser.add_argument(
     "--retry-failed", 
     action="store_true", 
@@ -76,7 +82,7 @@ def main(a):
     "-v", 
     "--variables", 
     action="store_true", 
-    help="Whether to rebuild variables based on last system defaults", 
+    help="Whether to restore variables defiitions to last system defaults", 
   )
   reset_parser.add_argument(
     "--restore-factory-defaults", 
@@ -133,9 +139,9 @@ def main(a):
     args.func(args, parser)
 
 # handlers
-def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart_job = 0, not_retry_active = False, no_app = True, force_acquire = False):
+def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart_job = 0, not_retry_active = False, no_app = True, force_acquire = False, no_nlp = False):
   from types import SimpleNamespace
-  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None, "restart_job":restart_job, "no_app":no_app, "not_retry_active":not_retry_active, "force_acquire":force_acquire}))
+  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None, "restart_job":restart_job, "no_app":no_app, "not_retry_active":not_retry_active, "force_acquire":force_acquire, "no_nlp":False}))
 
 # handlers
 def do_start(args, *other):
@@ -158,7 +164,7 @@ def do_start(args, *other):
   sys.path.insert(1, util.pandem_path("files", "scripts", "py"))
   settings = util.settings()
   
-  install_issues = admin.install_issues()
+  install_issues = admin.install_issues(check_nlp = not args.no_nlp)
   if len(install_issues) > 0:
     eol = '\n'
     l.warning(f"""The following errors where found on current PANDEM-2 installation please fix before proceed
@@ -167,10 +173,10 @@ def do_start(args, *other):
     return None
   
   if args.restart_job > 0:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = False, restart_job = args.restart_job, retry_active = True, force_acquire = args.force_acquire)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = False, restart_job = args.restart_job, retry_active = True, force_acquire = args.force_acquire, no_nlp = args.no_nlp)
     orch = orchestrator_ref.proxy()
   elif args.limit_collection is not None:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed, restart_job = args.restart_job, retry_active = not args.not_retry_active, force_acquire = args.force_acquire)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed, restart_job = args.restart_job, retry_active = not args.not_retry_active, force_acquire = args.force_acquire, no_nlp = args.no_nlp)
     orch = orchestrator_ref.proxy()
     storage_proxy = orch.get_actor("storage").get().proxy()
     dls_files = storage_proxy.list_files('source-definitions').get()
@@ -181,7 +187,7 @@ def do_start(args, *other):
       acquisition_proxy = orch.get_actor(f"acquisition_{dls['acquisition']['channel']['name']}").get().proxy()
       acquisition_proxy.add_datasource(dls, args.force_acquire)
   else:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed, retry_active = not args.not_retry_active, force_acquire = args.force_acquire)
+    orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed, retry_active = not args.not_retry_active, force_acquire = args.force_acquire, no_nlp = args.no_nlp)
     orch = orchestrator_ref.proxy()
 
   # launching pandem2source app

@@ -27,7 +27,7 @@ from itertools import chain
 
 class Orchestration(pykka.ThreadingActor):
 
-    def __init__(self, settings, start_acquisition = True, retry_failed = False, restart_job = 0, retry_active = True, force_acquire = True):
+    def __init__(self, settings, start_acquisition = True, retry_failed = False, restart_job = 0, retry_active = True, force_acquire = True, no_nlp = False):
         super(Orchestration, self).__init__()
         self.settings = settings
         self.current_actors = dict()
@@ -36,7 +36,7 @@ class Orchestration(pykka.ThreadingActor):
         self.retry_active = retry_active
         self.restart_job = restart_job
         self.force_acquire = force_acquire
-
+        self.no_nlp = no_nlp
 
     def on_start(self):
         # Launching the storage actor which can be used by any actor
@@ -78,7 +78,8 @@ class Orchestration(pykka.ThreadingActor):
         self.current_actors['script_executor'] = {'ref': script_executor_ref}
 
         # launch nlp annotator actor
-        nlp_annotator_ref = nlp_annotator.NLPAnnotator.start('nlp_annotator', self.actor_ref, self.settings)
+        run_nlp = self.settings["pandem"]["source"]["nlp"]["active"] and not self.no_nlp
+        nlp_annotator_ref = nlp_annotator.NLPAnnotator.start('nlp_annotator', self.actor_ref, self.settings, run_nlp)
         self.current_actors['nlp_annotator'] = {'ref': nlp_annotator_ref}
         
         # launch standardizer actor
@@ -105,8 +106,10 @@ class Orchestration(pykka.ThreadingActor):
         # List source definition files within 'source-definitions' through storage actor to get 
         source_files = storage_proxy.list_files('source-definitions').get()
         # read json dls files into dicts
-        dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in source_files]
-        sources_labels = set([dls['acquisition']['channel']['name'] for dls in dls_dicts])
+        dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in source_files if file_name['path'].endswith(".json")]
+        sources_labels = set([dls['acquisition']['channel']['name'] for dls in dls_dicts 
+          if run_nlp or len([c for c in dls['columns'] if 'variable' in c and c['variable'] == "article_text"]) == 0
+        ])
         
         for label in sources_labels:
             if label == "url":

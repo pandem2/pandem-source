@@ -70,7 +70,11 @@ class Pipeline(worker.Worker):
         if jobs is not None :
             jobs = jobs.to_dict(orient = 'records')
 
-            new_dls = dict((dls["scope"]["source"],dls) for dls in  (self._storage_proxy.read_file(f["path"]).get() for f in self._storage_proxy.list_files('source-definitions').get()))
+            new_dls = dict(
+              (dls["scope"]["source"],dls) 
+              for dls in  (
+                self._storage_proxy.read_file(f["path"]).get() for f in self._storage_proxy.list_files('source-definitions').get() if f['path'].endswith(".json"))
+              )
             for j in jobs:
               j["step"]="submitted_ended"
               j["status"]="in progress"
