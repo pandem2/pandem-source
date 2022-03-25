@@ -25,6 +25,7 @@
         "path":["Table and Index/icd10cm-tabular-2022.xml"]
       },
       "format":{
+        "name":"xml",
         "row":"//diag"
       }
     },

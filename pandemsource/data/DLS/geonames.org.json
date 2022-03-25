@@ -1,0 +1,37 @@
+{
+    "scope":{
+      "source":"geonames-countries",
+      "source_description":"The GeoNames geographical database (https://www.geonames.org/) is available for download free of charge under a creative commons attribution license. It contains over 27 million geographical names and consists of over 12 million unique features whereof 4.8 million populated places and 15 million alternate names. All features are categorized into one out of nine feature classes and further subcategorized into one out of 645 feature codes. (more statistics ...). ",
+      "tags":["GeoNames"],
+      "data_quality":"Official (compilation)",
+      "frequency":"daily",
+      "frequency_start_hour":1,
+      "frequency_end_hour":1,
+      "reference_user":"Geonames (Marc Wick, Founder)",
+      "reporting_email":"",
+      "globals":[
+      ],
+      "update_scope":[
+        {"variable":"source"}
+      ]
+    },
+    "acquisition":{
+      "channel":{
+        "name":"url",
+        "url": "http://download.geonames.org/export/dump/countryInfo.txt"
+      },
+      "format":{
+        "name":"csv",
+        "decimal_sign":".",
+        "skiprows":49,
+        "sep":"\t",
+        "thousands_separator":"",
+        "date_format":"%Y-%m-%d",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"ISO", "variable":"geo_code"},
+      {"name":"ISO3", "variable":"iso_country_code_3", "action":"insert"}
+    ]
+}

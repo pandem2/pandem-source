@@ -34,7 +34,7 @@ Pandem-Source is designed to be flexible and extensible so new sources can be ea
 - Docker (optional for supporting machine learning article classification)
 
 ## Installation
-pip install pandem2-source
+pip install pandem-source
 
 ## Running Pandem-Source
 
@@ -44,7 +44,7 @@ export PANDEM_HOME=your data folder here
 ```
 - Load defailt sources
 ```
-python -m pandem2source reset --restore-factory-defaults
+python -m pandemsource reset --restore-factory-defaults
 ```
 - Running monitoring and dashboard
 ```

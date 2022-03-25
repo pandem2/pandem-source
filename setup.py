@@ -7,8 +7,8 @@ with open('README.md') as f:
 
 setup(
     name='pandem-source',
-    version='1.0.1',
-    description='Manage heterogeneous data sources for PANDEM-2 project',
+    version='1.0.3',
+    description='Routinely collecting heterogeneous surveillance data into a coherent database',
     long_description=readme,
     long_description_content_type='text/markdown',
     author='Francisco Orchard',

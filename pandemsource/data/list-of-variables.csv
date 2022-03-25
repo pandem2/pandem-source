@@ -1,5 +1,6 @@
 data_family,variable,description,type,unit,linked_attributes,partition,formula,base_variable,modifiers
-13_referentials,source,,not characteristic,,,,,,[]
+13_referentials,source,Name of the source imported into PandemSource,not characteristic,,,,,,[]
+13_referentials,alias_group,A label for grouping aliases for the same variable,not characteristic,,,,,,[]
 01_cases,number_of_cases,Number of cases for the respective pathogen and reporting period depending on the case status,observation,people,,"source, case_status, geo_code","cum_to_daily(reporting_period, cumulative_cases)",,[]
 01_cases,cumulative_cases,Cumulative Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,,[]
 01_cases,confirmed_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
@@ -11,27 +12,28 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,probable_cases,Number of probable cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""probable""}]"
 01_cases,imported_cases,Number of imported cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""imported""}]"
 01_cases,cases_at_onset_of_symptoms_date,Number of confirmed cases for the respective pathogen at onset of symptoms date ,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""period_type"", ""value"": ""onset_of_symptoms_date""}]"
-01_cases,pathogen_code,,referential,,,,,,[]
-01_cases,pathogen_name,,referential_label,,pathogen_code,,,,[]
-01_cases,pathogen_alias,,referential_alias,,pathogen_code,,,,[]
-13_referentials,geo_code,,geo_referential,,,source,,,[]
-13_referentials,iso_country_code_2,,referential,,,source,,geo_code,"[{""variable"": ""geo_level"", ""value"": ""country""}]"
-13_referentials,geo_name,,referential_label,,"geo_code, geo_parent",source,,,[]
-13_referentials,country_name,,referential_alias,,geo_code,source,,geo_name,"[{""variable"": ""geo_level"", ""value"": ""country""}]"
-13_referentials,geo_parent,,referential_parent,,geo_code,source,,,[]
-13_referentials,geo_level,"Country, NUTS_1, NUTS_2, NUTS_3",characteristic,,geo_code,source,,,[]
-13_referentials,geo_local_code,,referential_alias,,geo_code,source,,,[]
-13_referentials,file,,not characteristic,,,,,,[]
-13_referentials,line_number,,not characteristic,,,,,,[]
-13_referentials,tag,,characteristic,,,,,,[]
-13_referentials,tag_source,,characteristic,,"tag, source",,,,[]
-01_cases,case_status,,characteristic,,,,,,[]
-13_referentials,reporting_period,,date,date,,,,,[]
-13_referentials,reporting_date,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""date""}]"
-13_referentials,reporting_time,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""instant""}]"
-13_referentials,reporting_week,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""isoweek""}]"
-13_referentials,reporting_month,,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""month""}]"
-13_referentials,period_type,,characteristic,,,,,,[]
+01_cases,pathogen_code,ICD-10-CM code of a pathogen,referential,,,,,,[]
+01_cases,pathogen_name,ICD-10-CM name of a pathogen,referential_label,,pathogen_code,,,,[]
+01_cases,pathogen_alias,Predefined alias for a pathogens,referential_alias,,pathogen_code,,,,[]
+13_referentials,geo_code,Unique code for identifying geographic entities,geo_referential,,,source,,,[]
+13_referentials,iso_country_code_2,Two letters ISO code for countries,referential,,,source,,geo_code,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_2""}]"
+13_referentials,iso_country_code_3,Three letters ISO code for countries,referential,,,source,,geo_code,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_3""}]"
+13_referentials,geo_name,Name of a geographic entity,referential_label,,"geo_code, geo_parent",source,,,[]
+13_referentials,country_name,Name of a Country,referential_alias,,geo_code,source,,geo_name,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""country_name""}]"
+13_referentials,geo_parent,Code of the parent of a geographic location,referential_parent,,geo_code,source,,,[]
+13_referentials,geo_level,"Geographical level, e.g. Country, NUTS_1, NUTS_2, NUTS_3",characteristic,,geo_code,source,,,[]
+13_referentials,geo_local_code,Unique geographical code within a particular source,referential_alias,,geo_code,source,,,"[{""variable"":""alias_group"", ""value"":""local_code""}]"
+13_referentials,file,File name of an input file during data integration,not characteristic,,,,,,[]
+13_referentials,line_number,Line of the file during data integration,not characteristic,,,,,,[]
+13_referentials,tag,"Tags associated to a source, this will group source files within containers for the first tag and will allow search for indicators parameters for all tags",characteristic,,,,,,[]
+13_referentials,tag_source,Combination of tags and sources present on PandemSource,characteristic,,"tag, source",,,,[]
+01_cases,case_status,"A label for grouping different types of cases e.g. confirmed, suspected, etc.",characteristic,,,,,,[]
+13_referentials,reporting_period,Period in which a measure is being reported,date,date,,,,,[]
+13_referentials,reporting_date,Day in which a measure  is being reported,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""date""}]"
+13_referentials,reporting_time,Instant in which a measure is being reported,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""instant""}]"
+13_referentials,reporting_week,Week on which a measure  is being reported. It is expected to be IsoWeek.,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""isoweek""}]"
+13_referentials,reporting_month,Month on which a measure is being reported,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""month""}]"
+13_referentials,period_type,"Type of period: ""date"", ""isoweek"", ""month"", ""instant""",characteristic,,,,,,[]
 01_cases,incidence,Number of confirmed cases each 100.000 people,indicator,people/people,,"source, case_status, geo_code","incidence(reporting_period, confirmed_cases, population, pathogen_code)",,[]
 01_cases,rt_number,"R_t is the expected number of secondary cases produced by infected individuals, who turns infectious on day t. If a source does not provide this number it will be estimated as the ratio of confirmed cases between last 7 days against the previous seven days.",indicator,qty,,"source, case_status, geo_code","rt_number(reporting_period, confirmed_cases, pathogen_code)",,[]
 01_cases,number_of_ppe_protective_equipment,,resource,units/time,,,,,[]
