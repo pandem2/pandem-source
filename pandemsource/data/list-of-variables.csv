@@ -218,14 +218,13 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 14_metadata,data_providers_for_dashboards,,referential,,,,,,[]
 14_metadata,dashboard_profile_eg_emergency,,referential,,,,,,[]
 14_metadata,gdpr_compliance,,referential,,,,,,[]
-,,,,,,,,,
 12_population_study,study_name,Name of a scientific study,not characteristic,,,,,,[]
 12_population_study,study_estimate_name,Name of a study estimation (time series will only be produced for estimates with the same estimate_name),characteristic,,,,,,[]
 12_population_study,study_source_name,Source of a study,not characteristic,,,,,,[]
 12_population_study,study_publication_date,Date of publication of a study,not characteristic,,,,,,[]
 12_population_study,study_source_type,"Type of source for a study (Preprint, journal, media, etc)",not characteristic,,,,,,[]
 12_population_study,study_estimate_grade,Geographical scope of a study (free text),not characteristic,,,,,,[]
-12_population_study,study_url,Url of the otiginal study,not characteristic,,,,,,
+12_population_study,study_url,Url of the otiginal study,not characteristic,,,,,,[]
 12_population_study,study_type,Type of a study (methodology),not characteristic,,,,,,[]
 12_population_study,study_data_quality,data quality evaluation of the study,not_characteristic,,,,,,[]
 07_lab,number_detections_variant,,observation,people,,"source, geo_code",,,[]
