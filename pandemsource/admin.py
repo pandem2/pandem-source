@@ -13,29 +13,28 @@ from . import util
 
 l = logging.getLogger("pandem-admin")
 
-def reset_variables(in_package = False, in_home = True):
-  if in_package:
-    write_json_variables( pkg_resources.resource_filename("pandemsource", "data/DLS/variables.json"))
-  if in_home:
-    dir_path = util.pandem_path("files", "variables")
-    file_path = util.pandem_path("files", "variables", "variables.json")
-    if not os.path.exists(dir_path):
-      os.makedirs(dir_path)
-    # copy variables json fils and indicators
-    write_json_variables(file_path)
+def reset_variables():
+  dir_path = util.pandem_path("files", "variables")
+  home_path = util.pandem_path("files", "variables", "variables.csv")
+  if not os.path.exists(dir_path):
+    os.makedirs(dir_path)
+  pkg_path = pkg_resources.resource_filename("pandemsource", "data/list-of-variables.csv")
+  shutil.copy(pkg_path, home_path)
+  # rewriting default variables
+  reset_default_folders("variables", "indicators", delete_existing = False)
 
-def reset_default_folders(*folders):
+def reset_default_folders(*folders, delete_existing = True):
   # copy default data from data folder
   for folder in folders:
     if pkg_resources.resource_exists("pandemsource", f"data/{folder}"):
       var_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", folder))
       var_to = util.pandem_path("files", folder)
-      if os.path.exists(var_to):
+      if os.path.exists(var_to) and delete_existing:
         shutil.rmtree(var_to)
-      shutil.copytree(var_from, var_to, copy_function = shutil.copy)
+      shutil.copytree(var_from, var_to, copy_function = shutil.copy, dirs_exist_ok = True)
 
 def read_variables_definitions():
-  path = pkg_resources.resource_filename("pandemsource", "data/list-of-variables.csv")
+  path = util.pandem_path("files", "variables", "variables.csv")
   df = pd.read_csv(path, encoding = "ISO-8859-1")
   df = df.rename(columns = {
     "Variable":"variable", 
@@ -56,18 +55,9 @@ def read_variables_definitions():
       df[col] = df[col].str.split(",")
     if col == "modifiers":
       df[col] = df[col].apply(lambda x : json.loads(x))
-  return df
-
-def write_json_variables(dest):
-  df = read_variables_definitions()
-  path = dest
   result = df.to_json(orient = "records")
   parsed = json.loads(result)
-  j = json.dumps(parsed, indent=2)
-
-  file = codecs.open(path, "w", "utf-8")
-  file.write(j)
-  file.close()
+  return parsed
 
 def reset_source(source_name):
   dls_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "DLS", f"{source_name}.json"))

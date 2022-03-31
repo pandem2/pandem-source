@@ -1,0 +1,235 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin": " Vaxzevria - AstraZeneca"
+            },
+            "attr": {
+                "vaccin_code": "AZ"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Inactivated - Beijing CNBG"
+            },
+            "attr": {
+                "vaccin_code": "BECNBG"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Covaxin - Bharat"
+            },
+            "attr": {
+                "vaccin_code": "BHACOV"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Chumakov - Covi-Vac"
+            },
+            "attr": {
+                "vaccin_code": "CHU"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Comirnaty - Pfizer/BioNTech"
+            },
+            "attr": {
+                "vaccin_code": "COM"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Curevac-CVnCOV"
+            },
+            "attr": {
+                "vaccin_code": "CVAC"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Ad26.COV 2.5 - Janssen"
+            },
+            "attr": {
+                "vaccin_code": "JANSS"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Hayat VAC"
+            },
+            "attr": {
+                "vaccin_code": "HAYATVAC"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"mRNA-1273 - Moderna"
+            },
+            "attr": {
+                "vaccin_code": "MOD"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Novavax - Covovax"
+            },
+            "attr": {
+                "vaccin_code": "NVX"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Novavax - Nuvaxovid"
+            },
+            "attr": {
+                "vaccin_code": "NVXD"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"QazCovid-In"
+            },
+            "attr": {
+                "vaccin_code": "QAZVAQ"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Sanofi GSK - Subunit"
+            },
+            "attr": {
+                "vaccin_code": "SGSK"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Covishield - SII"
+            },
+            "attr": {
+                "vaccin_code": "SIICOV"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"CoronaVac - Sinovac"
+            },
+            "attr": {
+                "vaccin_code": "SIN"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Sputnik V - Gamaleya"
+            },
+            "attr": {
+                "vaccin_code": "SPU"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Gamaleya - Sputnik-Light"
+            },
+            "attr": {
+                "vaccin_code": "SPUL"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"EpiVacCorona – SRCVB"
+            },
+            "attr": {
+                "vaccin_code": "SRCVB"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Inactivated – Wuhan CNBG"
+            },
+            "attr": {
+                "vaccin_code": "WUCNBG"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"UNKNOWN"
+            },
+            "attr": {
+                "vaccin_code": "UNK"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "vaccin":"Sino-Uzbek - ZF-UZ-VAC"
+            },
+            "attr": {
+                "vaccin_code": "ZFUZ"
+            }
+        }
+    ]
+}

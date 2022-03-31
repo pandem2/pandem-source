@@ -110,6 +110,11 @@ def main(a):
     help="Reset ecdc-covid19-variants datasource to system defaults", 
   )
   reset_parser.add_argument(
+    "--sero-tracker", 
+    action="store_true", 
+    help="Reset sero-tracker datasource to system defaults", 
+  )
+  reset_parser.add_argument(
     "--pandem-partners-template", 
     action="store_true", 
     help="Reset pandem partner templates to system defaults", 
@@ -201,7 +206,7 @@ def do_reset(args, *other):
     admin.delete_all()
     admin.reset_default_folders("input-local", "input-local-defaults", "dfcustom", "scripts", "variables", "indicators", "img")
   if args.variables or args.restore_factory_defaults:
-    admin.reset_variables(in_home = True)
+    admin.reset_variables()
   if args.covid19_datahub or args.ecdc_covid19_variants or args.restore_factory_defaults:
     admin.reset_source("nuts-eurostat")
     admin.reset_source("ICD-10-diseases-list")
@@ -233,6 +238,8 @@ def do_reset(args, *other):
     admin.reset_source("covid19-datahub")
   if args.ecdc_covid19_variants or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-variants")    
+  if args.sero_tracker or args.restore_factory_defaults:
+    admin.reset_source("serotracker")    
   if args.ecdc_atlas or args.restore_factory_defaults:
     admin.reset_source("ecdc-atlas-influenza")    
   if args.influenzanet or args.restore_factory_defaults:

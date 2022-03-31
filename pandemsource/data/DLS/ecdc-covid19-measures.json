@@ -1,0 +1,41 @@
+{
+  "scope":{
+    "source":"ecdc-covid19-measures",
+    "source_description":" Selected national public response measures presented in the ECDC weekly report COVID-19 country overview",
+    "tags":["ECDC COVID-19"],
+    "data_quality":"Official",
+    "frequency":"daily",
+    "frequency_start_hour":4,
+    "frequency_end_hour":4,
+    "reference_user":"TESSy (ECDC)",
+    "reporting_email":"surveillance@ecdc.europa.eu",
+    "globals":[
+      {"variable":"source"},
+      {"variable":"pathogen_name", "value":"COVID-19"}
+    ],
+    "update_scope":[
+      {"variable":"source"},
+      {"variable":"reporting_date"}
+
+    ]
+  },
+  "acquisition":{
+    "channel":{
+      "name":"url",
+      "url": "https://www.ecdc.europa.eu/sites/default/files/documents/response_graphs_data_2022-03-17.csv"
+    },
+    "format": {
+      "name":"csv",
+      "decimal_sign":".",
+      "thousands_separator":"",
+      "date_format":"%d/%m/%Y",
+      "encoding":"UTF-8"
+    }
+  },
+  "columns":[
+    {"name":"Country", "variable":"country_name"},
+    {"name":"date", "variable":"reporting_period"},
+    {"name":"Response_measure", "variable":"measure_code"},
+    {"name":"count", "variable":"implemented_measures"}
+  ]
+}

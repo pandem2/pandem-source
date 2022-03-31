@@ -1,0 +1,774 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": 1,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Lock-Down"
+            },
+            "attr": {
+                "measure_code": "StayHomeOrder"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 2,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Regional Lock Down"
+            },
+            "attr": {
+                "measure_code": "RegionalStayHomeOrder"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 3,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Stay-at-home Recommendations"
+            },
+            "attr": {
+                "measure_code": "StayHomeGen"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 4,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Stay-at-home recommendations for risk groups"
+            },
+            "attr": {
+                "measure_code": "StayHomeRiskG"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 5,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Social circel/bubble"
+            },
+            "attr": {
+                "measure_code": "SocialCircle"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 6,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Restrictions on private gatherings"
+            },
+            "attr": {
+                "measure_code": "PrivateGatheringRestrictions"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 7,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Daycare or Nursery closures"
+            },
+            "attr": {
+                "measure_code": "ClosDaycare"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 8,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Primary school closures"
+            },
+            "attr": {
+                "measure_code": "ClosPrim"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 9,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Secondary school closures"
+            },
+            "attr": {
+                "measure_code": "ClosSec"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 10,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "High school closures"
+            },
+            "attr": {
+                "measure_code": "ClosHigh"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 11,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit public gathering up to 1000"
+            },
+            "attr": {
+                "measure_code": "MassGatherAll"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 12,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit all public gathering"
+            },
+            "attr": {
+                "measure_code": "BanOnAllEvents"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 13,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit indoor gathering over 50"
+            },
+            "attr": {
+                "measure_code": "IndoorOver50"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 14,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit indoor gathering over 100"
+            },
+            "attr": {
+                "measure_code": "IndoorOver100"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 15,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit indoor gathering over 500"
+            },
+            "attr": {
+                "measure_code": "IndoorOver500"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 16,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit indoor gathering over 1000"
+            },
+            "attr": {
+                "measure_code": "IndoorOver1000"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 17,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit outdoor gatherin over 50"
+            },
+            "attr": {
+                "measure_code": "OutdoorOver50"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 18,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit outdoor gatherin over 100"
+            },
+            "attr": {
+                "measure_code": "OutdoorOver100"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 19,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit outdoor gatherin over 500"
+            },
+            "attr": {
+                "measure_code": "OutdoorOver500"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 20,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit outdoor gatherin over 1000"
+            },
+            "attr": {
+                "measure_code": "OutdoorOver1000"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 21,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Public space closed"
+            },
+            "attr": {
+                "measure_code": "ClosPubAny"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 22,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of entertainment venues"
+            },
+            "attr": {
+                "measure_code": "EntertainmentVenues"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 23,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of public transport"
+            },
+            "attr": {
+                "measure_code": "ClosureOfPublicTransport"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 24,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of gyms/sports centres"
+            },
+            "attr": {
+                "measure_code": "GymsSportsCentres"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 25,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of hotels/accommodation services"
+            },
+            "attr": {
+                "measure_code": "HotelsAccommodation"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 26,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closures of non-essential shops"
+            },
+            "attr": {
+                "measure_code": "NonEssentialShops"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 27,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of places of worship"
+            },
+            "attr": {
+                "measure_code": "PlaceOfWorship"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 28,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of restaurants and cafes/bars"
+            },
+            "attr": {
+                "measure_code": "RestaurantsCafes"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 29,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Masks recommended on all public spaces"
+            },
+            "attr": {
+                "measure_code": "MasksVoluntaryAllSpaces"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 30,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Masks recommended on public closed spaces"
+            },
+            "attr": {
+                "measure_code": "MasksVoluntaryClosedSpaces"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 31,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Masks mandatory on all public spaces"
+            },
+            "attr": {
+                "measure_code": "MasksMandatoryAllSpaces"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 32,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Masks mandatory on all closed public space"
+            },
+            "attr": {
+                "measure_code": "MasksMandatoryClosedSpaces"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 33,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Teleworking recommendation"
+            },
+            "attr": {
+                "measure_code": "Teleworking"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 34,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Adaptation of workplaces"
+            },
+            "attr": {
+                "measure_code": "AdaptationOfWorkplace"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 35,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closures of Workplaces"
+            },
+            "attr": {
+                "measure_code": "WorkplaceClosures"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 36,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Lock-Down (relaxed)"
+            },
+            "attr": {
+                "measure_code": "StayHomeOrderPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 37,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Regional Lock Down (relaxed)"
+            },
+            "attr": {
+                "measure_code": "RegionalStayHomeOrderPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 38,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Stay-at-home Recommendations (relaxed)"
+            },
+            "attr": {
+                "measure_code": "StayHomeGenPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 39,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Stay-at-home recommendations for risk groups (relaxed)"
+            },
+            "attr": {
+                "measure_code": "StayHomeRiskGPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 40,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Social circel/bubble (relaxed)"
+            },
+            "attr": {
+                "measure_code": "SocialCirclePartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 41,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Restrictions on private gatherings (relaxed)"
+            },
+            "attr": {
+                "measure_code": "PrivateGatheringRestrictionsPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 42,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Daycare or Nursery closures (relaxed)"
+            },
+            "attr": {
+                "measure_code": "ClosDaycarePartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 43,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Primary school closures (relaxed)"
+            },
+            "attr": {
+                "measure_code": "ClosPrimPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 44,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Secondary school closures (relaxed)"
+            },
+            "attr": {
+                "measure_code": "ClosSecPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 45,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "High school closures (relaxed)"
+            },
+            "attr": {
+                "measure_code": "ClosHighPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 46,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit public gathering up to 1000 (relaxed)"
+            },
+            "attr": {
+                "measure_code": "MassGatherAllPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 47,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit all public gathering (relaxed)"
+            },
+            "attr": {
+                "measure_code": "BanOnAllEventsPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 48,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit indoor gathering over 50 (relaxed)"
+            },
+            "attr": {
+                "measure_code": "IndoorOver50Partial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 49,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit indoor gathering over 100 (relaxed)"
+            },
+            "attr": {
+                "measure_code": "IndoorOver100Partial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 50,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit indoor gathering over 500 (relaxed)"
+            },
+            "attr": {
+                "measure_code": "IndoorOver500Partial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 51,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit indoor gathering over 1000 (relaxed)"
+            },
+            "attr": {
+                "measure_code": "IndoorOver1000Partial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 52,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit outdoor gatherin over 50 (relaxed)"
+            },
+            "attr": {
+                "measure_code": "OutdoorOver50Partial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 53,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit outdoor gatherin over 100 (relaxed)"
+            },
+            "attr": {
+                "measure_code": "OutdoorOver100Partial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 54,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit outdoor gatherin over 500 (relaxed)"
+            },
+            "attr": {
+                "measure_code": "OutdoorOver500Partial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 55,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit outdoor gatherin over 1000 (relaxed)"
+            },
+            "attr": {
+                "measure_code": "OutdoorOver1000Partial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 56,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Public space closed (relaxed)"
+            },
+            "attr": {
+                "measure_code": "ClosPubAnyPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 57,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of entertainment venues (relaxed)"
+            },
+            "attr": {
+                "measure_code": "EntertainmentVenuesPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 58,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of public transport (relaxed)"
+            },
+            "attr": {
+                "measure_code": "ClosureOfPublicTransportPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 59,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of gyms/sports centres (relaxed)"
+            },
+            "attr": {
+                "measure_code": "GymsSportsCentresPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 60,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of hotels/accommodation services (relaxed)"
+            },
+            "attr": {
+                "measure_code": "HotelsAccommodationPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 61,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closures of non-essential shops (relaxed)"
+            },
+            "attr": {
+                "measure_code": "NonEssentialShopsPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 62,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of places of worship (relaxed)"
+            },
+            "attr": {
+                "measure_code": "PlaceOfWorshipPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 63,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of restaurants and cafes/bars (relaxed)"
+            },
+            "attr": {
+                "measure_code": "RestaurantsCafesPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 64,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Masks recommended on all public spaces (relaxed)"
+            },
+            "attr": {
+                "measure_code": "MasksVoluntaryAllSpacesPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 65,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Masks recommended on public closed spaces (relaxed)"
+            },
+            "attr": {
+                "measure_code": "MasksVoluntaryClosedSpacesPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 66,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Masks mandatory on all public spaces (relaxed)"
+            },
+            "attr": {
+                "measure_code": "MasksMandatoryAllSpacesPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 67,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Masks mandatory on all closed public space (relaxed)"
+            },
+            "attr": {
+                "measure_code": "MasksMandatoryClosedSpacesPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 68,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Teleworking recommendation (relaxed)"
+            },
+            "attr": {
+                "measure_code": "TeleworkingPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 69,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Adaptation of workplaces (relaxed)"
+            },
+            "attr": {
+                "measure_code": "AdaptationOfWorkplacePartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 70,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closures of Workplaces (relaxed)"
+            },
+            "attr": {
+                "measure_code": "WorkplaceClosuresPartial"
+            }
+        }
+    ]
+}

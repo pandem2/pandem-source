@@ -2,6 +2,7 @@ from . import worker
 import os
 from . import util 
 from .storage import CacheValue
+from . import admin
 import itertools
 import json
 import datetime
@@ -11,6 +12,7 @@ from .util import JsonEncoder
 import logging as l
 import pickle
 import copy
+
 
 class Variables(worker.Worker):
     def __init__(self, name, orchestrator_ref, settings): 
@@ -28,7 +30,7 @@ class Variables(worker.Worker):
     def get_variables(self):
         if self._variables is None:
           dic_variables = dict()
-          var_list=self._storage_proxy.read_file('variables/variables.json').get()
+          var_list=admin.read_variables_definitions()
           for var in var_list: 
               if not var["base_variable"]:            
                   base_dict = var.copy()

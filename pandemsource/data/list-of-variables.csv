@@ -47,7 +47,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 02_deaths,deaths_infected_in_icu,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}, {""variable"": ""bed_type"", ""value"": ""icu""}]"
 02_deaths,deaths_in_lctf,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""care_type"", ""value"": ""in_ltcf""}]"
 03_patient,patient_status,,characteristic,,,,,,[]
-02_deaths,mortality_rates,,indicator,people/people,,,,,[]
+02_deaths,mortality_rate,,indicator,people/people,,"source, case_status, geo_code",,,[]
 03_patient,severity,,characteristic,,,,,,[]
 03_patient,number_of_non-infected_patients_,,observation,people,,,,,[]
 03_patient,number_of_patients,,observation,people,,"Source, care_type, geo_code",,,[]
@@ -95,12 +95,13 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 04_tests,available_tests,,observation,qty,,,,,[]
 04_tests,test_result,,characteristic,,,,,,[]
 04_tests,epidemiological_surveys_answer,,observation,qty,,,,,[]
-04_tests,positivity_rate,,indicator,people/people,,,,,[]
+04_tests,positivity_rate,Number of positive tests cases divided by the size of the target population,indicator,people/people,,"Source, test_result, geo_code","positivity_rate(reporting_period, positive_results, performed_tests, pathogen_code)",,[]
 04_tests,number_of_test_staff,,resource,people,,,,,[]
 04_tests,qty_of_test_resources,,resource,qty,,,,,[]
 04_tests,number_of_test_resources_dependencies,,resource,qty,,,,,[]
 05_vaccination,doses_injected,,observation,qty,,"Source, vaccination_status, geo_code",,,[]
 05_vaccination,people_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,,[]
+05_vaccination,vaccination_coverage,Number of vaccinated individuals divided by the size of the target population,indicator,people/people,,"Source, vaccination_status, geo_code","vaccination_coverage(reporting_period, people_vaccinated, population, pathogen_code)",,[]
 05_vaccination,one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}]"
 05_vaccination,two_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}]"
 05_vaccination,three_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}]"
@@ -123,7 +124,8 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 13_referentials,population_group,,referential_label,,population_type,,,,[]
 05_vaccination,resource_status,,characteristic,,,,,,[]
 05_vaccination,doses_scheduled_and_target_population,,observation,,,,,,[]
-05_vaccination,"doses_injected_by_age_group,risk_group,and_brand/type",,characteristic,,,,,,[]
+05_vaccination,vaccin_code,,referential,,,,,,[]
+05_vaccination,vaccin,,referential_label,,vaccin_code,,,,[]
 05_vaccination,"doses_by_vendor,batch",,characteristic,,,,,,[]
 05_vaccination,doses_injected_by_occupation_(hcw_an_other_essential_professionals),,characteristic,,,,,,[]
 05_vaccination,"doses_injected_in_high_risk_individuals_-_potential_risk_factors_(immunosuppressed,comorbidities,pregnant_women,elderly)",,characteristic,,,,,,[]
@@ -183,7 +185,9 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 10_transport,mass_patient_transport_protocols,,document,,,,,,[]
 11_measures,number_of_people_entering_to_the_country_(by_origin),,observation,,,,,,[]
 11_measures,mitigation_measures_and_policies,,observation,,,,,,[]
-11_measures,"measure_details:_type_(eg_lockdown),start_-_end,place",,characteristic,,,,,,[]
+11_measures,implemented_measures,,observation,qty,,,,,[]
+11_measures,government_measure,,referential_label,,measure_code,,,,[]
+11_measures,measure_code,,referential,,,,,,[]
 11_measures,border_rules/laws,,document,,,,,,[]
 12_population_study,adherence_to_prevention_and_control_measures,,observation,,,,,,[]
 12_population_study,is_people_understanding_public_health_communication,,observation,,,,,,[]
@@ -218,14 +222,13 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 14_metadata,data_providers_for_dashboards,,referential,,,,,,[]
 14_metadata,dashboard_profile_eg_emergency,,referential,,,,,,[]
 14_metadata,gdpr_compliance,,referential,,,,,,[]
-,,,,,,,,,
 12_population_study,study_name,Name of a scientific study,not characteristic,,,,,,[]
 12_population_study,study_estimate_name,Name of a study estimation (time series will only be produced for estimates with the same estimate_name),characteristic,,,,,,[]
 12_population_study,study_source_name,Source of a study,not characteristic,,,,,,[]
 12_population_study,study_publication_date,Date of publication of a study,not characteristic,,,,,,[]
 12_population_study,study_source_type,"Type of source for a study (Preprint, journal, media, etc)",not characteristic,,,,,,[]
 12_population_study,study_estimate_grade,Geographical scope of a study (free text),not characteristic,,,,,,[]
-12_population_study,study_url,Url of the otiginal study,not characteristic,,,,,,
+12_population_study,study_url,Url of the otiginal study,not characteristic,,,,,,[]
 12_population_study,study_type,Type of a study (methodology),not characteristic,,,,,,[]
 12_population_study,study_data_quality,data quality evaluation of the study,not_characteristic,,,,,,[]
 07_lab,number_detections_variant,,observation,people,,"source, geo_code",,,[]
