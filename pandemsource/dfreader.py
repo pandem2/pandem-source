@@ -213,7 +213,9 @@ class DataframeReader(worker.Worker):
             ]
         tuples = []
         for row in range(len(df)):
+            print(insert_cols.items())
             for col, group in insert_cols.items():
+                print(df["line_number"][row], dls["scope"]["source"], file_name)
                 tup = {
                   "attrs":{
                     "line_number":df["line_number"][row]
@@ -292,7 +294,7 @@ class DataframeReader(worker.Worker):
               # value is missing we are going to try to get it from tuples
               r["value"] = list(set(x["attrs"][base_var] for x in tuples if base_var in x["attrs"]))
             ret.append(r)
-            
+
             if len(r["value"])==0:
               message = (f"Variable {var['variable']} needs to be instantiated ad per DLS but no values where found on dataset")
               issue = {'step' : job['step'],

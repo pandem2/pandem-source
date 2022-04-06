@@ -129,7 +129,12 @@ def main(a):
     action="store_true", 
     help="Reset pandem medisys system defaults", 
   )
-  
+  reset_parser.add_argument(
+    "--flights",
+    action="store_true",
+    help="Reset pandem flight related information to system defaults", 
+  )
+
   reset_parser.set_defaults(func = do_reset)
 
   util.check_pandem_home()
@@ -146,7 +151,7 @@ def main(a):
 # handlers
 def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart_job = 0, not_retry_active = False, no_app = True, force_acquire = False, no_nlp = False):
   from types import SimpleNamespace
-  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None, "restart_job":restart_job, "no_app":no_app, "not_retry_active":not_retry_active, "force_acquire":force_acquire, "no_nlp":False}))
+  return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None, "restart_job":restart_job, "no_app":no_app, "not_retry_active":not_retry_active, "force_acquire":force_acquire, "no_nlp": no_nlp}))
 
 # handlers
 def do_start(args, *other):
@@ -247,7 +252,9 @@ def do_reset(args, *other):
   if args.twitter or args.restore_factory_defaults:
     admin.reset_source("twitter")    
   if args.medisys or args.restore_factory_defaults:
-    admin.reset_source("medisys")    
+    admin.reset_source("medisys")
+  if args.flights or args.restore_factory_defaults:
+    admin.reset_source("ourairports")
 
 if __name__ == "__main__":
   main(sys.argv[1] if len(sys.argv)>1 else None)
