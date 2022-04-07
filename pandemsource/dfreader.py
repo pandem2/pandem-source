@@ -198,7 +198,7 @@ class DataframeReader(worker.Worker):
             ("action" in t and t["action"] == "insert" or col_types[t["name"]] in ["observation", "indicator", "resource"])
         )
         attr_cols = {}
-        for col  in insert_cols.keys():
+        for col in insert_cols.keys():
           typ = col_types[col]
           if typ in ["observation", "indicator", "resource"]:
             attr_cols[col] =  [k for k, v in col_types.items() if v not in  ["observation", "indicator", "resource"] and types_ok[k]]
@@ -213,9 +213,7 @@ class DataframeReader(worker.Worker):
             ]
         tuples = []
         for row in range(len(df)):
-            print(insert_cols.items())
             for col, group in insert_cols.items():
-                print(df["line_number"][row], dls["scope"]["source"], file_name)
                 tup = {
                   "attrs":{
                     "line_number":df["line_number"][row]

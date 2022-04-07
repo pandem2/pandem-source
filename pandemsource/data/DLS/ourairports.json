@@ -32,7 +32,7 @@
         }
     },
     "columns":[
-        {"name":"ident", "variable":"geo_airport_code", "action":"write"},
+        {"name":"ident", "variable":"geo_airport_code", "action":"insert"},
         {"name": "iso_country", "variable":"geo_code"}
     ]
 }

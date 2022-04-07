@@ -8,8 +8,8 @@ class AcquisitionZenodo(acquisition.Acquisition):
     def new_files(self, dls, last_hash):
         source = dls['acquisition']['channel']['search']
         match = dls['acquisition']['channel']['match']
-        url = f'https://zenodo.org/api/records/?q={source}&access_token='
+        av, sm = 'all_versions=1', 'sort=most_recent'
+        url = f'https://zenodo.org/api/records/?q={source}&{av}&{sm}&access_token='
         r = requests.get(url)
         if r.status_code != 200:
             raise ValueError(f'{url} returns ERROR CODE {r.status_code}')
-        
