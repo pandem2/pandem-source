@@ -1,3 +1,4 @@
+from pandemsource import acquisition_zenodo
 import pykka
 from . import storage
 from . import acquisition_url
@@ -124,6 +125,8 @@ class Orchestration(pykka.ThreadingActor):
                 acquisition_ref = acquisition_twitter.AcquisitionTwitter.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
             elif label == "medisys":
                 acquisition_ref = acquisition_medisys.AcquisitionMedisys.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
+            elif label == "zenodo":
+                acquisition_ref = acquisition_zenodo.AcquisitionZenodo.start(name = 'acquisition_'+label, orchestrator_ref = self.actor_ref, settings = self.settings)
             else:
                 raise NotImplementedError(f"The acquisition channel {label} has not been implemented")
 

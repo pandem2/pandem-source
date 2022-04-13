@@ -55,6 +55,21 @@ python -m pandemsource start -d
 ```
 - Accessing the dashboard from http://localhost:8001 to see the progress and integrated time series
 
+## Troubleshooting
+
+If the command `python -m pandemsource start -d --no-nlp` does not work. Please make sure you've installed *R 3.6.3 or higher*. If R is properly installed, please make sure you've also installed required dependencies with:
+
+(In your terminal)
+```bash
+sudo apt install libxml2-dev libsodium-dev libssl-dev libcurl4-openssl-dev
+```
+
+(In the R interpreter)
+```R
+install.packages(c("epitweetr", "dplyr", "shiny", "plotly", "DT", "jsonlite", "httr"))
+```
+
+
 # PANDEM 2
 
 PANDEM-2 is a H2020 EU-funded project that aims to develop new solutions for efficient, EU-wide pandemic management. The goal of PANDEM-2 is to prepare Europe for future pandemics through innovations in training and to build capacity between EU member states responding to pandemics on a cross-border basis.

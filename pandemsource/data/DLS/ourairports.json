@@ -33,6 +33,6 @@
     },
     "columns":[
         {"name":"ident", "variable":"geo_airport_code", "action":"insert"},
-        {"name": "iso_country", "variable":"geo_code"}
+        {"name": "iso_country", "variable":"iso_country_code_2"}
     ]
 }

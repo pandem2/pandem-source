@@ -54,6 +54,7 @@ def read_variables_definitions():
     if col in ["linked_attributes", "partition"]:
       df[col] = df[col].str.split(",")
     if col == "modifiers":
+      print(df[col])
       df[col] = df[col].apply(lambda x : json.loads(x))
   result = df.to_json(orient = "records")
   parsed = json.loads(result)
