@@ -54,7 +54,6 @@ def read_variables_definitions():
     if col in ["linked_attributes", "partition"]:
       df[col] = df[col].str.split(",")
     if col == "modifiers":
-      print(df[col])
       df[col] = df[col].apply(lambda x : json.loads(x))
   result = df.to_json(orient = "records")
   parsed = json.loads(result)
@@ -84,6 +83,14 @@ def reset_source(source_name):
     if not os.path.exists(script_to_dir):
       os.makedirs(script_to_dir)
     shutil.copyfile(script_from, script_to)
+
+  # Copy the corresponding Python script from package to pandem-home
+  pyscript_fol = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", "py", "sources"))
+  dls_pyscript = dls["scope"]["source"].replace("-", "_").replace(" ", "_") + ".py"
+  pyscript_to = util.pandem_path("files", "scripts", "py", "sources", dls_pyscript)
+  if dls_pyscript in os.listdir(pyscript_fol):
+    shutil.copyfile(os.path.join(pyscript_fol, dls_pyscript), pyscript_to)
+
 
 def delete_all():
     if os.path.exists(util.pandem_path("settings.yml")):

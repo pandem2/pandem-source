@@ -34,7 +34,6 @@ class DataframeReader(worker.Worker):
         """Checks if the DLS columns names exist in dataframe
         and if the variable indicated in the column element from dls exists in variables.json files
         and if yes, checks the dataframe variables types, if not as expected in variables.json, raises an issue"""
-
         var=variables
         dls_col_list=[]
         issues = {}
@@ -255,7 +254,6 @@ class DataframeReader(worker.Worker):
                 tuples.append(tup)
         ret = {"scope":dls["scope"].copy()}
         ret["scope"]["file_name"] = file_name
-
         # validating that globals are property instantiated
         #if "scope" in dls and "globals" in dls["scope"] : 
         #  ret["scope"]["globals"] = self.add_values(dls["scope"]["globals"], tuples = [], issues = issues, dls = dls, job = job, file_name = file_name)

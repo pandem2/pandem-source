@@ -34,6 +34,6 @@
     "columns":[
         {"name":"destination", "variable":"geo_airport_code"},
         {"name":"day", "variable":"reporting_date"},
-        {"name":"flights", "variable":"incoming_flights"}
+        {"name":"flights", "variable":"incoming_flights", "action":"insert"}
     ]
 }

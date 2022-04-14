@@ -73,7 +73,7 @@ class Standardizer(worker.Worker):
                 if var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
                     alias=self._variables_proxy.get_referential(var_name).get() 
                     if alias is not None:
-                        refs_alias[var_name] = dict((x['attr'][var_name],x['attrs'][code]) for x in alias)
+                        refs_alias[var_name] = dict((x['attr'][var_name],(x['attrs'][code] if code in x['attrs'] else None)) for x in alias)
                         ref_matched[var_name] = False
                         ref_failed[var_name] = False
                     elif var_name not in ignore_check : 
