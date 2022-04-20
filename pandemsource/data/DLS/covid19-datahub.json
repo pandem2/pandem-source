@@ -15,8 +15,7 @@
       ],
       "update_scope":[
         {"variable":"source"},
-        {"variable":"reporting_date"}
-
+        {"variable":"geo_code"}
       ]
     },
     "acquisition":{

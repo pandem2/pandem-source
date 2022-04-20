@@ -31,7 +31,7 @@
       }
     },
     "columns":[
-      {"name":"ISO", "variable":"geo_code"},
+      {"name":"#ISO", "variable":"geo_code"},
       {"name":"ISO3", "variable":"iso_country_code_3", "action":"insert"}
     ]
 }

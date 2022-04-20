@@ -810,8 +810,10 @@ plot_timeseries <- function(df, title, scale = "std", period = "12") {
   # Calculating breaks of y axis
   y_breaks <- unique(floor(pretty(seq(0, (max(df$value, na.rm=T) + 1) * 1.1))))
   # plotting
+  labels <- unique(df$legend)
   fig_line <- ggplot2::ggplot(df, ggplot2::aes(x = .data$date, y = .data$y, color = .data$legend, label = .data$Details)) +
     ggplot2::geom_line() + #ggplot2::aes(colour=.data$key)) +
+    ggplot2::geom_point(size = 0.5) +
     # Title
     ggplot2::labs(
      title= title,
@@ -827,9 +829,8 @@ plot_timeseries <- function(df, title, scale = "std", period = "12") {
                                           margin = ggplot2::margin(-15, 0, 0, 0)),
       axis.title.x = ggplot2::element_text(margin = ggplot2::margin(30, 0, 0, 0), size = 10),
       axis.title.y = ggplot2::element_text(margin = ggplot2::margin(-25, 0, 0, 0), size = 10),
-      legend.position= if(length(unique(df$legend)) < 50) "bottom" else "none"
+      legend.position= if(length(unique(df$legend)) < 50 && max(nchar(df$legend))< 20) "bottom" else "none"
     )
-  
   fig_line
 
 }
