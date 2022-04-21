@@ -265,4 +265,4 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 12_population_study,article_cat_sug_min_attention,,characteristic,,,,,,[]
 12_population_study,article_cat_emotion_analysis_attention,,characteristic,,,,,,[]
 13_referentials,geo_airport_code,International airport identifier,referential_alias,,geo_code,,,,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_2""}]"
-11_measures,incoming_flights,Number of international incoming flights per country ,observation,qty,,,,,[]
+13_referentials,incoming_flights,Number of international incoming flights per country ,observation,qty,,,,,[]

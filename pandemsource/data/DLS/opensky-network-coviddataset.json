@@ -27,7 +27,7 @@
             "name":"csv",
             "decimal_sign":".",
             "thousands_separator":"",
-            "date_format":"%Y-%m-%d",
+            "date_format":"%Y-%m-%d %H:%M:%S%z",
             "encoding":"UTF-8"
         }
     },

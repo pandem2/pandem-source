@@ -202,14 +202,7 @@ class DataframeReader(worker.Worker):
           if typ in ["observation", "indicator", "resource"]:
             attr_cols[col] =  [k for k, v in col_types.items() if v not in  ["observation", "indicator", "resource"] and types_ok[k]]
           else:
-            attr_cols[col] =  [k for k, v in col_vars.items() if 
-              types_ok[k] and  
-              (
-                (variables[col_vars[col]]["linked_attributes"] is not None and  
-                v in variables[col_vars[col]]["linked_attributes"]) or
-                  col_types[k] in ["characteristic", "not_characteristic", "private", "date", "referential_parent"]
-              )
-            ]
+            attr_cols[col] =  [k for k, v in col_vars.items() if types_ok[k] and v not in  ["observation", "indicator", "resource"] and k != col]
         tuples = []
         for row in range(len(df)):
             for col, group in insert_cols.items():
