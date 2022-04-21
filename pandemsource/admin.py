@@ -141,7 +141,7 @@ def install_issues(check_nlp = True):
        ret.append("""NLP Annotation is active as per settings but the models path has not been found which is necessary to detect the existing models (even when running the server outside PANDEM-2
              You have either set the PANDEM_NLP environment variable to the folder holding the models or set the value pandem.source.nlp.models.path on  {util.pandem_path('settings.yml')}
        """)
-  if are_twitter_credentials_missing():
+  if check_nlp and are_twitter_credentials_missing():
     ret.append(f"""Twitter credentials are necessary since one of your sources uses twitter, but we could not find the credentials
       please try running PANDEM-2 again to provide the right credentials or remove the twitter data source definition on {util.pandem_path("files", "source-definitions")}
       To get twitter credentials please check you have to decralre it. Please check this: https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api
