@@ -3,7 +3,7 @@ import re
 import threading
 from . import acquisition
 import subprocess
-
+import re
 
 class AcquisitionGIT(acquisition.Acquisition):
     def __init__(self, name, orchestrator_ref, settings): 
@@ -41,7 +41,7 @@ class AcquisitionGIT(acquisition.Acquisition):
             for subdir in subdirs:
               files_paths = self._storage_proxy.list_files(self.source_path(dls, repo_name, subdir)).get()
               if "match" in dls['acquisition']['channel']:
-                files_paths = [f for f in files_paths if re.match(".*"+dls['acquisition']['channel']['match']+".*", f['path']) is not None]
+                files_paths = [f for f in files_paths if re.match(".*"+dls['acquisition']['channel']['match']+".*", f['name']) is not None]
               files_to_pipeline.extend([file_path['path'] for file_path in files_paths ])
 
         # the repo already exists and we know the last commit 

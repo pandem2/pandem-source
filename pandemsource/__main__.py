@@ -110,9 +110,9 @@ def main(a):
     help="Reset ecdc-covid19-variants datasource to system defaults", 
   )
   reset_parser.add_argument(
-    "--sero-tracker", 
+    "--serotracker", 
     action="store_true", 
-    help="Reset sero-tracker datasource to system defaults", 
+    help="Reset serotracker datasource to system defaults", 
   )
   reset_parser.add_argument(
     "--pandem-partners-template", 
@@ -190,7 +190,7 @@ def do_start(args, *other):
     orch = orchestrator_ref.proxy()
     storage_proxy = orch.get_actor("storage").get().proxy()
     dls_files = storage_proxy.list_files('source-definitions').get()
-    dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in dls_files]
+    dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in dls_files if file_name['path'].endswith(".json")]
     
     for source_name in args.limit_collection.split(","):
       dls = list(filter(lambda dls: dls['scope']['source'] == source_name, dls_dicts))[0]
@@ -243,7 +243,8 @@ def do_reset(args, *other):
     admin.reset_source("covid19-datahub")
   if args.ecdc_covid19_variants or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-variants")    
-  if args.sero_tracker or args.restore_factory_defaults:
+  if args.serotracker or args.restore_factory_defaults:
+    admin.reset_source("geonames-countries")    
     admin.reset_source("serotracker")    
   if args.ecdc_atlas or args.restore_factory_defaults:
     admin.reset_source("ecdc-atlas-influenza")    

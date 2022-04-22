@@ -9,10 +9,11 @@ import datetime
 import numpy
 from collections import defaultdict
 from .util import JsonEncoder
-import logging as l
+import logging
 import pickle
 import copy
 
+l = logging.getLogger("pandem.variable")
 
 class Variables(worker.Worker):
     def __init__(self, name, orchestrator_ref, settings): 
@@ -91,7 +92,7 @@ class Variables(worker.Worker):
                 file_name = file['name']
                 if file_name == 'default.json':
                     target_files.append(file)
-                else:
+                elif file_name.endswith(".json"):
                     can_ignore = False
                     for var_val in file_name.split('.')[:-1]:
                         var = var_val.split('=')[0]
@@ -307,7 +308,7 @@ class Variables(worker.Worker):
         key_map = {tuple((k, (v if var not in modifiers or not k in modifiers[var] else modifiers[var][k])) for k, v in comb):comb for comb in combinations}
         if tuples is not None:
           for t in tuples:
-            keys = sorted(attr for attr in t["attrs"].keys() if dico_vars[attr]["type"] in types)
+            keys = sorted(attr for attr in t["attrs"].keys() if dico_vars[attr]["type"] in types and (t["attrs"][attr] is not None or (var in modifiers and attr in modifiers[var])))
             if tuple((k, t["attrs"][k]) for k in keys) in key_map:
               key = key_map[tuple((k, t["attrs"][k]) for k in keys)]
               filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
@@ -375,7 +376,7 @@ class Variables(worker.Worker):
                 key = []
                 key.append(("indicator", obs_name))
                 to_ignore = ['not_characteristic', 'date']
-                key.extend([(k, v) for k,v in t["attrs"].items() if k in var_dic and var_dic[k]["type"] not in to_ignore or k == "source"])
+                key.extend([(k, v) for k,v in t["attrs"].items() if v is not None and k in var_dic and var_dic[k]["type"] not in to_ignore or k == "source"])
                 key.sort(key = lambda p:p[0])
                 key = tuple(key)
           

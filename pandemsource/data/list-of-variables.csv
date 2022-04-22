@@ -17,7 +17,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,pathogen_alias,Predefined alias for a pathogens,referential_alias,,pathogen_code,,,,[]
 13_referentials,geo_code,Unique code for identifying geographic entities,geo_referential,,,source,,,[]
 13_referentials,iso_country_code_2,Two letters ISO code for countries,referential,,,source,,geo_code,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_2""}]"
-13_referentials,iso_country_code_3,Three letters ISO code for countries,referential,,,source,,geo_code,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_3""}]"
+13_referentials,iso_country_code_3,Three letters ISO code for countries,referential_alias,,geo_code,source,,,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_3""}]"
 13_referentials,geo_name,Name of a geographic entity,referential_label,,"geo_code, geo_parent",source,,,[]
 13_referentials,country_name,Name of a Country,referential_alias,,geo_code,source,,geo_name,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""country_name""}]"
 13_referentials,geo_parent,Code of the parent of a geographic location,referential_parent,,geo_code,source,,,[]
@@ -158,7 +158,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 06_contact_tracing,contact_tracers_(staff_working_in_contact_tracing),,resource,,,,,,[]
 04_tests,number_of_test_performed_(overall_and_by_individual),,observation,,,,,,[]
 07_lab,speed_of_spread_of_variants_(proportion_among_overall_cases),,observation,,,,,,[]
-04_tests,seroprevalence,,indicator,,,,,,[]
+04_tests,sero_prevalence,,indicator,people/people,,,,,[]
 04_tests,test_type,,characteristic,,,,,,[]
 07_lab,seaway_water_virus_presence_(and_levels),,observation,,,,,,[]
 07_lab,mutations/sequences_spread_and_distributions,,characteristic,,,,,,[]
@@ -254,7 +254,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,comorbidity_code,,referential,,,,,,[]
 03_patient,comorbidity_name,,referential,,,,,,[]
 12_population_study,article_id,,observation,comma list,,,,,[]
-12_population_study,studied_population,,characteristic,people,,,,,[]
+12_population_study,studied_population,,observation,people,,,,,[]
 12_population_study,article_created_at,,private,,,,,,[]
 12_population_study,topic,,characteristic,,,,,,[]
 12_population_study,article_text,,private,,,,,,[]

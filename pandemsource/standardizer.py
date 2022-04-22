@@ -55,6 +55,7 @@ class Standardizer(worker.Worker):
             #retrieves the tupple
             else:
                 std_var=copy.deepcopy(tuples['tuples'][i])
+            validation_failed = False
             for var_name in std_var['attrs'].copy().keys():
                 if variables[var_name]['type'] in type_translate:
                   code=variables[var_name]['linked_attributes'][0]
@@ -73,7 +74,7 @@ class Standardizer(worker.Worker):
                 if var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
                     alias=self._variables_proxy.get_referential(var_name).get() 
                     if alias is not None:
-                        refs_alias[var_name] = dict((x['attr'][var_name],(x['attrs'][code] if code in x['attrs'] else None)) for x in alias)
+                        refs_alias[var_name] = dict((x['attr'][var_name],x['attrs'][code]) for x in alias if code in x['attrs'])
                         ref_matched[var_name] = False
                         ref_failed[var_name] = False
                     elif var_name not in ignore_check : 
@@ -122,6 +123,7 @@ class Standardizer(worker.Worker):
                               "issue_type":"ref-not-found",
                               'issue_severity':"warning"
                       }
+                      validation_failed = True
                       list_issues.append(issue)
                   if len(new_values)>0:
                     if var_type in type_translate:
@@ -140,7 +142,8 @@ class Standardizer(worker.Worker):
                 for cle, value in global_tuple['attrs'].items():
                     if cle not in std_var['attrs']:
                        std_var['attrs'][cle]=value
-                std_tuples['tuples'].append(std_var)
+                if not validation_failed:
+                  std_tuples['tuples'].append(std_var)
         # the source will be delayed if there referentials with some failures and no success
         for ref, failed in ref_failed.items():
           if failed and not ref_matched[ref]:
