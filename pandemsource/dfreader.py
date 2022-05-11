@@ -343,16 +343,17 @@ class DataframeReader(worker.Worker):
         return tup
 
     def transform_range(self, value):
-      if '>' in value:
-        a = value.strip().split('>')[1].split('y')[0]
-        b = ''
-      elif '-' in value:
-        a = value.strip().split('-')[0]
-        b = value.strip().split('-')[1].split('y')[0]
+      nb = re.findall('[0-9]+', value)
+      nb_size = len(nb)
+      if nb_size == 0:
+        return None
+      elif nb_size == 1:
+        return f'-{nb[0]}'if int(nb[0]) <= 40 else f'{nb[0]}-'
+      elif nb_size == 2:
+        nb = sorted(list(map(int, nb)))
+        return f'{nb[0]}-{nb[1]}'
       else:
-        a = 0
-        b = value.strip().split('y')[0]
-      return f'{a}-{b}'
+        raise ValueError(f'Too much numbers in list ({nb_size}): {nb}')
 
     def is_numeric_unit(self, unit):
       if unit is None:

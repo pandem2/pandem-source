@@ -1,0 +1,41 @@
+{
+    "scope":{
+        "source":"ecdc-covid19-age-group",
+        "source_description":"14-day notification rate of newly reported COVID-19 cases per 100 000 population by age group, week and country",
+        "tags":["ECDC COVID-19"],
+        "data_quality":"Official",
+        "frequency":"daily",
+        "frequency_start_hour":4,
+        "frequency_end_hour":4,
+        "reference_user":"TESSy (ECDC)",
+        "reporting_email":"surveillance@ecdc.europa.eu",
+        "globals":[
+            {"variable":"source"},
+            {"variable":"pathogen_name", "value":"COVID-19"}
+        ],
+        "update_scope":[
+            {"variable":"source"},
+            {"variable":"reporting_week"}
+        ]
+    },
+    "acquisition":{
+        "channel":{
+            "name":"url",
+            "url": "https://opendata.ecdc.europa.eu/covid19/agecasesnational/csv/data.csv"
+        },
+        "format":{
+            "name":"csv",
+            "decimal_sign":".",
+            "thousands_separator":"",
+            "date_format":"isoweek",
+            "encoding":"UTF-8"
+        }
+    },
+    "columns":[
+        {"name":"country_code", "variable":"geo_code"},
+        {"name":"year_week", "variable":"reporting_week"},
+        {"name":"age_group", "variable":"age_group"},
+        {"name":"new_cases", "variable":"confirmed_cases"},
+        {"name":"population", "variable":"population"}
+    ]
+}

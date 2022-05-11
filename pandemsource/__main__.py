@@ -90,6 +90,11 @@ def main(a):
     help="Delete all files and database elements and restore system defaults", 
   )
   reset_parser.add_argument(
+    "--scripts",
+    action="store_true",
+    help="Restore the default script folder in pandem-home"
+  )
+  reset_parser.add_argument(
     "--covid19-datahub", 
     action="store_true", 
     help="Reset covid19-datahub datasource to system defaults", 
@@ -105,9 +110,9 @@ def main(a):
     help="Reset influenza net datasource to system defaults", 
   )
   reset_parser.add_argument(
-    "--ecdc-covid19-variants", 
+    "--ecdc-covid19", 
     action="store_true", 
-    help="Reset ecdc-covid19-variants datasource to system defaults", 
+    help="Reset ecdc-covid19 datasource to system defaults", 
   )
   reset_parser.add_argument(
     "--serotracker", 
@@ -210,9 +215,11 @@ def do_reset(args, *other):
   if args.restore_factory_defaults:
     admin.delete_all()
     admin.reset_default_folders("input-local", "input-local-defaults", "dfcustom", "scripts", "variables", "indicators", "img")
+  if args.scripts:
+    admin.reset_default_folders("scripts")
   if args.variables or args.restore_factory_defaults:
     admin.reset_variables()
-  if args.covid19_datahub or args.ecdc_covid19_variants or args.restore_factory_defaults:
+  if args.covid19_datahub or args.ecdc_covid19 or args.restore_factory_defaults:
     admin.reset_source("nuts-eurostat")
     admin.reset_source("ICD-10-diseases-list")
   if args.pandem_partners_template or args.restore_factory_defaults:
@@ -241,8 +248,9 @@ def do_reset(args, *other):
     admin.reset_source("covid19-template-local-regions-THL")
   if args.covid19_datahub or args.restore_factory_defaults:
     admin.reset_source("covid19-datahub")
-  if args.ecdc_covid19_variants or args.restore_factory_defaults:
-    admin.reset_source("ecdc-covid19-variants")    
+  if args.ecdc_covid19 or args.restore_factory_defaults:
+    admin.reset_source("ecdc-covid19-variants")
+    admin.reset_source("ecdc-covid19-age-group") 
   if args.serotracker or args.restore_factory_defaults:
     admin.reset_source("geonames-countries")    
     admin.reset_source("serotracker")    

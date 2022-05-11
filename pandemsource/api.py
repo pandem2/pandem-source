@@ -7,6 +7,8 @@ import threading
 from abc import ABCMeta
 import logging
 import asyncio
+import numpy as np
+import pandas as pd
 import tornado.httpserver
 import tornado.netutil
 import tornado.websocket
@@ -590,6 +592,154 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
             self._timeseries_cache = response
             self.write(response)
 
+class DatasetHandler(tornado.web.RequestHandler):
+    def initialize(self, storage_proxy, variables_proxy):
+        self.storage_proxy = storage_proxy
+        self.variables_proxy = variables_proxy
+
+    def post(self):
+        """
+        ---
+        tags:
+          - Get Data Set
+        summary: Retrieve infromation about time series avaiable in this PANDEM-2 instance
+        description: specific dataset if available in PANDEM-2
+        operationId: getDataSet
+        parameters:
+        responses:
+            '200':
+              description: Returns a specific dataset if available
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/DatasetModel'
+                application/xml:
+                  schema:
+                    $ref: '#/components/schemas/DatasetModel'
+                text/plain:
+                  schema:
+                    type: string
+        """
+        storage_proxy = self.storage_proxy
+        variables_proxy = self.variables_proxy
+        var_dic = variables_proxy.get_variables().get()
+        
+        query = tornado.escape.json_decode(self.request.body)
+        if query is not None:
+            ts = variables_proxy.get_timeseries().get()
+            needed_variables, query = self.__build_needed_variables(query, var_dic)
+            filtered_ts = self.__filter_ts(query, needed_variables, ts)
+
+            # Getting columns of the dataframe
+            data = {}
+            columns = {'source'}
+            for ((source, indicator), comb) in filtered_ts.items():
+                d = variables_proxy.lookup([var_dic[indicator]['variable']], source=source,
+                                          combinations=comb, filter={'reporting_period': None}).get()
+                data[(source, indicator)] = d
+                columns.add(indicator)
+
+                # Identifying columns from data keys
+                for ts_key in d.keys():
+                    for k, v in ts_key:
+                        columns.add(k)
+                # Retrieving columns from nested attrs
+                for ts_dict in d.values():
+                    for ts_values in ts_dict.values():
+                        if len(ts_values) > 0 and 'attrs' in ts_values[0]:
+                            columns.update(ts_values[0]['attrs'].keys())
+
+            # Filling the dataframe with values
+            rows = {}
+            for ((source, indicator), v) in data.items():
+                for ts_key, ts_dict in v.items():
+                    for ts_values in ts_dict.values():
+                        for ts_value in ts_values:
+                            attrs_date_key = list(ts_value['attrs'].keys())[0]
+                            if var_dic[attrs_date_key]['type'] == 'date':
+                                date_element = (
+                                    attrs_date_key, ts_value['attrs'][attrs_date_key])
+                                row_key = list(ts_key)
+                                row_key.append(date_element)
+                                row_key = tuple(row_key)
+                                if row_key not in rows:
+                                    rows[row_key] = self.__init_row(
+                                        ts_key, columns, date_element, source)
+                            rows[row_key] = self.__update_indicator(
+                                ts_value, rows, row_key, date_element, indicator)
+
+            df = pd.DataFrame.from_dict(rows, orient='index', dtype=None)
+            df = df.replace({np.nan: None})
+            self.write({"dataset": df.to_dict('records')})
+
+
+    def __build_needed_variables(self, query, var_dic):
+        """Build a list of needed_variables and adds required filters"""
+        needed_variables = []
+        for el in query['select']:
+            if var_dic[el]['type'] not in ['observation', 'indicator', 'resource', 'date']:
+                needed_variables.append(var_dic[el]['variable'])
+            for modifier in var_dic[el]['modifiers']:
+                query['filter'][modifier['variable']] = modifier['value']
+
+        needed_variables.extend(query['filter'].keys())
+        return list(set(needed_variables)), query
+    
+    def __filter_ts(self, query, needed_variables, ts):
+        """Keep the timeseries which have both needed_variables and proper filters"""
+        filtered_ts = {}
+
+        for k, v in ts.items():
+            is_in_filter, is_in_needed = True, True
+            for nv in needed_variables:
+                if nv not in list(map(lambda v: v[0], k)):
+                    is_in_needed = False
+                    break
+            if is_in_needed:
+                for k2, v2 in query['filter'].items():
+                    if k2 not in list(map(lambda x: x[0], k)):
+                        is_in_filter = False
+                        break
+                    if v2 not in list(map(lambda x: x[1], k)):
+                        is_in_filter = False
+                        break
+            if is_in_filter and is_in_needed:
+                comb = [(i, j) for (i, j) in k if j is not None and i !=
+                        'indicator' and i != 'source']
+                comb.sort(key=lambda v: v[0])
+
+                source = [(i, j)
+                          for (i, j) in k if j is not None and i == 'source'][0][1]
+                indicator = [(i, j)
+                            for (i, j) in k if j is not None and i == 'indicator'][0][1]
+                if (source, indicator) not in filtered_ts:
+                    filtered_ts[(source, indicator)] = set()
+                filtered_ts[(source, indicator)].add(tuple(comb))
+        return filtered_ts
+    
+    def __init_row(self, ts_key, columns, date_element, source):
+        """Initialize dictionary's columns and add value if not indicator"""
+        row = {}
+        for col in columns:
+            tuples_keys = list(map(lambda x: x[0], ts_key))
+            tuples_values = list(map(lambda x: x[1], ts_key))
+            if col in tuples_keys:
+                row[col] = tuples_values[tuples_keys.index(col)]
+            else:
+                row[col] = None
+        row[date_element[0]] = date_element[1]
+        row['source'] = source
+        return row
+    
+    def __update_indicator(self, ts_value, rows, row_key, date_element, indicator):
+        """Updates a dictionary with all indicators values"""
+        if ts_value['attrs']:
+            for i, j in ts_value['attrs'].items():
+                if i == date_element[0]:
+                    rows[row_key][indicator] = ts_value['value']
+                    return rows[row_key]
+
+
 @components.schemas.register
 class SourcesModel(object):
     """
@@ -658,6 +808,17 @@ class TimeSeriesModel(object):
             type: array
     """
 
+@components.schemas.register
+class DatasetModel(object):
+    """
+    ---
+    type: array
+    description: Dataset characterizing a time serie
+    properties:
+        dataset:
+            type: array
+    """
+
 
 class Application(tornado.web.Application):
 
@@ -670,7 +831,8 @@ class Application(tornado.web.Application):
           tornado.web.url(r"/source_details", SourceDetailsHandler, {'storage_proxy': storage_proxy}),
           tornado.web.url(r"/variable_list", VariableListHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
           tornado.web.url(r"/timeseries", TimeSeriesHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
-          tornado.web.url(r"/timeserie", TimeSerieHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy})
+          tornado.web.url(r"/timeserie", TimeSerieHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
+          tornado.web.url(r"/dataset", DatasetHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy})
         ]
         setup_swagger(
             self._routes,
