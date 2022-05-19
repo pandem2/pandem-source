@@ -1,0 +1,41 @@
+{
+    "scope": {
+        "source":"ecdc-covid19-age-group-variants",
+        "source_description":"Output dataset of the UCL Algorithm",
+        "tags":["ECDC COVID-19 Simulated"],
+        "data_quality":"simulated",
+        "frequency":"daily",
+        "frequency_start_hour":4,
+        "frequency_end_hour":4,
+        "reference_user":"TESSy (ECDC)",
+        "reporting_email":"surveillance@ecdc.europa.eu",
+        "globals":[
+            {"variable":"source"},
+            {"variable":"pathogen_name", "value":"COVID-19"}
+        ],
+        "update_scope":[
+            {"variable":"source"},
+            {"variable":"reporting_week"}
+        ]
+    },
+    "acquisition":{
+        "channel":{
+            "name":"git-local",
+            "changed_by": {"script_type":"R", "script_name":"ucl-simulator-ecdc-covid19-age-group-variant"}
+        },
+        "format": {
+            "name":"csv",
+            "decimal_sign":".",
+            "thousands_separator":"",
+            "date_format":"isoweek",
+            "encoding":"UTF-8"
+        }
+    },
+    "columns":[
+        {"name":"country_code", "variable":"geo_code"},
+        {"name":"year_week", "variable":"reporting_week"},
+        {"name":"age_group", "variable":"age_group"},
+        {"name":"variant", "variable":"variant"},
+        {"name":"new_cases", "variable":"confirmed_cases"}
+    ]
+}

@@ -1,11 +1,18 @@
-library(httr)
+# create personal library folder
+dir.create(Sys.getenv("R_LIBS_USER"), recursive = TRUE)
+# install missing libraries
+list.of.packages <- c("XML", "httr", "dplyr", "jsonlite", "ggplot2", "devtools")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, lib = Sys.getenv("R_LIBS_USER"), repos = "http://cran.us.r-project.org")
+devtools::install_github("maous1/Pandem2simulator")
+
 library(XML)
+library(httr)
 library(dplyr)
 library(jsonlite)
 library(Pandem2simulator)
 library(ggplot2)
 
-filter_country_code <- "HU"
 
 get_df_age_group <- function() {
     json_payload <- '{
@@ -120,8 +127,6 @@ remove_exclusive_dates <- function(df1, df2) {
     #df2_without_exclusive <- select(df2[(df2$check == "YES"), ], -"check")
     df1_without_exclusive <- df1[(df1$check == "YES"), ]
     df2_without_exclusive <- df2[(df2$check == "YES"), ]
-    write.csv(df1, file = "df1.csv")
-    write.csv(df2, file = "df2.csv")
     return(list(df1_without_exclusive, df2_without_exclusive))
 }
 
@@ -130,24 +135,29 @@ write_country_csv <- function(df) {
     for (country in countries) {
         df2write <- subset(
             df, df$country_code == "LU", c(
-                "country_code", "year_week", "time", "age_group", "variant"))
+                "country_code", "year_week", "time", "age_group", "variant", "new_cases"))
         write.csv(df2write,
             file = paste(country, "_case_variants.csv", sep = "")
         )
     }
 }
 
-# 1. Normalize dataframes
+message("Getting age_group dataframe... (1/8)")
+age_group_df <- get_df_age_group()
+message("Getting variants dataframe... (2/8)")
+variants_df <- get_df_variants()
 
-age_group_df <- normalize_dataframe(get_df_age_group())
-variants_df <- normalize_dataframe(get_df_variants())
+message("Normalizing dataframes... (3/8)")
+age_group_df <- normalize_dataframe(age_group_df)
+variants_df <- normalize_dataframe(variants_df)
 
-# 2. Format dataframes
-
-filter_start_date <- variants_df$time[1]
-filter_end_date <- variants_df$time[length(variants_df$time)]
-print(filter_start_date)
-print(filter_end_date)
+message("Formatting dataframes... (4/8)")
+# TODO: take max and min date instead of rows
+#filter_start_date <- variants_df$time[1]
+#filter_end_date <- variants_df$time[length(variants_df$time)]
+filter_start_date <- "2021-07-01"
+filter_end_date <- "2021-07-29"
+#filter_end_date <- "2022-04-08"
 
 
 variants_df_formatted <- format_dataframe(
@@ -159,22 +169,35 @@ age_group_df_formatted <- format_dataframe(
     start_date = filter_start_date, end_date = filter_end_date
 )
 
-# (OPTIONAL: 3. Filter by given country dataframes)
+# TODO: remove country and date limitations
+allowed_countries <- c(
+    "FR", "LT", "LU", "LV", "NL", "PL", "PT", "RO", "SE", "SI", "SK", "IT", 
+    "IE", "HR", "FI", "ES", "EL", "EE", "DK", "DE", "CZ", "CY", "GB", "AT", 
+    "BE")
+variants_df_formatted<-variants_df_formatted[(
+    variants_df_formatted$country_code %in% allowed_countries),]
+age_group_df_formatted<-age_group_df_formatted[(
+    age_group_df_formatted$country_code %in% allowed_countries),]
 
-variants_df_formatted_country <- variants_df_formatted %>%
-    filter(country_code == filter_country_code)
-age_group_df_formatted_country <- age_group_df_formatted %>%
-    filter(country_code == filter_country_code)
 
-# 4. Remove couples date/country that aren't in both dataframes
+message("Filtering countries [skipped]... (5/8)")
+#filter_country_code <- "HU"
+#variants_df_formatted_country <- variants_df_formatted %>%
+#    filter(country_code %in% filter_country_code)
+#age_group_df_formatted_country <- age_group_df_formatted %>%
+#    filter(country_code %in% filter_country_code)
 
+# If 3 is not necessary (all countries):
+age_group_df_formatted_country <- age_group_df
+variants_df_formatted_country <- variants_df_formatted
+
+message("Removing exclusive dates in both dataset... (6/8)")
 dataframes <- remove_exclusive_dates(
     variants_df_formatted_country, age_group_df_formatted_country)
 variants_df_formatted_country <- dataframes[[1]]
 age_group_df_formatted_country <- dataframes[[2]]
 
-# 5. Obtain simulated case & variants dataframe
-
+message("Obtaining simulated case & variants dataframe... (7/8)")
 case_variants_aggregated <- simulator(
     trainset = variants_df_formatted_country,
     testset = age_group_df_formatted_country, geolocalisation = "country_code",
@@ -183,8 +206,7 @@ case_variants_aggregated <- simulator(
     time = "time",
     factor = 500
 )
-print(case_variants_aggregated)
+str(case_variants_aggregated)
 
-# 6. Write a resulting CSV file per country
-
+message("Writing resulting datasets... (8/8)")
 write_country_csv(case_variants_aggregated)

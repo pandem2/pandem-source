@@ -110,7 +110,7 @@ def install_issues(check_nlp = True):
     r_packages = '"epitweetr", "dplyr", "shiny", "plotly", "DT", "jsonlite", "httr"'
     installed = subprocess.run(['R', '-e', f'if(length(setdiff(c({r_packages}), names(installed.packages()[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
     if installed == 1:
-      ret.append(f'Cannot find some necessary R packages, please intalle them from CRAN, by running install.packages(c({r_packages}))')
+      ret.append(f'Cannot find some necessary R packages, please intall them from CRAN, by running install.packages(c({r_packages}))')
     installed = subprocess.run(['R', '-e', f'if(length(setdiff(c(), names(installed.packages("COVID19")[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
     if installed == 1:
       ret.append(f"""Cannot find COVID19 R packages necessary for getting COVID19 data hub data. 

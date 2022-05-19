@@ -250,7 +250,8 @@ def do_reset(args, *other):
     admin.reset_source("covid19-datahub")
   if args.ecdc_covid19 or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-variants")
-    admin.reset_source("ecdc-covid19-age-group") 
+    admin.reset_source("ecdc-covid19-age-group")
+    admin.reset_source("ecdc-covid19-age-group-variants")
   if args.serotracker or args.restore_factory_defaults:
     admin.reset_source("geonames-countries")    
     admin.reset_source("serotracker")    
