@@ -97,3 +97,4 @@ ENV/
 
 #Debug
 .vscode/launch.json
+.vscode/settings.json

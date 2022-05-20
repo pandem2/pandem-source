@@ -123,8 +123,6 @@ remove_exclusive_dates <- function(df1, df2) {
         )), "NO", "YES")
 
     # Only keep row where check equals YES
-    #df1_without_exclusive <- select(df1[(df1$check == "YES"), ], -"check")
-    #df2_without_exclusive <- select(df2[(df2$check == "YES"), ], -"check")
     df1_without_exclusive <- df1[(df1$check == "YES"), ]
     df2_without_exclusive <- df2[(df2$check == "YES"), ]
     return(list(df1_without_exclusive, df2_without_exclusive))
@@ -134,7 +132,7 @@ write_country_csv <- function(df) {
     countries <- unique(df$country_code)
     for (country in countries) {
         df2write <- subset(
-            df, df$country_code == "LU", c(
+            df, df$country_code == country, c(
                 "country_code", "year_week", "time", "age_group", "variant", "new_cases"))
         write.csv(df2write,
             file = paste(country, "_case_variants.csv", sep = "")
@@ -152,13 +150,8 @@ age_group_df <- normalize_dataframe(age_group_df)
 variants_df <- normalize_dataframe(variants_df)
 
 message("Formatting dataframes... (4/8)")
-# TODO: take max and min date instead of rows
-#filter_start_date <- variants_df$time[1]
-#filter_end_date <- variants_df$time[length(variants_df$time)]
-filter_start_date <- "2021-07-01"
-filter_end_date <- "2021-07-29"
-#filter_end_date <- "2022-04-08"
-
+filter_start_date <- min(variants_df$time, na.rm = TRUE)
+filter_end_date <- max(variants_df$time, na.rm = TRUE)
 
 variants_df_formatted <- format_dataframe(
     variants_df,
@@ -168,17 +161,6 @@ age_group_df_formatted <- format_dataframe(
     age_group_df,
     start_date = filter_start_date, end_date = filter_end_date
 )
-
-# TODO: remove country and date limitations
-allowed_countries <- c(
-    "FR", "LT", "LU", "LV", "NL", "PL", "PT", "RO", "SE", "SI", "SK", "IT", 
-    "IE", "HR", "FI", "ES", "EL", "EE", "DK", "DE", "CZ", "CY", "GB", "AT", 
-    "BE")
-variants_df_formatted<-variants_df_formatted[(
-    variants_df_formatted$country_code %in% allowed_countries),]
-age_group_df_formatted<-age_group_df_formatted[(
-    age_group_df_formatted$country_code %in% allowed_countries),]
-
 
 message("Filtering countries [skipped]... (5/8)")
 #filter_country_code <- "HU"

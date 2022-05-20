@@ -1,13 +1,13 @@
 {
     "scope": {
         "source":"ecdc-covid19-age-group-variants",
-        "source_description":"Output dataset of the UCL Algorithm",
+        "source_description":"Age group & variant Dataset simulated by the UCL Algorithm",
         "tags":["ECDC COVID-19 Simulated"],
         "data_quality":"simulated",
         "frequency":"daily",
         "frequency_start_hour":4,
         "frequency_end_hour":4,
-        "reference_user":"TESSy (ECDC)",
+        "reference_user":"TESSy (ECDC) and UCL",
         "reporting_email":"surveillance@ecdc.europa.eu",
         "globals":[
             {"variable":"source"},
