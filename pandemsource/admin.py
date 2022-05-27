@@ -236,5 +236,33 @@ def run_pandem2app():
   threading.Thread(target=run_app).start()
 
 
+def list_sources_dir(p):
+  ret = dict()
+  for f in os.listdir(p):
+   if f.endswith(".json"):
+     with open(os.path.join(p, f)) as fj:
+       js = json.load(fj)
+       if "scope" in js:
+         s, t = (js["scope"].get("source"), js["scope"].get("tags"))
+         ret[s] = t[0] if len(t) > 0 else s
+  return ret
+
+def list_sources(local = True, default = False, missing_local = False, missing_default = False):
+  local_map = list_sources_dir(util.pandem_path("files", "source-definitions"))
+  default_map = list_sources_dir(pkg_resources.resource_filename("pandemsource", os.path.join("data", "DLS")))
   
+  if local and missing_local or default and missing_default:
+    raise ValueError("Cannot lis both missing and existing sources")
+  ret = list()
+  if local:
+    ret.extend(local_map.items())
+  elif missing_local:
+    ret.extend((k, v) for k, v in default_map.items() if k not in local_map)
+  if default:
+    ret.extend(local_map.items())
+  elif missing_default:
+    ret.extend((k, v) for k, v in local_map.items() if k not in defaul_map)
+  return ret
+
+
 

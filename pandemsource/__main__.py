@@ -5,6 +5,7 @@ import shutil
 from . import util 
 from .orchestrator import Orchestration
 from . import admin
+import pandas as pd
 
 l = logging.getLogger("pandem")
 
@@ -115,6 +116,11 @@ def main(a):
     help="Reset ecdc-covid19 datasource to system defaults", 
   )
   reset_parser.add_argument(
+    "--ecdc-covid19-simulated", 
+    action="store_true", 
+    help="Reset ecdc-covid19 simulated datasource to system defaults", 
+  )
+  reset_parser.add_argument(
     "--serotracker", 
     action="store_true", 
     help="Reset serotracker datasource to system defaults", 
@@ -142,6 +148,33 @@ def main(a):
 
   reset_parser.set_defaults(func = do_reset)
 
+  # Launch pandem source listt command
+  start_parser = subs.add_parser("list", help = "List elements on this Pandem-Source instance")
+  start_parser.add_argument(
+    "--sources",
+    action="store_true",
+    help="List existing sources in this instance", 
+  )
+  
+  start_parser.add_argument(
+    "--missing-sources",
+    action="store_true",
+    help="List sources embedded on pandemSource package not present on this instance", 
+  )
+  start_parser.add_argument(
+    "--package-sources",
+    action="store_true",
+    help="List sources embedded on pandemSource package", 
+  )
+  start_parser.add_argument(
+    "--missing-package-sources",
+    action="store_true",
+    help="List existing sources in this instance not present on pandemSource package", 
+  )
+
+  start_parser.set_defaults(func = do_list)
+
+  
   util.check_pandem_home()
   #calling handlers
   func = None
@@ -248,10 +281,13 @@ def do_reset(args, *other):
     admin.reset_source("covid19-template-local-regions-THL")
   if args.covid19_datahub or args.restore_factory_defaults:
     admin.reset_source("covid19-datahub")
+  if args.ecdc_covid19_simulated or args.restore_factory_defaults:
+    admin.reset_source("ecdc-covid19-age-group-variants")
   if args.ecdc_covid19 or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-variants")
     admin.reset_source("ecdc-covid19-age-group")
-    admin.reset_source("ecdc-covid19-age-group-variants")
+    admin.reset_source("ecdc-covid19-measures")
+    admin.reset_source("ecdc-covid19-daily")
   if args.serotracker or args.restore_factory_defaults:
     admin.reset_source("geonames-countries")    
     admin.reset_source("serotracker")    
@@ -266,6 +302,14 @@ def do_reset(args, *other):
   if args.flights or args.restore_factory_defaults:
     admin.reset_source("ourairports")
     admin.reset_source("opensky-network-coviddataset")
+
+def do_list(args, *other):
+  if args.sources or args.missing_sources or args.package_sources or args.missing_package_sources:
+    sources = admin.list_sources(local = args.sources, default = args.package_sources, missing_local = args.missing_sources, missing_default = args.missing_package_sources)
+    for line in pd.DataFrame(sources,columns=["Source", "Tag"]).to_string().split("\n"):
+        print(line)
+
+
 
 if __name__ == "__main__":
   main(sys.argv[1] if len(sys.argv)>1 else None)

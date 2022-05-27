@@ -769,6 +769,73 @@
             "attr": {
                 "measure_code": "WorkplaceClosuresPartial"
             }
+        },
+        {
+            "attrs": {
+                "line_number": 71,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Closure of hotels/accommodation services other"
+            },
+            "attr": {
+                "measure_code": "HotelsOtherAccommodation"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 72,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Partial closure of hotels/accommodation services other"
+            },
+            "attr": {
+                "measure_code": "HotelsOtherAccommodationPartial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 73,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit public gathering up to 50"
+            },
+            "attr": {
+                "measure_code": "MassGather50"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 74,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Ban/limit public gathering up to 50 (relaxed)"
+            },
+            "attr": {
+                "measure_code": "MassGather50Partial"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 75,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Quarantine for international travellers"
+            },
+            "attr": {
+                "measure_code": "QuarantineForInternationalTravellers"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 76,
+                "source": "pandem2",
+                "file": "",
+                "government_measure": "Quarantine for international travellers (relaxed)"
+            },
+            "attr": {
+                "measure_code": "QuarantineForInternationalTravellersPartial"
+            }
         }
+
     ]
 }

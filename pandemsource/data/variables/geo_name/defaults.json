@@ -1,0 +1,208 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": 5,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "AT",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "AUSTRIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 6,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "DK",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "DENMARK"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 7,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "ES",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "SPAIN"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 8,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "FI",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "FINLAND"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 9,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "IE",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "IRELAND"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 10,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "RO",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "ROMANIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 11,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "PL",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "POLAND"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 12,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "BE",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "BELGIUM"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 13,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "BG",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "BULGARIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 14,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "BE",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "BELGIUM"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 15,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "CY",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "CYPRUS"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 16,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "HR",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "CROATIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 17,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "EE",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "ESTONIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 18,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "CZ",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "CZECHIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 19,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "GR",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "GREECE"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 19,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "HU",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "HUNGARY"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 20,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "DE",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "GERMANY"
+            }
+        }    
+    ]
+}
