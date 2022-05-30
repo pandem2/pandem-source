@@ -12,15 +12,23 @@ The DLS ensures each source and variable is properly documented knwing its origi
 ## Supported sources
 Pandem-Source is designed to be flexible and extensible so new sources can be easily added by end users. In order to demontstrate this principle. The following sources are supported Out of the Box
 
+### Sources for indicators
 - [COVID19 Data Hub](https://covid19datahub.io/) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/covid19-datahub.json)
-- [ICD-10-CM](https://www.cdc.gov/nchs/icd/icd10cm.htm) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ICD-10-diseases-list.json) 
 - [ECDC Atlas](https://www.ecdc.europa.eu/en/surveillance-atlas-infectious-diseases) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ecdc-atlas-influenza.json)
-- [ECDC COVID19 Datasets](https://www.ecdc.europa.eu/en/covid-19/data) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ecdc-covid19-variants.json)
+- [ECDC COVID19 Datasets](https://www.ecdc.europa.eu/en/covid-19/data) see source definitions for [variants](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ecdc-covid19-variants.json), [age group](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ecdc-covid19-age-group.json), [daily cases](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ecdc-covid19-daily.json), [goverments measures](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ecdc-covid19-measures.json), [vaccination](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ecdc-covid19-vaccination.json)
+- [ECDC COVID19 Simulated data](https://github.com/maous1/Pandem2simulator) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ecdc-covid19-age-group-variants.json)
+- [Serotracker](https://serotracker.com/en/Explore) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/serotracker.json)
+- [Open Sky Nerwork](https://opensky-network.org/) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/opensky-network-coviddataset.json)
 - [Influenza Net](http://www.influenzanet.info) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/influenza-net.json)
 - [MediSys](https://medisys.newsbrief.eu/medisys/) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/medisys.json)
-- [Eurostats NUTS](https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/administrative-units-statistical-units/nuts) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/nuts-eurostat.json)
 - [Twitter](https://twitter.com) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/twitter.json)
 - [User provided data](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/input-local-defaults/M.12%20Upload%20templates_end_users.xlsx?raw=true). You can use this data template to easily integrate your own real or ficticious datasets.
+
+### Sources for referentials
+- [Eurostats NUTS](https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/administrative-units-statistical-units/nuts) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/nuts-eurostat.json)
+- [Our airports](https://ourairports.com/) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ourairports.json)
+- [Geonames](https://www.geonames.org/) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/geonames-countries.json)
+- [ICD-10-CM](https://www.cdc.gov/nchs/icd/icd10cm.htm) see [source definition](https://github.com/pandem2/pandem-source/blob/main/pandemsource/data/DLS/ICD-10-siseases-list.json) 
 
 ## User Interface - timeseries explorer
 ![Time series](https://github.com/pandem2/pandem-source/raw/main/img/P2.timeseries.png)
