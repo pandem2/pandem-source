@@ -105,7 +105,7 @@ def install_issues(check_nlp = True):
   ret = []
   FNULL = open(os.devnull, 'w') 
   if shutil.which("R") is None:
-    ret.append["Cannot find R language. Please installe it. PANDEM2 needs it to calculate indecators"]
+    ret.append("Cannot find R language. Please installe it. PANDEM2 needs it to calculate indecators")
   else:
     r_packages = '"dplyr", "shiny", "plotly", "DT", "jsonlite", "httr", "XML", "ggplot2"'
     installed = subprocess.run(['R', '-e', f'if(length(setdiff(c({r_packages}), names(installed.packages()[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
@@ -132,7 +132,7 @@ def install_issues(check_nlp = True):
        if not nlp_models_up():
          # Here if it will be to pandem2 to launch docker since models are not up   
          if shutil.which("docker") is None:
-           ret.append["Cannot find docker and NLP models are not running, we need it to start the NLP server. Please install it."]
+           ret.append("Cannot find docker and NLP models are not running, we need it to start the NLP server. Please install it.")
          else:
            l.info("Launching docker for serving NLP modles")
            retries = 10
