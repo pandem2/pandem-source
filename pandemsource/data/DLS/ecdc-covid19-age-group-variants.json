@@ -1,7 +1,7 @@
 {
     "scope": {
         "source":"ecdc-covid19-age-group-variants",
-        "source_description":"Age group & variant Dataset simulated by an algorithm developed ny the Catholic University of Leuven Algorithm https://github.com/maous1/Pandem2simulator",
+        "source_description":"Age group & variant Dataset simulated by an algorithm developed by the Catholic University of Leuven Algorithm https://github.com/maous1/Pandem2simulator",
         "tags":["ECDC COVID-19 Simulated"],
         "data_quality":"simulated",
         "frequency":"daily",

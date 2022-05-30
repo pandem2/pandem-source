@@ -107,7 +107,7 @@ def install_issues(check_nlp = True):
   if shutil.which("R") is None:
     ret.append["Cannot find R language. Please installe it. PANDEM2 needs it to calculate indecators"]
   else:
-    r_packages = '"epitweetr", "dplyr", "shiny", "plotly", "DT", "jsonlite", "httr"'
+    r_packages = '"dplyr", "shiny", "plotly", "DT", "jsonlite", "httr", "XML", "ggplot2"'
     installed = subprocess.run(['R', '-e', f'if(length(setdiff(c({r_packages}), names(installed.packages()[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
     if installed == 1:
       ret.append(f'Cannot find some necessary R packages, please intall them from CRAN, by running install.packages(c({r_packages}))')
@@ -118,6 +118,14 @@ def install_issues(check_nlp = True):
         install.packages("devtools")
         devtools::install_github(repo = "covid19datahub/COVID19", ref = "b941b66e59b7b0aec4807eb5b28208abba66de4a", upgrade = "never")
       If you prefer downloading data prepared by COVID data hub tem you can install it from CRAN, by running install.packages(c("COVID19"))""")
+    installed = subprocess.run(['R', '-e', f'if(length(setdiff(c(), names(installed.packages("Pandem2simulator")[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
+    if installed == 1:
+      ret.append(f"""Cannot find Pandem2simulator R packages necessary for simulating COVID19 detailed data from ecdc datasets. 
+      You can install this package with the following command:
+        install.packages("devtools")
+        
+      devtools::install_github("maous1/Pandem2simulator")
+      """)
   if settings["pandem"]["source"]["nlp"]["active"] and check_nlp:
      models_path = settings["pandem"]["source"]["nlp"]["models_path"]
      if os.path.exists(models_path):

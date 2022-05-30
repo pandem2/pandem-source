@@ -298,7 +298,7 @@ class Evaluator(worker.Worker):
                       exec_file_path = os.path.join(staging_dir, 'exec.R')
                       result_path = os.path.join(staging_dir, 'result.json')
                       if can_run:
-                        subprocess.run (f'/usr/bin/Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
+                        subprocess.run (f'Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
                         if os.path.exists(result_path):
                             modifiers = {t["variable"]:t["value"] for t in vars_dic[ind]["modifiers"] } if "modifiers" in vars_dic[ind] else {}
                             with open(self.pandem_path(result_path)) as f:

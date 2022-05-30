@@ -1,10 +1,3 @@
-# create personal library folder
-dir.create(Sys.getenv("R_LIBS_USER"), recursive = TRUE)
-# install missing libraries
-list.of.packages <- c("XML", "httr", "dplyr", "jsonlite", "ggplot2", "devtools")
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages, lib = Sys.getenv("R_LIBS_USER"), repos = "http://cran.us.r-project.org")
-devtools::install_github("maous1/Pandem2simulator")
 
 library(XML)
 library(httr)
