@@ -118,7 +118,7 @@ def install_issues(check_nlp = True):
         install.packages("devtools")
         devtools::install_github(repo = "covid19datahub/COVID19", ref = "b941b66e59b7b0aec4807eb5b28208abba66de4a", upgrade = "never")
       If you prefer downloading data prepared by COVID data hub tem you can install it from CRAN, by running install.packages(c("COVID19"))""")
-    installed = subprocess.run(['R', '-e', f'if(length(setdiff(c(), names(installed.packages("Pandem2simulator")[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
+    installed = subprocess.run(['R', '-e', f'if(length(setdiff(c("Pandem2simulator"), names(installed.packages("Pandem2simulator")[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
     if installed == 1:
       ret.append(f"""Cannot find Pandem2simulator R packages necessary for simulating COVID19 detailed data from ecdc datasets. 
       You can install this package with the following command:
