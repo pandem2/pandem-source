@@ -107,7 +107,7 @@ class Evaluator(worker.Worker):
                   }
                 date_attrs = set(vn for vn in t["attrs"].keys() if var_dic[vn]['type'] == 'date' and t["attrs"][vn] is not None)
                 independent_attrs = [t for t in t["attrs"].keys() if t not in modifiers[var_name] or  modifiers[var_name][t] is not None]
-                sorted_attrs = list(sorted(vn for vn in independent_attrs if var_dic[vn]['type'] not in ['not_characteristic', 'date'] and t["attrs"][vn] is not None))
+                sorted_attrs = list(sorted(vn for vn in independent_attrs if var_dic[vn]['type'] not in ['not_characteristic', 'date', 'private'] and t["attrs"][vn] is not None))
                 if len(sorted_attrs) > 0 and len(date_attrs)>0:
                   obs_keys[var_name]["comb"].add(tuple((vn, t["attrs"][vn]) for vn in sorted_attrs))
                   obs_keys[var_name]["dates"].add(tuple((vn, t["attrs"][vn]) for vn in date_attrs))

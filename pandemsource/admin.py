@@ -54,7 +54,7 @@ def read_variables_definitions():
     if col in ["linked_attributes", "partition"]:
       df[col] = df[col].str.split(",")
     if col == "modifiers":
-      df[col] = df[col].apply(lambda x : json.loads(x))
+      df[col] = df[col].apply(lambda x : json.loads(x) if pd.notna(x) else [])
   result = df.to_json(orient = "records")
   parsed = json.loads(result)
   return parsed
@@ -107,7 +107,7 @@ def install_issues(check_nlp = True):
   if shutil.which("R") is None:
     ret.append("Cannot find R language. Please installe it. PANDEM2 needs it to calculate indecators")
   else:
-    r_packages = '"dplyr", "shiny", "plotly", "DT", "jsonlite", "httr", "XML", "ggplot2"'
+    r_packages = '"dplyr", "shiny", "plotly", "DT", "jsonlite", "httr", "XML", "ggplot2", "epitweetr"'
     installed = subprocess.run(['R', '-e', f'if(length(setdiff(c({r_packages}), names(installed.packages()[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
     if installed == 1:
       ret.append(f'Cannot find some necessary R packages, please intall them from CRAN, by running install.packages(c({r_packages}))')

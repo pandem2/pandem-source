@@ -7,7 +7,7 @@ with open('README.md') as f:
 
 setup(
     name='pandem-source',
-    version='1.0.7',
+    version='1.0.8',
     description='Routinely collecting heterogeneous surveillance data into a coherent database',
     long_description=readme,
     long_description_content_type='text/markdown',
