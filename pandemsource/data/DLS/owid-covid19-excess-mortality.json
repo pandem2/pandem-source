@@ -1,0 +1,37 @@
+{
+    "scope":{
+        "source":"owid-covid19-excess-mortality",
+        "source_description":"The reported all-cause mortality data is from the Human Mortality Database (HMD) Short-term Mortality Fluctuations project and the World Mortality Dataset (WMD). Both sources are updated weekly.",
+        "tags":["Our-World-In-Data"],
+        "data_quality":"Open data",
+        "frequency":"daily",
+        "frequency_start_hour":1,
+        "frequency_end_hour":1,
+        "reference_user":"Daniel Gavrilov, Marcel Gerber, Matthieu Bergel, Lucas Rodés-Guirao",
+        "reporting_email":"info@ourworldindata.org",
+        "globals":[
+            {"variable": "source"}
+        ],
+        "update_scope":[
+            {"variable":"source"}
+        ]
+    },
+    "acquisition":{
+        "channel":{
+            "name":"url",
+            "url":"https://github.com/owid/covid-19-data/raw/master/public/data/excess_mortality/excess_mortality.csv"
+        },
+        "format": {
+            "name":"csv",
+            "decimal_sign":".",
+            "thousands_separator":"",
+            "date_format":"%Y-%m-%d",
+            "encoding":"UTF-8"
+        }
+    },
+    "columns":[
+        {"name":"location", "variable":"country_name"},
+        {"name":"date", "variable":"reporting_date"},
+        {"name":"excess_proj_all_ages", "variable":"excess_mortality"}
+    ]
+}
