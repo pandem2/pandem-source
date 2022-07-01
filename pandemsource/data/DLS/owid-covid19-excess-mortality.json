@@ -1,7 +1,7 @@
 {
     "scope":{
         "source":"owid-covid19-excess-mortality",
-        "source_description":"The reported all-cause mortality data is from the Human Mortality Database (HMD) Short-term Mortality Fluctuations project and the World Mortality Dataset (WMD). Both sources are updated weekly.",
+        "source_description":"Reported all-cause mortality data from the Human Mortality Database (HMD) Short-term Mortality Fluctuations project and the World Mortality Dataset (WMD). Both sources are updated weekly. Data is based on the P-Score indicator calculated using the reported deaths data from HMD and WMD and the projected deaths from WMD, as an estimate of expected deaths. The P-score is the percentage difference between the reported number of weekly or monthly deaths in 2020–2022 and the projected number of deaths for the same period based on previous years.",
         "tags":["Our-World-In-Data"],
         "data_quality":"Open data",
         "frequency":"daily",
@@ -25,13 +25,14 @@
             "name":"csv",
             "decimal_sign":".",
             "thousands_separator":"",
-            "date_format":"%Y-%m-%d",
+            "date_format":"isoweek",
             "encoding":"UTF-8"
         }
     },
     "columns":[
-        {"name":"location", "variable":"country_name"},
-        {"name":"date", "variable":"reporting_date"},
-        {"name":"excess_proj_all_ages", "variable":"excess_mortality"}
+        {"name":"country", "variable":"country_name"},
+        {"name":"iso_week", "variable":"reporting_week"},
+        {"name":"excess_death", "variable":"excess_mortality"},
+        {"name":"age_group", "variable":"age_group"}
     ]
 }

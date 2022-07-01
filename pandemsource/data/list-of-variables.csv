@@ -72,6 +72,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,standarise_mortality_by_age_infected_people,,observation,,,,,standarise_mortality_by_age,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
 03_patient,excess_mortality,,indicator,,,,,,[]
 03_patient,excess_mortality_ltcf,,indicator,,,,,excess_mortality,"[{""variable"": ""care_type"", ""value"": ""ltcf""}]"
+03_patient,excess_mortality_pscore,,indicator,,,,,,[]
 03_patient,average_stay_length,,observation,days,,,,,[]
 03_patient,average_stay_length_at_icu,,observation,days,,,,average_stay_length,"[{""variable"": ""bed_type"", ""value"": ""icu""}]"
 03_patient,length_of_stay,,observation,days,,,,,[]
