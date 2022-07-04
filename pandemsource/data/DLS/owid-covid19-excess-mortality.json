@@ -32,7 +32,7 @@
     "columns":[
         {"name":"country", "variable":"country_name"},
         {"name":"iso_week", "variable":"reporting_week"},
-        {"name":"excess_death", "variable":"excess_mortality"},
+        {"name":"excess_death", "variable":"excess_mortality_pscore"},
         {"name":"age_group", "variable":"age_group"}
     ]
 }

@@ -1,17 +1,52 @@
 import pandas as pd
+import numpy as np
 import time
 
 # Disable the false positive "SettingWithCopyWarning"
 pd.options.mode.chained_assignment = None
 
 AGE_GROUPS = ['0-14', '15-64', '65-74', '75-84']
+EU_COUNTRIES = [
+    'germany',
+    'austria',
+    'belgium',
+    'bulgaria',
+    'cyprus',
+    'croatia',
+    'denmark',
+    'spain',
+    'estonia',
+    'finland',
+    'france',
+    'greece',
+    'hungary',
+    'ireland',
+    'italy',
+    'latvia',
+    'lithuania',
+    'luxembourg',
+    'malta',
+    'netherlands',
+    'poland',
+    'portugal',
+    'romania',
+    'slovakia',
+    'slovenia',
+    'sweden',
+    'czechia'
+]
 
 def df_transform(df: pd.DataFrame) -> pd.DataFrame:
   df = df[df.time_unit != 'monthly']
+  df = df[df['location'].str.lower().isin(EU_COUNTRIES)]
+  df['location'] = df['location'].str.upper()
   excess_death_all_ages = build_excess_death_all_ages(df)
   excess_death_age_groups = build_excess_death_age_groups(df)
   final_df = pd.concat([excess_death_all_ages, excess_death_age_groups])
-  final_df['line_number'] = range(1, len(final_df)+1) 
+  final_df['line_number'] = range(1, len(final_df)+1)
+  
+  final_df['excess_death'] = pd.to_numeric(final_df['excess_death'])
+  final_df.to_csv('/home/william/pandem-test/final.csv')
   return final_df
 
 
@@ -70,7 +105,7 @@ def fill_age_groups_rows(df: pd.DataFrame, ref: pd.DataFrame) -> pd.DataFrame:
 def get_iso_week(date: str) -> str:
     if pd.notna(date):
         date_struct = time.strptime(date, '%Y-%m-%d')
-        iso_week = time.strftime('%Y-W%U', date_struct)
+        iso_week = time.strftime('%Y-%U', date_struct)
     else:
         iso_week = pd.NA
     return iso_week

@@ -203,6 +203,102 @@
             "attr": {
                 "geo_name": "GERMANY"
             }
-        }    
+        },
+        {
+            "attrs": {
+                "line_number": 21,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "IT",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "ITALY"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 22,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "LV",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "LATVIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 23,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "LT",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "LITHUANIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 24,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "NL",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "NETHERLANDS"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 25,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "SK",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "SLOVAKIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 26,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "SI",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "SLOVENIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 27,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "CZ",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "CZECHIA"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 28,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "SE",
+                "geo_level": "Country"
+            },
+            "attr": {
+                "geo_name": "SWEDEN"
+            }
+        }
     ]
 }
