@@ -113,18 +113,6 @@
                 "line_number": 14,
                 "source": "pandemsource",
                 "file": "default.json",
-                "geo_code": "BE",
-                "geo_level": "Country"
-            },
-            "attr": {
-                "geo_name": "BELGIUM"
-            }
-        },
-        {
-            "attrs": {
-                "line_number": 15,
-                "source": "pandemsource",
-                "file": "default.json",
                 "geo_code": "CY",
                 "geo_level": "Country"
             },
@@ -134,7 +122,7 @@
         },
         {
             "attrs": {
-                "line_number": 16,
+                "line_number": 15,
                 "source": "pandemsource",
                 "file": "default.json",
                 "geo_code": "HR",
@@ -146,7 +134,7 @@
         },
         {
             "attrs": {
-                "line_number": 17,
+                "line_number": 16,
                 "source": "pandemsource",
                 "file": "default.json",
                 "geo_code": "EE",
@@ -158,7 +146,7 @@
         },
         {
             "attrs": {
-                "line_number": 18,
+                "line_number": 17,
                 "source": "pandemsource",
                 "file": "default.json",
                 "geo_code": "CZ",
@@ -170,10 +158,10 @@
         },
         {
             "attrs": {
-                "line_number": 19,
+                "line_number": 18,
                 "source": "pandemsource",
                 "file": "default.json",
-                "geo_code": "GR",
+                "geo_code": "EL",
                 "geo_level": "Country"
             },
             "attr": {
@@ -279,18 +267,6 @@
         {
             "attrs": {
                 "line_number": 27,
-                "source": "pandemsource",
-                "file": "default.json",
-                "geo_code": "CZ",
-                "geo_level": "Country"
-            },
-            "attr": {
-                "geo_name": "CZECHIA"
-            }
-        },
-        {
-            "attrs": {
-                "line_number": 28,
                 "source": "pandemsource",
                 "file": "default.json",
                 "geo_code": "SE",
