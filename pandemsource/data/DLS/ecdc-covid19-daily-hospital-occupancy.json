@@ -1,0 +1,39 @@
+{
+    "scope":{
+        "source":"ecdc-covid19-daily-hospital-occupancy",
+        "source_description":"Hospital and ICU admission rates and current occupancy for COVID-19 by date and country",
+        "tags":["ECDC COVID-19"],
+        "data_quality":"Official",
+        "frequency":"daily",
+        "frequency_start_hour":4,
+        "frequency_end_hour":4,
+        "reference_user":"TESSy (ECDC)",
+        "reporting_email":"surveillance@ecdc.europa.eu",
+        "globals":[
+            {"variable":"source"},
+            {"variable":"pathogen_name", "value":"COVID-19"}
+        ],
+        "update_scope":[
+            {"variable":"source"},
+            {"variable":"reporting_week"}
+        ]
+    },
+    "acquisition":{
+        "channel":{
+            "name":"url",
+            "url": "https://opendata.ecdc.europa.eu/covid19/hospitalicuadmissionrates/csv/data.csv"
+        },
+        "format":{
+            "name":"csv",
+            "decimal_sign":".",
+            "thousands_separator":"",
+            "date_format":"isoweek",
+            "encoding":"UTF-8"
+        }
+    },
+    "columns":[
+        {"name":"country", "variable":"country_name"},
+        {"name":"year_week", "variable":"reporting_week"},
+        {"name":"value", "variable":"daily_hospital_occupancy"}
+    ]
+}

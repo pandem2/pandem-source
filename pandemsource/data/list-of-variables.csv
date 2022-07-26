@@ -94,6 +94,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,qty_of_hospital_resources,,resource,qty,,,,,[]
 03_patient,number_of_hospital_resources_dependencies,,resource,qty,,,,,[]
 03_patient,beds_occupancy,,resource,people,,,,,[]
+03_patient,daily_hospital_occupancy,,observation,qty,,,,,[]
 04_tests,performed_tests,,observation,qty,,"Source, test_result, geo_code",,,[]
 04_tests,positive_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""positive""}]"
 04_tests,negative_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""negative""}]"
