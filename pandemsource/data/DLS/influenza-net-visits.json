@@ -1,6 +1,6 @@
 {
     "scope":{
-      "source":"influenza-net",
+      "source":"influenza-net-visits",
       "source_description":"From http://www.influenzanet.info/\n. Influenzanet is a Europe-wide network to monitor the activity of influenza-like-illness (ILI) with the aid of volunteers via the internet. It is operational in nine countries. In contrast with the traditional system of sentinel networks of mainly primary care physicians, Influenzanet obtains its data directly from the population. This creates a fast and flexible monitoring system whose uniformity allows for direct comparison of ILI rates between countries.",
       "tags":["Influenza net"],
       "data_quality":"Cohort",
@@ -21,16 +21,13 @@
       "channel":{
         "name":"url",
         "url": [
-          "https://influweb.api.datainterfaces.org/data/metadata/indicators/DK_incidence.csv",
-          "https://influweb.api.datainterfaces.org/data/metadata/indicators/FR_incidence.csv",
-          "https://influweb.api.datainterfaces.org/data/metadata/indicators/IE_incidence.csv",
-          "https://influweb.api.datainterfaces.org/data/metadata/indicators/IT_incidence.csv",
-          "https://influweb.api.datainterfaces.org/data/metadata/indicators/PT_incidence.csv",
-          "https://influweb.api.datainterfaces.org/data/metadata/indicators/ES_incidence.csv",
-          "https://influweb.api.datainterfaces.org/data/metadata/indicators/UK_incidence.csv",
-          "https://influweb.api.datainterfaces.org/data/metadata/indicators/NL_incidence.csv",
-          "https://influweb.api.datainterfaces.org/data/metadata/indicators/DE_incidence.csv",
-          "https://influweb.api.datainterfaces.org/data/metadata/indicators/SE_incidence.csv"
+          "https://influweb.api.datainterfaces.org/data/metadata/indicators/DK_visits_cumulated.csv",
+          "https://influweb.api.datainterfaces.org/data/metadata/indicators/FR_visits_cumulated.csv",
+          "https://influweb.api.datainterfaces.org/data/metadata/indicators/IE_visits_cumulated.csv",
+          "https://influweb.api.datainterfaces.org/data/metadata/indicators/IT_visits_cumulated.csv",
+          "https://influweb.api.datainterfaces.org/data/metadata/indicators/PT_visits_cumulated.csv",
+          "https://influweb.api.datainterfaces.org/data/metadata/indicators/ES_visits_cumulated.csv",
+          "https://influweb.api.datainterfaces.org/data/metadata/indicators/UK_visits_cumulated.csv"
         ]
       },
       "format": {
@@ -42,16 +39,24 @@
       }
     },
     "columns":[
-      {"name":"season"},  
       {"name":"yw", "variable":"reporting_week"}, 
+      {"name":"variable", "variable":"visit_type_code"},
       {"name":"syndrome", "variable":"pathogen_alias"},
-      {"name":"incidence", "variable":"incidence_1000"},
-      {"name":"type"},
-      {"name":"upper", "variable":"incidence_1000_high_ci"},
-      {"name":"lower", "variable":"incidence_1000_low_ci"},
-      {"name":"count", "variable":"participants_declaring_symptoms"},
-      {"name":"part", "variable":"number_of_participants"},
-      {"name":"method"},
+      {"name":"season"},
+      {"name":"prop_raw"},
+      {"name":"prop_adj"},
+      {"name":"prop_adj_low"},
+      {"name":"prop_adj_up"},
+      {"name":"cum_prop_raw"},
+      {"name":"cum_prop_adj", "variable":"number_of_visits_per_100k"},
+      {"name":"cum_prop_adj_low", "variable":"number_of_visits_per_100k_low_ci"},
+      {"name":"cum_prop_adj_up", "variable":"number_of_visits_per_100k_high_ci"},
+      {"name":"n_total"},
+      {"name":"n_adj", "variable":"number_of_visits"},
+      {"name":"n_weight"},
+      {"name":"n_missing"},
+      {"name":"total_adj"},
+      {"name":"total_weight"},
       {"name":"country", "variable":"geo_code"}
     ]
 }

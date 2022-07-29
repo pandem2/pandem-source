@@ -301,7 +301,8 @@ def do_reset(args, *other):
   if args.ecdc_atlas or args.restore_factory_defaults:
     admin.reset_source("ecdc-atlas-influenza")    
   if args.influenzanet or args.restore_factory_defaults:
-    admin.reset_source("influenza-net")    
+    admin.reset_source("influenza-net")
+    admin.reset_source("influenza-net-visits")
   if args.twitter or args.restore_factory_defaults:
     admin.reset_source("twitter")    
   if args.medisys or args.restore_factory_defaults:
