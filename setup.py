@@ -20,6 +20,7 @@ setup(
       "pandas",
       "openpyxl",
       "pykka",
+      "psutil",
       "lxml",
       "isoweek",
       "tweepy",

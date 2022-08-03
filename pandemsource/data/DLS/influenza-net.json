@@ -21,13 +21,13 @@
       "channel":{
         "name":"url",
         "url": [
-           "http://influenzanet.info/data/metadata/indicators/NL_incidence.csv",
-           "http://influenzanet.info/data/metadata/indicators/DK_incidence.csv",
-           "http://influenzanet.info/data/metadata/indicators/FR_incidence.csv",
-           "http://influenzanet.info/data/metadata/indicators/IE_incidence.csv",
-           "http://influenzanet.info/data/metadata/indicators/IT_incidence.csv",
-           "http://influenzanet.info/data/metadata/indicators/ES_incidence.csv",
-           "http://influenzanet.info/data/metadata/indicators/SE_incidence.csv"
+           "https://influenzanet.info/data/metadata/indicators/NL_incidence.csv",
+           "https://influenzanet.info/data/metadata/indicators/DK_incidence.csv",
+           "https://influenzanet.info/data/metadata/indicators/FR_incidence.csv",
+           "https://influenzanet.info/data/metadata/indicators/IE_incidence.csv",
+           "https://influenzanet.info/data/metadata/indicators/IT_incidence.csv",
+           "https://influenzanet.info/data/metadata/indicators/ES_incidence.csv",
+           "https://influenzanet.info/data/metadata/indicators/SE_incidence.csv"
         ]
       },
       "format": {
