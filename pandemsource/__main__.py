@@ -145,6 +145,11 @@ def main(a):
     action="store_true",
     help="Reset pandem flight related information to system defaults", 
   )
+  reset_parser.add_argument(
+    "--owid",
+    action="store_true",
+    help="Reset pandem owid related information to system defaults"
+  )
 
   reset_parser.set_defaults(func = do_reset)
 
@@ -283,18 +288,21 @@ def do_reset(args, *other):
     admin.reset_source("covid19-datahub")
   if args.ecdc_covid19_simulated or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-age-group-variants")
+    admin.reset_source("ecdc-covid19-daily-hospital-occupancy-variants")
   if args.ecdc_covid19 or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-variants")
     admin.reset_source("ecdc-covid19-age-group")
     admin.reset_source("ecdc-covid19-measures")
     admin.reset_source("ecdc-covid19-daily")
+    admin.reset_source("ecdc-covid19-daily-hospital-occupancy")
   if args.serotracker or args.restore_factory_defaults:
     admin.reset_source("geonames-countries")    
     admin.reset_source("serotracker")    
   if args.ecdc_atlas or args.restore_factory_defaults:
     admin.reset_source("ecdc-atlas-influenza")    
   if args.influenzanet or args.restore_factory_defaults:
-    admin.reset_source("influenza-net")    
+    admin.reset_source("influenza-net")
+    admin.reset_source("influenza-net-visits")
   if args.twitter or args.restore_factory_defaults:
     admin.reset_source("twitter")    
   if args.medisys or args.restore_factory_defaults:
@@ -302,6 +310,8 @@ def do_reset(args, *other):
   if args.flights or args.restore_factory_defaults:
     admin.reset_source("ourairports")
     admin.reset_source("opensky-network-coviddataset")
+  if args.owid or args.restore_factory_defaults:
+    admin.reset_source("owid-covid19-excess-mortality")
 
 def do_list(args, *other):
   if args.sources or args.missing_sources or args.package_sources or args.missing_package_sources:

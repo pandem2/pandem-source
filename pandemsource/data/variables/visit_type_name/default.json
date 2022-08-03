@@ -1,0 +1,70 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "visit_type_code": "visit.emergency"
+            },
+            "attr": {
+                "visit_type_name": "Emergency"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "2",
+                "source": "pandem2",
+                "file": "",
+                "visit_type_code": "visit.gp"
+            },
+            "attr": {
+                "visit_type_name": "General Practitioner"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "3",
+                "source": "pandem2",
+                "file": "",
+                "visit_type_code": "visit.no"
+            },
+            "attr": {
+                "visit_type_name": "Visit Number"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "4",
+                "source": "pandem2",
+                "file": "",
+                "visit_type_code": "visit.other"
+            },
+            "attr": {
+                "visit_type_name": "Other"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "5",
+                "source": "pandem2",
+                "file": "",
+                "visit_type_code": "visit.hospital"
+            },
+            "attr": {
+                "visit_type_name": "Hospital"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "6",
+                "source": "pandem2",
+                "file": "",
+                "visit_type_code": "visit.plan"
+            },
+            "attr": {
+                "visit_type_name": "Plan"
+            }
+        }
+    ]
+}

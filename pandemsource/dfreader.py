@@ -360,7 +360,7 @@ class DataframeReader(worker.Worker):
         return False 
 
       unit = unit.lower().replace(" ", "")
-      if unit in ['people', 'number', 'qty', 'days', 'people/people', 'units/time']:
+      if unit in ['people', 'number', 'qty', 'days', 'people/people', 'units/time', 'ratio']:
         return True
       return False
 

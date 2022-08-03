@@ -40,7 +40,11 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 13_referentials,reporting_week,Week on which a measure  is being reported. It is expected to be IsoWeek.,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""isoweek""}]"
 13_referentials,reporting_month,Month on which a measure is being reported,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""month""}]"
 13_referentials,period_type,"Type of period: ""date"", ""isoweek"", ""month"", ""instant""",characteristic,,,,,,[]
-01_cases,incidence,Number of confirmed cases each 100.000 people,indicator,people/people,,"source, case_status, geo_code","incidence(reporting_period, confirmed_cases, population, pathogen_code)",,[]
+13_referentials,visit_type_code,,referential,,,,,,[]
+13_referentials,visit_type_name,,referential_label,,visit_type_code,,,,[]
+01_cases,incidence_1000,Number of confirmed cases each 100.000 people,indicator,people/people,,"source, case_status, geo_code","incidence_1000(reporting_period, confirmed_cases, population, pathogen_code)",,[]
+01_cases,incidence_1000_low_ci,Lower Confidence Index of Number of confirmed cases each 100.000 people,indicator,people/people,,"source, case_status, geo_code",,,[]
+01_cases,incidence_1000_high_ci,High Confidence Index of Number of confirmed cases each 100.000 people,indicator,people/people,,"source, case_status, geo_code",,,[]
 01_cases,rt_number,"R_t is the expected number of secondary cases produced by infected individuals, who turns infectious on day t. If a source does not provide this number it will be estimated as the ratio of confirmed cases between last 7 days against the previous seven days.",indicator,qty,,"source, case_status, geo_code","rt_number(reporting_period, confirmed_cases, pathogen_code)",,[]
 01_cases,number_of_ppe_protective_equipment,,resource,units/time,,,,,[]
 01_cases,needs_of_ppe_protective_equipment,,resource,units/time,,,,,[]
@@ -72,6 +76,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,standarise_mortality_by_age_infected_people,,observation,,,,,standarise_mortality_by_age,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
 03_patient,excess_mortality,,indicator,,,,,,[]
 03_patient,excess_mortality_ltcf,,indicator,,,,,excess_mortality,"[{""variable"": ""care_type"", ""value"": ""ltcf""}]"
+03_patient,excess_mortality_pscore,,indicator,ratio,,,,,[]
 03_patient,average_stay_length,,observation,days,,,,,[]
 03_patient,average_stay_length_at_icu,,observation,days,,,,average_stay_length,"[{""variable"": ""bed_type"", ""value"": ""icu""}]"
 03_patient,length_of_stay,,observation,days,,,,,[]
@@ -93,6 +98,11 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,qty_of_hospital_resources,,resource,qty,,,,,[]
 03_patient,number_of_hospital_resources_dependencies,,resource,qty,,,,,[]
 03_patient,beds_occupancy,,resource,people,,,,,[]
+03_patient,daily_hospital_occupancy,,observation,qty,,,,,[]
+03_patient,number_of_visits,,indicator,people/people,,,,,[]
+03_patient,number_of_visits_per_100k,,indicator,people/people,,,,,[]
+03_patient,number_of_visits_per_100k_low_ci,,indicator,people/people,,,,,[]
+03_patient,number_of_visits_per_100k_high_ci,,indicator,people/people,,,,,[]
 04_tests,performed_tests,,observation,qty,,"Source, test_result, geo_code",,,[]
 04_tests,positive_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""positive""}]"
 04_tests,negative_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""negative""}]"

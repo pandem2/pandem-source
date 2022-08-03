@@ -460,7 +460,7 @@ class TimeSerieHandler(tornado.web.RequestHandler):
                     #resp[(date, datevar)].update({k:v for k,v in keys})
                   if var not in resp[(date, datevar)]:
                     resp[(date, datevar)]["indicator"] = indicator
-                    resp[(date, datevar)]["value"] = value
+                    resp[(date, datevar)]["value"] = value if value not in [np.inf, -np.inf] else None
                   else :
                     # TODO: change the aggregation function depending on the unit
                     resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + value
