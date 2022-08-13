@@ -228,7 +228,10 @@ class Variables(worker.Worker):
                     # We do that by appending to tuples_list any existing row not in the replacement scope and then overriding the file 
                     else:
                         with open(file_path, 'r') as f:
-                            last_tuples = json.load(f)
+                            try:
+                              last_tuples = json.load(f)
+                            except:
+                              raise ValueError(f"Error while interpreting file {f} as JSON")
                         for tup in last_tuples['tuples']:
                             cond_count = len(update_filter)
                             for filt in update_filter: 

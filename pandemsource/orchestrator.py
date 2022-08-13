@@ -133,7 +133,7 @@ class Orchestration(pykka.ThreadingActor):
             acquisition_proxy = acquisition_ref.proxy()
             dls_label = [dls for dls in dls_dicts if dls['acquisition']['channel']['name'] == label]
             for dls in dls_label:
-                if self.start_acquisition:
+                if self.start_acquisition and (not 'active' in dls['acquisition'] or dls['acquisition']['active']):
                     acquisition_proxy.add_datasource(dls, self.force_acquire)
         
             self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label}

@@ -1,6 +1,6 @@
 {
     "scope":{
-      "source":"covid19-datahub-XXX",
+      "source":"covid19-datahub-AUT",
       "source_description":"Unified dataset by collecting worldwide fine-grained case data, merged with exogenous variables helpful for a better understanding of COVID-19.",
       "tags":["COVID-19 Datahub"],
       "data_quality":"Official (third-party compilation)",
@@ -19,10 +19,10 @@
       ]
     },
     "acquisition":{
-      "active":false,
+      "active":true,
       "channel":{
         "name":"git-local",
-        "changed_by": {"script_type":"R", "script_name":"download-covid19-datahub-XXX"}
+        "changed_by": {"script_type":"R", "script_name":"download-covid19-datahub-AUT"}
       },
       "format": {
         "name":"csv",
