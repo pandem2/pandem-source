@@ -234,11 +234,11 @@ def do_start(args, *other):
     storage_proxy = orch.get_actor("storage").get().proxy()
     dls_files = storage_proxy.list_files('source-definitions').get()
     dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in dls_files if file_name['path'].endswith(".json")]
-    
     for source_name in args.limit_collection.split(","):
-      dls = list(filter(lambda dls: dls['scope']['source'] == source_name, dls_dicts))[0]
-      acquisition_proxy = orch.get_actor(f"acquisition_{dls['acquisition']['channel']['name']}").get().proxy()
-      acquisition_proxy.add_datasource(dls, args.force_acquire)
+      dlss = list(filter(lambda dls: dls['scope']['source'] == source_name or (source_name in dls['scope']['tags'] and (dls['acquisition'].get("active") != false)), dls_dicts))
+      for dls in dlss:
+        acquisition_proxy = orch.get_actor(f"acquisition_{dls['acquisition']['channel']['name']}").get().proxy()
+        acquisition_proxy.add_datasource(dls, args.force_acquire)
   else:
     orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed, retry_active = not args.not_retry_active, force_acquire = args.force_acquire, no_nlp = args.no_nlp)
     orch = orchestrator_ref.proxy()
@@ -315,7 +315,7 @@ def do_reset(args, *other):
     admin.reset_source("covid19-datahub-SWE")
     admin.reset_source("covid19-datahub-GBR")
 
-if args.ecdc_covid19_simulated or args.restore_factory_defaults:
+  if args.ecdc_covid19_simulated or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-age-group-variants")
     admin.reset_source("ecdc-covid19-daily-hospital-occupancy-variants")
   if args.ecdc_covid19 or args.restore_factory_defaults:

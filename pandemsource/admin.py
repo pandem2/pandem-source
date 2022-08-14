@@ -78,11 +78,12 @@ def reset_source(source_name):
     script_type = dls["acquisition"]["channel"]["changed_by"]["script_type"]
     script_name = dls["acquisition"]["channel"]["changed_by"]["script_name"]
     script_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", script_type, f"{script_name}.{script_type}"))
-    script_to = util.pandem_path("files", "scripts", script_type, f"{script_name}.{script_type}" )
-    script_to_dir = util.pandem_path("files", "scripts", script_type)
-    if not os.path.exists(script_to_dir):
-      os.makedirs(script_to_dir)
-    shutil.copyfile(script_from, script_to)
+    if os.path.exists(script_from):
+      script_to = util.pandem_path("files", "scripts", script_type, f"{script_name}.{script_type}" )
+      script_to_dir = util.pandem_path("files", "scripts", script_type)
+      if not os.path.exists(script_to_dir):
+        os.makedirs(script_to_dir)
+      shutil.copyfile(script_from, script_to)
 
   # Copy the corresponding Python script from package to pandem-home
   pyscript_fol = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", "py", "sources"))
@@ -116,7 +117,7 @@ def install_issues(check_nlp = True):
       ret.append(f"""Cannot find COVID19 R packages necessary for getting COVID19 data hub data. 
       if you want to download data directly from sources you have to install it as follow:
         install.packages("devtools")
-        devtools::install_github(repo = "covid19datahub/COVID19", ref = "b941b66e59b7b0aec4807eb5b28208abba66de4a", upgrade = "never")
+        devtools::install_github(repo = "covid19datahub/COVID19")
       If you prefer downloading data prepared by COVID data hub tem you can install it from CRAN, by running install.packages(c("COVID19"))""")
     installed = subprocess.run(['R', '-e', f'if(length(setdiff(c("Pandem2simulator"), names(installed.packages()[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
     if installed == 1:
