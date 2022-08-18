@@ -5,7 +5,8 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,cumulative_cases,Cumulative Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,,[]
 01_cases,confirmed_cases,Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
 01_cases,cumulative_confirmed_cases,Cumulative Number of confirmed cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,cumulative_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
-01_cases,recovered_cases,Number of recovered cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,cumulative_cases,"[{""variable"": ""case_status"", ""value"": ""recovered""}]"
+01_cases,recovered_cases,Number of recovered cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","recovered_cases(reporting_date, confirmed_cases, pathogen_code)",cumulative_cases,"[{""variable"": ""case_status"", ""value"": ""recovered""}]"
+01_cases,recovered_cases_per_100k,Number of recovered cases for the respective pathogen and reporting period each 100.000 people,indicator,people/people,,"source, case_status, geo_code","recovered_cases_per_100k(reporting_date, recovered_cases, pathogen_code)",,"[{""variable"": ""case_status"", ""value"": ""recovered""}, {""variable"": ""population_size"", ""value"": ""100000""}]"
 01_cases,confirmed_cases_alert,Alert triggered by the number of confirmed cases going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, case_status, geo_code","confirmed_cases_alert(reporting_date, confirmed_cases)",cumulative_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
 02_deaths,deaths_infected_alert,Alert triggered by the number of infected deaths going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, case_status, geo_code","deaths_infected_alert(reporting_date, deaths_infected)",,
 03_patient,icu_patients_alert,Alert triggered by the number of icu patients going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, case_status, geo_code","icu_patients_alert(reporting_date, icu_patients)",,
@@ -13,6 +14,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 12_population_study,article_count_alert,Alert triggered by the number of alrticles going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, topic, geo_code","article_count_alert(reporting_time, article_count)",,
 12_population_study,participants_declaring_symptoms_alert,Alert triggered by the number of participants declaring symptomps going over the expected using a modified version of the ears algorithm,indicator,qty,,,"participants_declaring_symptoms_alert(reporting_time, participants_declaring_symptoms)",,
 01_cases,active_cases,Number of active cases at the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","active_cases(reporting_date, confirmed_cases, pathogen_code)",number_of_cases,"[{""variable"": ""case_status"", ""value"": ""active""}]"
+01_cases,active_cases_per_100k,Number of active cases at the respective pathogen and reporting period each 100.000 people,indicator,people/people,,"source, case_status, geo_code","active_cases_per_100k(reporting_date, active_cases, pathogen_code)",,"[{""variable"": ""case_status"", ""value"": ""active""},{""variable"": ""population_size"", ""value"": ""100000""}]"
 01_cases,reinfection_cases,Number of reinfections at the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""reinfection""}]"
 01_cases,possible_cases,Number of possible cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""possible""}]"
 01_cases,probable_cases,Number of probable cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""probable""}]"
@@ -33,6 +35,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 13_referentials,line_number,Line of the file during data integration,not characteristic,,,,,,[]
 13_referentials,tag,"Tags associated to a source, this will group source files within containers for the first tag and will allow search for indicators parameters for all tags",characteristic,,,,,,[]
 13_referentials,tag_source,Combination of tags and sources present on PandemSource,characteristic,,"tag, source",,,,[]
+01_cases,population_size,,characteristic,people,,,,,[]
 01_cases,case_status,"A label for grouping different types of cases e.g. confirmed, suspected, etc.",characteristic,,,,,,[]
 13_referentials,reporting_period,Period in which a measure is being reported,date,date,,,,,[]
 13_referentials,reporting_date,Day in which a measure  is being reported,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""date""}]"
@@ -58,7 +61,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 02_deaths,deaths_infected_in_icu,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}, {""variable"": ""bed_type"", ""value"": ""icu""}]"
 02_deaths,deaths_in_lctf,,observation,people,,"Source, care_type, geo_code",,number_of_deaths,"[{""variable"": ""care_type"", ""value"": ""in_ltcf""}]"
 03_patient,patient_status,,characteristic,,,,,,[]
-02_deaths,mortality_rate,,indicator,people/people,,"source, case_status, geo_code",,,[]
+01_cases,mortality_rate,,indicator,people/people,,"source, case_status, geo_code","mortality_rate(reporting_period, population, deaths_infected)",,[]
 03_patient,severity,,characteristic,,,,,,[]
 03_patient,number_of_non-infected_patients_,,observation,people,,,,,[]
 03_patient,number_of_patients,,observation,people,,"Source, care_type, geo_code",,,[]
@@ -100,10 +103,13 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,number_of_hospital_resources_dependencies,,resource,qty,,,,,[]
 03_patient,beds_occupancy,,resource,people,,,,,[]
 03_patient,daily_hospital_occupancy,,observation,qty,,,,,[]
+03_patient,daily_icu_occupancy,,observation,qty,,,,,[]
+03_patient,hospital_admissions_per_100k,,observation,qty,,,,,[]
+03_patient,icu_admissions_per_100k,,observation,qty,,,,,[]
 03_patient,number_of_visits,,indicator,people/people,,,,,[]
-03_patient,number_of_visits_per_100k,,indicator,people/people,,,,,[]
-03_patient,number_of_visits_per_100k_low_ci,,indicator,people/people,,,,,[]
-03_patient,number_of_visits_per_100k_high_ci,,indicator,people/people,,,,,[]
+03_patient,number_of_visits_per_100,,indicator,people/people,,,,,[]
+03_patient,number_of_visits_per_100_low_ci,,indicator,people/people,,,,,[]
+03_patient,number_of_visits_per_100_high_ci,,indicator,people/people,,,,,[]
 04_tests,performed_tests,,observation,qty,,"Source, test_result, geo_code",,,[]
 04_tests,positive_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""positive""}]"
 04_tests,negative_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""negative""}]"

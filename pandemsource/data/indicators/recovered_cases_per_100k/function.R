@@ -1,0 +1,1 @@
+100000*recovered_cases/population

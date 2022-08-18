@@ -34,6 +34,9 @@
     "columns":[
         {"name":"country", "variable":"country_name"},
         {"name":"year_week", "variable":"reporting_week"},
-        {"name":"value", "variable":"daily_hospital_occupancy"}
+        {"name":"daily_hospital_occupancy", "variable":"daily_hospital_occupancy"},
+        {"name":"daily_icu_occupancy", "variable":"daily_icu_occupancy"},
+        {"name":"weekly_new_hospital_admissions_per_100k", "variable":"hospital_admissions_per_100k"},
+        {"name":"weekly_new_icu_admissions_per_100k", "variable":"icu_admissions_per_100k"}
     ]
 }

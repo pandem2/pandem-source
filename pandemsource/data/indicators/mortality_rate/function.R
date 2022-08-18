@@ -1,0 +1,1 @@
+1000000*deaths_infected/population
