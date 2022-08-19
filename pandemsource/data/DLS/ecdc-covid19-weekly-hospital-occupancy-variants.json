@@ -1,9 +1,9 @@
 {
     "scope":{
-        "source":"ecdc-covid19-daily-hospital-occupancy",
-        "source_description":"Hospital and ICU admission rates and current occupancy for COVID-19 by date and country",
-        "tags":["ECDC COVID-19"],
-        "data_quality":"Official",
+        "source":"ecdc-covid19-weekly-hospital-occupancy-variants",
+        "source_description":"Hospital current occupancy for COVID-19 & variant Dataset simulated by an algorithm developed by the Catholic University of Leuven Algorithm https://github.com/maous1/Pandem2simulator ",
+        "tags":["ECDC COVID-19 Simulated"],
+        "data_quality":"simulated",
         "frequency":"daily",
         "frequency_start_hour":4,
         "frequency_end_hour":4,
@@ -20,8 +20,8 @@
     },
     "acquisition":{
         "channel":{
-            "name":"url",
-            "url": "https://opendata.ecdc.europa.eu/covid19/hospitalicuadmissionrates/csv/data.csv"
+            "name":"git-local",
+            "changed_by": {"script_type":"R", "script_name":"ucl-simulator-ecdc-covid19-hospital-occupancy-variant"}
         },
         "format":{
             "name":"csv",
@@ -32,11 +32,9 @@
         }
     },
     "columns":[
-        {"name":"country", "variable":"country_name"},
+        {"name":"country_code", "variable":"geo_code"},
         {"name":"year_week", "variable":"reporting_week"},
-        {"name":"daily_hospital_occupancy", "variable":"daily_hospital_occupancy"},
-        {"name":"daily_icu_occupancy", "variable":"daily_icu_occupancy"},
-        {"name":"weekly_new_hospital_admissions_per_100k", "variable":"hospital_admissions_per_100k"},
-        {"name":"weekly_new_icu_admissions_per_100k", "variable":"icu_admissions_per_100k"}
+        {"name":"variant", "variable":"variant"},
+        {"name":"new_cases", "variable":"weekly_hospital_occupancy"}
     ]
 }

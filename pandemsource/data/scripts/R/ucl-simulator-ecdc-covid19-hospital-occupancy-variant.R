@@ -38,9 +38,9 @@ eu_countries <- c(
 
 get_df_hospital_occupancy <- function() {
     json_payload <- '{
-        "select": ["daily_hospital_occupancy"],
+        "select": ["weekly_hospital_occupancy"],
         "filter": {
-            "source": "ecdc-covid19-daily-hospital-occupancy"
+            "source": "ecdc-covid19-weekly-hospital-occupancy"
         }
     }'
 
@@ -93,8 +93,8 @@ normalize_dataframe <- function(df) {
         names(df)[names(df) == "number_detections_variant"] <- "new_cases"
         df$number_sequenced <- NA
     }
-    if ("daily_hospital_occupancy" %in% colnames(df)) {
-        names(df)[names(df) == "daily_hospital_occupancy"] <- "new_cases"
+    if ("weekly_hospital_occupancy" %in% colnames(df)) {
+        names(df)[names(df) == "weekly_hospital_occupancy"] <- "new_cases"
     }
     return(df)
 }

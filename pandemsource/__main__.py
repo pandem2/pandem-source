@@ -317,13 +317,13 @@ def do_reset(args, *other):
 
   if args.ecdc_covid19_simulated or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-age-group-variants")
-    admin.reset_source("ecdc-covid19-daily-hospital-occupancy-variants")
+    admin.reset_source("ecdc-covid19-weekly-hospital-occupancy-variants")
   if args.ecdc_covid19 or args.restore_factory_defaults:
     admin.reset_source("ecdc-covid19-variants")
     admin.reset_source("ecdc-covid19-age-group")
     admin.reset_source("ecdc-covid19-measures")
     admin.reset_source("ecdc-covid19-daily")
-    admin.reset_source("ecdc-covid19-daily-hospital-occupancy")
+    admin.reset_source("ecdc-covid19-weekly-hospital-occupancy")
   if args.serotracker or args.restore_factory_defaults:
     admin.reset_source("geonames-countries")    
     admin.reset_source("serotracker")    
