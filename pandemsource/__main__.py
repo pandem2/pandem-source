@@ -319,6 +319,7 @@ def do_reset(args, *other):
     admin.reset_source("ecdc-covid19-age-group-variants")
     admin.reset_source("ecdc-covid19-weekly-hospital-occupancy-variants")
   if args.ecdc_covid19 or args.restore_factory_defaults:
+    admin.reset_source("ecdc-covid19-vaccination")
     admin.reset_source("ecdc-covid19-variants")
     admin.reset_source("ecdc-covid19-age-group")
     admin.reset_source("ecdc-covid19-measures")

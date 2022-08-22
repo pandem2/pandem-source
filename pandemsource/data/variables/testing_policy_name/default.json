@@ -1,0 +1,48 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "testing_policy_code": "0"
+            },
+            "attr": {
+                "testing_policy_name": "No testing policy"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "2",
+                "source": "pandem2",
+                "file": "",
+                "testing_policy_code": "1"
+            },
+            "attr": {
+                "testing_policy_name": "Only those who both (a) have symptoms AND (b) meet specific criteria (eg key workers, admitted to hospital, came into contact with a known case, returned from overseas)"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "3",
+                "source": "pandem2",
+                "file": "",
+                "testing_policy_code": "2"
+            },
+            "attr": {
+                "testing_policy_name": "Testing of anyone showing Covid-19 symptoms"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "4",
+                "source": "pandem2",
+                "file": "",
+                "testing_policy_code": "3"
+            },
+            "attr": {
+                "testing_policy_name": "Open public testing (eg “drive through” testing available to asymptomatic people)"
+            }
+        }
+    ]
+}

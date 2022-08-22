@@ -4,33 +4,40 @@
             "attrs": {
                 "line_number": "1",
                 "source": "pandem2",
-                "file": "",
-                "contact_tracing_policy_code": "0"
+                "file": ""
             },
             "attr": {
-                "contact_tracing_policy_name": "No tracing"
+                "testing_policy_code": "0"
             }
         },
         {
             "attrs": {
                 "line_number": "2",
                 "source": "pandem2",
-                "file": "",
-                "contact_tracing_policy_code": "1"
+                "file": ""
             },
             "attr": {
-                "contact_tracing_policy_name": "Limited tracing"
+                "testing_policy_code": "1"
             }
         },
         {
             "attrs": {
                 "line_number": "3",
                 "source": "pandem2",
-                "file": "",
-                "contact_tracing_policy_code": "2"
+                "file": ""
             },
             "attr": {
-                "contact_tracing_policy_name": "Comprehensive tracing"
+                "testing_policy_code": "2"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "4",
+                "source": "pandem2",
+                "file": ""
+            },
+            "attr": {
+                "testing_policy_code": "3"
             }
         }
     ]

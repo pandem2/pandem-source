@@ -45,6 +45,7 @@
       {"name":"icu", "variable":"icu_patients"},
       {"name":"vent", "variable":"number_of_patients_with_ventilator"},
       {"name":"contact_tracing", "variable":"contact_tracing_policy_code"},
+      {"name":"testing_policy", "variable":"testing_policy_code"},
       {"name":"population", "variable":"population"},
       {"name":"key_nuts", "variable":"geo_code"}
     ]
