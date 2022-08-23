@@ -1,0 +1,1 @@
+100*people_vaccinated/population

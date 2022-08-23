@@ -122,9 +122,10 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 04_tests,number_of_test_staff,,resource,people,,,,,[]
 04_tests,qty_of_test_resources,,resource,qty,,,,,[]
 04_tests,number_of_test_resources_dependencies,,resource,qty,,,,,[]
-05_vaccination,doses_injected,,observation,qty,,"Source, vaccination_status, geo_code",,,[]
+05_vaccination,doses_injected,Number of vaccine doses injected all types of vaccines combined by week and country,observation,qty,,"Source, vaccination_status, geo_code",,,[]
 05_vaccination,people_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,,[]
 05_vaccination,vaccination_coverage,Number of vaccinated individuals divided by the size of the target population,indicator,people/people,,"Source, vaccination_status, geo_code","vaccination_coverage(reporting_period, people_vaccinated, population, pathogen_code)",,[]
+05_vaccination,vaccination_coverage_proportional,Number of vaccinated individuals divided by the size of the target population in percentage,indicator,ratio,,"Source, vaccination_status, geo_code","vaccination_coverage_proportional(reporting_period, people_vaccinated, population, pathogen_code)",,[]
 05_vaccination,one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}]"
 05_vaccination,two_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}]"
 05_vaccination,three_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}]"

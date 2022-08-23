@@ -1,6 +1,6 @@
 {
   "scope":{
-    "source":"ecdc-covid19-variants",
+    "source":"ecdc-covid19-vaccination",
     "source_description":"Information about the volume of COVID-19 sequencing, the number and percentage of variants of concern by week, country and variant. Data collected by the ECDC from  the GISAID EpiCoV database and TESSy",
     "tags":["ECDC COVID-19"],
     "data_quality":"Official",
@@ -39,8 +39,7 @@
     {"name":"NumberDosesReceived", "variable":"doses_injected"},
     {"name":"SecondDose", "variable":"two_doses_vaccinated"},
     {"name":"DoseAdditional1", "variable":"three_doses_vaccinated"},
-    {"name":"AgeGroup", "variable":"age_group"},
-    {"name":"PopulationType", "variable":"population_type"},
-    {"name":"Vaccine", "variable":"vaccination_code"}
+    {"name":"TargetGroup", "variable":"age_group"},
+    {"name":"Vaccine", "variable":"vaccin_code"}
   ]
 }
