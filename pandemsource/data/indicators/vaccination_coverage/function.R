@@ -1,1 +1,1 @@
-people_vaccinated/population
+people_fully_vaccinated/population

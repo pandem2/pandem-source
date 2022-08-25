@@ -36,7 +36,7 @@
     {"name":"YearWeekISO", "variable":"reporting_week"},
     {"name":"Region", "variable":"geo_code"},
     {"name":"Denominator", "variable":"population"},
-    {"name":"NumberDosesReceived", "variable":"doses_injected"},
+    {"name":"TotalDosesInjected", "variable":"doses_injected"},
     {"name":"SecondDose", "variable":"two_doses_vaccinated"},
     {"name":"DoseAdditional1", "variable":"three_doses_vaccinated"},
     {"name":"TargetGroup", "variable":"age_group"},
