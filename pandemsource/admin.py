@@ -198,8 +198,8 @@ def nlp_docker_launch_command():
   for model in models:
     cmd.extend(["-v",  f"{models_path}{os.sep}{model}:/models/{model}/1/"]) 
 
-  cmd.extend(["-v", f"{models_path}{os.sep}models.config:/models/models.config"])
-  cmd.extend(["--rm", "-t", f"tensorflow/serving:{tf_version}", "--model_config_file=/models/models.config"])
+  cmd.extend(["-v", f"{models_path}{os.sep}model_config.config:/models/model_config.config"])
+  cmd.extend(["--rm", "-t", f"tensorflow/serving:{tf_version}", "--model_config_file=/models/model_config.config"])
   return cmd
 
 def nlp_run_model_server():

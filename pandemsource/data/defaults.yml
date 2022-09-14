@@ -12,26 +12,53 @@ pandem:
       models_path:  ""
       languages:
         en:
-          - emotion_analysis_attention
-          - sentiment_analysis_attention
-          - sug_min_attention
+          - emotion_classification_multi
+          - sentiment_classification
+          - suggestion_classification
+          - aspect_classification_ohe
       categories:
-        emotion_analysis_attention:
-          - surprise
+        emotion_classification_multi:
+          - anger
+          - anticipation
+          - disgust
           - fear
           - joy
-          - anger
           - sadness
-          - love 
-        sentiment_analysis_attention:
+          - surprise
+          - trust
+        sentiment_classification:
           - negative
           - neutral
           - positive
-        sug_min_attention:
+        suggestion_classification:
           - non-suggestion
           - suggestion 
+        aspect_classification_ohe:
+          - healthcare worker
+          - vaccine mandate
+          - care home
+          - death rate
+          - social distancing rule
+          - positive for covid
+          - covid
+          - public health
+          - coronavirus
+          - covid case
+          - vaccine
+          - relief bill
+          - covid test
+          - govt
+          - corona
+          - pandemic
+          - mask
+          - dose of vaccine
+          - flu
+          - school
+          - immune system
+          - business
+          - patient
       use_sudo: false
       tensorflow_server_host:  "localhost"
       tensorflow_server_port:  8501
       tensorflow_server_protocol:  "http"
-      tensorflow_server_version:  "2.4.3"
+      tensorflow_server_version:  "2.8.0"

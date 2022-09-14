@@ -8,6 +8,7 @@ import json
 import re
 import copy
 import itertools
+from pprint import pprint
 
 l = logging.getLogger("pandem-nlp")
 
@@ -77,13 +78,21 @@ class NLPAnnotator(worker.Worker):
                 texts = (t["attrs"][text_field] for t in to_annotate)
                 data = json.dumps({"instances": [[t] for t in texts]})
                 result = requests.post(f"{endpoints[m]}:predict", data = data, headers = {'content-type': "application/json"}).content
+                #print(f"++++++++++++++++++++++++++++++  {m}")
+                #pprint(json.loads(result))
                 annotations = json.loads(result)["predictions"]
                 for t, pred in zip(to_annotate, annotations):
-                  best = functools.reduce(lambda a, b: a if a[1]>b[1] else b, enumerate(pred))[0]
-                  at = copy.deepcopy(t)
-                  # creating a new tuple with the best category for this model
-                  at["attrs"][f"article_cat_{m}"] = categories[m][best]
-                  annotated.append(at)
+                  #best = functools.reduce(lambda a, b: a if a[1]>b[1] else b, enumerate(pred))[0]
+                  in_class = [a for a, b in enumerate(pred) if b >=0.5]
+                  for ic in in_class:
+                    at = copy.deepcopy(t)
+                    # adding default predictions as all for all categories
+                    for mm in categories.keys():
+                      if mm in self._model_languages[lang]: 
+                        at["attrs"][f"article_cat_{mm}"] = "All"
+                    # creating a new tuple with the positive category for this model
+                    at["attrs"][f"article_cat_{m}"] = categories[m][ic]
+                    annotated.append(at)
                   # updating exitsting tuple with category ALL
                   t["attrs"][f"article_cat_{m}"] = "All"
             count = count + len(to_annotate)
@@ -129,6 +138,7 @@ class NLPAnnotator(worker.Worker):
               
         ret = self._storage_proxy.to_job_cache(job["id"], f"std_{path}", list_of_tuples).get()
         self._pipeline_proxy.annotate_end(ret, path = path, job = job)
+        return ret
 
     def slices(self, iterable, size):
        head = list(itertools.islice(iterable, size))
