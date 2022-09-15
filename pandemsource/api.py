@@ -575,7 +575,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
                   #  values[label_name] = " ".join([(word[0].upper()+word[1:].lower() if len(word)>2 else word)  for word in re.split("_| |\\-", values[label_name])])
 
               # Adding indicator associated values
-              if "indicator" in values:
+              if "indicator" in values and values["indicator"] in var_dic:
                 values["indicator__family"] = var_dic[values["indicator"]]["data_family"]
                 values["indicator__description"] = var_dic[values["indicator"]]["description"]
                 values["indicator__unit"] = var_dic[values["indicator"]]["unit"]

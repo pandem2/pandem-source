@@ -15,25 +15,16 @@ def rebuild_columns(df: pd.DataFrame) -> pd.DataFrame:
     indicators = ['Daily hospital occupancy', 'Daily ICU occupancy', 'Weekly new hospital admissions per 100k', 'Weekly new ICU admissions per 100k']
     new_indicators = list(map(lambda x: x.lower().replace(' ', '_'), indicators))
     weekly_indicators = dict()
+    rows = df.to_dict(orient = "records")
     # Initialize new columns
-    for ind in new_indicators:
-        df[ind] = pd.NA
-    # Regroup indicators by (week, country)
-    for row in df.index:
-        indicator = df['indicator'][row].lower().replace(' ','_')
-        value = df['value'][row]
-        week = df['year_week'][row]
-        country = df['country'][row]
-        try:
-            weekly_indicators[(week, country)].append({indicator: value})
-        except KeyError:
-            weekly_indicators[(week, country)] = [{indicator: value}]
-    df = df.drop_duplicates(subset=['year_week', 'country'])
-    # Build new columns
-    for k, indicators_list in weekly_indicators.items():
-        week, country = k[0], k[1]
-        for indicator in indicators_list:
-            for name, value in indicator.items():
-                df.loc[(df['year_week'] == week) & (df['country'] == country), name] = value
-    df = df.drop(columns=['value', 'indicator'])
+    for row in rows:
+      ind = row['indicator']
+      value = row['value']
+      for ni in new_indicators:
+        row[ni] = None
+      nind = ind.lower().replace(" ", "_")
+      row[nind] = value
+      row.pop('indicator')
+      row.pop('value')
+    df = pd.DataFrame.from_records(rows)
     return df

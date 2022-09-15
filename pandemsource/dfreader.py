@@ -254,7 +254,6 @@ class DataframeReader(worker.Worker):
         if "scope" in dls and "update_scope" in dls["scope"]:
           ret["scope"]["update_scope"] = self.add_values(dls["scope"]["update_scope"], tuples = tuples, variables = variables, issues = issues, dls = dls, job = job, file_name = file_name)
         ret["tuples"] = tuples
-
         ret = self._storage_proxy.to_job_cache(job["id"], f"tup_{path}", ret).get()
         self._pipeline_proxy.read_df_end(tuples = ret, n_tuples = len(tuples), issues = issues, path = path, job = job)
     

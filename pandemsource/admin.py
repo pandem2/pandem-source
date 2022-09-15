@@ -108,7 +108,7 @@ def install_issues(check_nlp = True):
   if shutil.which("R") is None:
     ret.append("Cannot find R language. Please installe it. PANDEM2 needs it to calculate indecators")
   else:
-    r_packages = '"dplyr", "shiny", "plotly", "DT", "jsonlite", "httr", "XML", "ggplot2", "epitweetr"'
+    r_packages = '"dplyr", "shiny", "plotly", "DT", "jsonlite", "httr", "XML", "ggplot2", "epitweetr", "reticulate", "seqinr", "readr"'
     installed = subprocess.run(['R', '-e', f'if(length(setdiff(c({r_packages}), names(installed.packages()[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
     if installed == 1:
       ret.append(f'Cannot find some necessary R packages, please intall them from CRAN, by running install.packages(c({r_packages}))')
