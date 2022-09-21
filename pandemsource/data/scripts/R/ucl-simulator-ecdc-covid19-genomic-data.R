@@ -124,8 +124,9 @@ write_country_csv <- function(df) {
                 "country_code",
                 "year_week",
                 "time",
-                "age_group",
                 "variant",
+                "position",
+                "mutation",
                 "new_cases"
             )
         )
@@ -172,26 +173,25 @@ genomic_data <- read.csv("genomic_data.csv")
 file.remove("genomic_data.csv")
 
 message("Merging genomic data and the result of UCL simulator... (9/10)")
-data_mutation <- find_mutation(genomic_data)
-
+genomic_data$time <- genomic_data$collection_date
+data_mutation <- create_table_mutation(genomic_data)
 data_mutation <- normalize_mutation_dates(data_mutation)
 
 case_variants_genomic <- add_genomic_data(
-    metadata = variants_df_formatted_country,
-    genomic_data = data_mutation,
-    col_merge = "variant",
-    count = "new_cases",
-    time = "time",
-    mutation = T
+   metadata = variants_df_formatted_country, 
+   genomic_data = data_mutation, 
+   var_names_merge=variant, 
+   var_names_count=new_cases, 
+   var_names_time=time
 )
 
-for ccode in unique(case_variants_genomic$country_code) {
-  case_variants_genomic_selected <- select_mutation(
-    data = case_variants_genomic %>% dplyr::filter(country_code == ccode), 
-    dateStart = as.Date(filter_end_date, format = "%Y-%m-%d") - 30,
-    dateEnd = as.Date(filter_end_date, format = "%Y-%m-%d"),
-    number=5,
-    count = "new_cases"
-  )
-  write_country_csv(case_variants_genomic_selected)
-}
+case_variants_genomic_selected <- select_mutation(
+  data = case_variants_genomic, 
+  dateStart= as.Date(filter_end_date, format = "%Y-%m-%d") - 30, 
+  dateEnd = as.Date(filter_end_date, format = "%Y-%m-%d"), 
+  number=5,
+  var_names_count=new_cases, 
+  var_names_time=time
+)
+
+write_country_csv(case_variants_genomic_selected)

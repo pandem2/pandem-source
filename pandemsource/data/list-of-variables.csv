@@ -8,11 +8,11 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,recovered_cases,Number of recovered cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","recovered_cases(reporting_date, confirmed_cases, pathogen_code)",cumulative_cases,"[{""variable"": ""case_status"", ""value"": ""recovered""}]"
 01_cases,recovered_cases_per_100k,Number of recovered cases for the respective pathogen and reporting period each 100.000 people,indicator,people/people,,"source, case_status, geo_code","recovered_cases_per_100k(reporting_date, recovered_cases, pathogen_code)",,[]
 01_cases,confirmed_cases_alert,Alert triggered by the number of confirmed cases going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, case_status, geo_code","confirmed_cases_alert(reporting_date, confirmed_cases)",cumulative_cases,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
-02_deaths,deaths_infected_alert,Alert triggered by the number of infected deaths going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, case_status, geo_code","deaths_infected_alert(reporting_date, deaths_infected)",,
-03_patient,icu_patients_alert,Alert triggered by the number of icu patients going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, case_status, geo_code","icu_patients_alert(reporting_date, icu_patients)",,
-03_patient,number_of_patients_alert,Alert triggered by the number of infected patients going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, case_status, geo_code","number_of_patients_alert(reporting_date, number_of_patients)",,
-12_population_study,article_count_alert,Alert triggered by the number of alrticles going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, topic, geo_code","article_count_alert(reporting_time, article_count)",,
-12_population_study,participants_declaring_symptoms_alert,Alert triggered by the number of participants declaring symptomps going over the expected using a modified version of the ears algorithm,indicator,qty,,,"participants_declaring_symptoms_alert(reporting_time, participants_declaring_symptoms)",,
+02_deaths,deaths_infected_alert,Alert triggered by the number of infected deaths going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, case_status, geo_code","deaths_infected_alert(reporting_date, deaths_infected)",,[]
+03_patient,icu_patients_alert,Alert triggered by the number of icu patients going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, case_status, geo_code","icu_patients_alert(reporting_date, icu_patients)",,[]
+03_patient,number_of_patients_alert,Alert triggered by the number of infected patients going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, case_status, geo_code","number_of_patients_alert(reporting_date, number_of_patients)",,[]
+12_population_study,article_count_alert,Alert triggered by the number of alrticles going over the expected using a modified version of the ears algorithm,indicator,qty,,"source, topic, geo_code","article_count_alert(reporting_time, article_count)",,[]
+12_population_study,participants_declaring_symptoms_alert,Alert triggered by the number of participants declaring symptomps going over the expected using a modified version of the ears algorithm,indicator,qty,,,"participants_declaring_symptoms_alert(reporting_time, participants_declaring_symptoms)",,[]
 01_cases,active_cases,Number of active cases at the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code","active_cases(reporting_date, confirmed_cases, pathogen_code)",number_of_cases,"[{""variable"": ""case_status"", ""value"": ""active""}]"
 01_cases,active_cases_per_100k,Number of active cases at the respective pathogen and reporting period each 100.000 people,indicator,people/people,,"source, case_status, geo_code","active_cases_per_100k(reporting_date, active_cases, pathogen_code)",,[]
 01_cases,reinfection_cases,Number of reinfections at the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,"[{""variable"": ""case_status"", ""value"": ""reinfection""}]"
@@ -188,7 +188,8 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 04_tests,sero_prevalence,,indicator,people/people,,,,,[]
 04_tests,test_type,,characteristic,,,,,,[]
 07_lab,seaway_water_virus_presence_(and_levels),,observation,,,,,,[]
-07_lab,mutations/sequences_spread_and_distributions,,characteristic,,,,,,[]
+07_lab,mutation_position,,characteristic,,,,,,[]
+07_lab,mutation_type,,characteristic,,,,,,[]
 07_lab,possibility_to_link_lab_data_with_cases/patient_data,,characteristic,,,,,,[]
 07_lab,possibility_to_associate_lab_data_with_aggregated_epidemiological_data,,characteristic,,,,,,[]
 07_lab,sensibility_&_specificity_of_test_methods,,document,,,,,,[]
@@ -259,6 +260,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 12_population_study,study_type,Type of a study (methodology),not characteristic,,,,,,[]
 12_population_study,study_data_quality,data quality evaluation of the study,not_characteristic,,,,,,[]
 07_lab,number_detections_variant,,observation,people,,"source, geo_code",,,[]
+07_lab,number_detections_mutation,,observation,people,,"source, geo_code",,,[]
 13_referentials,gender_code,,referential,,,,,,[]
 13_referentials,gender_name,,referential_label,,gender_code,,,,[]
 13_referentials,gender_alias,,referential_alias,,gender_code,,,,[]

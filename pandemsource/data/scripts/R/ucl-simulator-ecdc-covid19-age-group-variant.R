@@ -47,16 +47,16 @@ request_dataset <- function(json_payload) {
 #' Normalizes dataframe columns for UCL-algorithm
 normalize_dataframe <- function(df) {
     if ("reporting_period" %in% colnames(df)) {
-        names(df)[names(df) == "reporting_period"] <- "time"
-        fun1 <- function(time) strftime(time, format = "%Y-%V")
-        df$year_week <- mapply(fun1, df$time)
+      names(df)[names(df) == "reporting_period"] <- "time"
+      fun1 <- function(time) strftime(time, format = "%Y-%V")
+      df$year_week <- mapply(fun1, df$time)
     }
     if ("geo_code" %in% colnames(df)) {
-        names(df)[names(df) == "geo_code"] <- "country_code"
+      names(df)[names(df) == "geo_code"] <- "country_code"
     }
     if ("number_detections_variant" %in% colnames(df)) {
-        names(df)[names(df) == "number_detections_variant"] <- "new_cases"
-        df$number_sequenced <- NA
+      names(df)[names(df) == "number_detections_variant"] <- "new_cases"
+      df$number_sequenced <- NA
     }
     if ("age_group" %in% colnames(df)) {
         df$age_group <- mapply(normalize_age_group, df$age_group)
@@ -175,10 +175,11 @@ age_group_df_formatted_country <- dataframes[[2]]
 message("Obtaining simulated case & variants dataframe... (7/8)")
 case_variants_aggregated <- simulator(
     trainset = variants_df_formatted_country,
-    testset = age_group_df_formatted_country, geolocalisation = "country_code",
-    outcome = "variant",
-    count = "new_cases",
-    time = "time",
+    testset = age_group_df_formatted_country, 
+    var_names_geolocalisation = country_code,
+    var_names_outcome = variant,
+    var_names_count = new_cases,
+    var_names_time = time,
     factor = 500
 )
 str(case_variants_aggregated)

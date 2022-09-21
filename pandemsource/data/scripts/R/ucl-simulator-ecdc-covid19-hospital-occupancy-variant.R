@@ -179,10 +179,11 @@ hosp_occupancy_df_formatted <- dataframes[[2]]
 message("Obtaining simulated case & hosp occupancy dataframe... (6/7)")
 case_hosp_occupancy_aggregated <- simulator(
     trainset = variants_df_formatted,
-    testset = hosp_occupancy_df_formatted, geolocalisation = "country_code",
-    outcome = "variant",
-    count = "new_cases",
-    time = "time",
+    testset = hosp_occupancy_df_formatted, 
+    var_names_geolocalisation = country_code,
+    var_names_outcome = variant,
+    var_names_count = new_cases,
+    var_names_time = time,
     factor = 500
 )
 str(case_hosp_occupancy_aggregated)

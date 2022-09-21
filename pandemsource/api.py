@@ -103,9 +103,13 @@ class SourcesHandler(tornado.web.RequestHandler):
                   schema:
                     type: string
         """
+        print("--------------->A")
         df_sources = self.storage_proxy.read_db('source').get()
+        print("--------------->B")
         df_jobs = self.storage_proxy.read_db('job').get()
+        print("--------------->C")
         df_issues = self.storage_proxy.read_db('issue').get()
+        print("--------------->D")
         tags = {}
         sources = {s['name']:s for s in (df_sources.to_dict('records') if df_sources is not None else [])} 
         jobs = df_jobs.to_dict('records') if df_jobs is not None else []
@@ -348,6 +352,7 @@ class SourceDetailsHandler(tornado.web.RequestHandler):
         sources_path = util.pandem_path("files", "source-definitions")
         dls_paths = self.storage_proxy.list_files(sources_path).get()
         dlss = [self.storage_proxy.read_file(f['path']).get() for f in dls_paths if f['path'].endswith(".json")]
+        
         defs = {dls["scope"]["tags"][0]+ " - "+ dls["scope"]["source"] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else dls["scope"]["source"]:dls for dls in dlss}
         if source is not None:
           defs = {k:v for k, v in defs.items() if k == source}
