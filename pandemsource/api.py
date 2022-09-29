@@ -103,13 +103,9 @@ class SourcesHandler(tornado.web.RequestHandler):
                   schema:
                     type: string
         """
-        print("--------------->A")
         df_sources = self.storage_proxy.read_db('source').get()
-        print("--------------->B")
         df_jobs = self.storage_proxy.read_db('job').get()
-        print("--------------->C")
         df_issues = self.storage_proxy.read_db('issue').get()
-        print("--------------->D")
         tags = {}
         sources = {s['name']:s for s in (df_sources.to_dict('records') if df_sources is not None else [])} 
         jobs = df_jobs.to_dict('records') if df_jobs is not None else []
@@ -534,17 +530,21 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
             ts = variables_proxy.get_timeseries().get()
             self._timeseries_hash = variables_proxy.timeseries_hash.get()
             ts_values = [{k:v for k, v in key} for key in ts.keys()]
+            refs_read = set()
+
             # Adding nice to have information on time series
             for values in ts_values:
               # Adding related attribute characteristics
               for var, value in list(values.items()):
                 if var in ref_attrs:
                   # Loading referential attrs if present 
-                  for attr in  ref_attrs[var]:
-                    if attr not in code_attrs:
-                       link = variables_proxy.get_referential(var).get()
-                    if link is not None:
-                      code_attrs[attr] = {t['attr'][var]:t['attrs'][attr] for t in link if 'attrs' in t and 'attr' in t and attr in t['attrs'] and var in t['attr']}
+                  for attr in ref_attrs[var]:
+                    if not (var, attr) in refs_read:
+                      refs_read.add((var, attr))
+                      if attr not in code_attrs:
+                         link = variables_proxy.get_referential(var).get()
+                      if link is not None:
+                        code_attrs[attr] = {t['attr'][var]:t['attrs'][attr] for t in link if 'attrs' in t and 'attr' in t and attr in t['attrs'] and var in t['attr']}
                     # Taking label from referential
                     if attr in code_attrs and value in code_attrs[attr]:
                       values[f"ref__{attr}"] = code_attrs[attr][value]
