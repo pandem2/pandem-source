@@ -284,7 +284,7 @@ class DataframeReader(worker.Worker):
             ret.append(r)
 
             if len(r["value"])==0:
-              message = (f"Variable {var['variable']} needs to be instantiated ad per DLS but no values where found on dataset")
+              message = (f"Variable {var['variable']} needs to be instantiated as per DLS but no values where found on dataset")
               issue = {'step' : job['step'],
                       'line' : 0,
                       'source' : dls['scope']['source'],

@@ -136,18 +136,18 @@ write_country_csv <- function(df) {
     }
 }
 
-message("Getting age_group & variants dataframe... (1/10)")
+message("Getting age_group & variants dataframe... (1/6)")
 variants_df <- get_df_variants()
 
 
-message("Checking integrity of variants... (3/10)")
+message("Checking integrity of variants... (2/6)")
 check_dataframe(variants_df)
 
-message("Normalizing dataframes... (4/10)")
+message("Normalizing dataframes... (3/6)")
 variants_df <- normalize_dataframe(variants_df)
 
 
-message("Formatting dataframes... (5/10)")
+message("Formatting dataframes... (4/6)")
 filter_start_date <- min(variants_df$time, na.rm = TRUE)
 filter_end_date <- max(variants_df$time, na.rm = TRUE)
 
@@ -161,10 +161,10 @@ variants_df_formatted <- format_dataframe(
 message("Filtering by country...")
 variants_df_formatted_country <- filter(variants_df_formatted, country_code %in% c("FR", "AT", "BE", "IT"))
 
-message("Downloading Genomic Datasets from NCBI... (7/10)")
+message("Downloading Genomic Datasets from NCBI... (5/6)")
 download_genomic_data(
     ecdcdata = variants_df_formatted_country,
-    variant_colname = "variant",
+    var_names_variant = "variant",
     path_dataformat = "/usr/bin/dataformat",
     path_dataset = "/usr/bin/datasets",
     path_nextclade = "/usr/bin/nextclade"
@@ -172,7 +172,7 @@ download_genomic_data(
 genomic_data <- read.csv("genomic_data.csv")
 file.remove("genomic_data.csv")
 
-message("Merging genomic data and the result of UCL simulator... (9/10)")
+message("Adding genomic data on the cases dataset... (6/7)")
 genomic_data$time <- genomic_data$collection_date
 data_mutation <- create_table_mutation(genomic_data)
 data_mutation <- normalize_mutation_dates(data_mutation)
@@ -185,6 +185,7 @@ case_variants_genomic <- add_genomic_data(
    var_names_time=time
 )
 
+message("Selecting time correlated mutations on last 30 days... (7/7)")
 case_variants_genomic_selected <- select_mutation(
   data = case_variants_genomic, 
   dateStart= as.Date(filter_end_date, format = "%Y-%m-%d") - 30, 
@@ -195,3 +196,12 @@ case_variants_genomic_selected <- select_mutation(
 )
 
 write_country_csv(case_variants_genomic_selected)
+
+#cleaning data
+file.remove(list.files("data/sars-cov-2", full.names = TRUE))
+file.remove("data/sars-cov-2")
+file.remove("data")
+file.remove(list.files("Nextclade_results", full.names = TRUE))
+file.remove("Nextclade_results")
+file.remove("genomic_filter.fna")
+

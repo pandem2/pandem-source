@@ -35,10 +35,9 @@
         {"name":"country_code", "variable":"geo_code"},
         {"name":"year_week", "variable":"reporting_week"},
         {"name":"time"},
-        {"name":"age_group", "variable":"age_group"},
         {"name":"variant", "variable":"variant"},
         {"name":"position", "variable":"mutation_position"},
         {"name":"mutation", "variable":"mutation_type"},
-        {"name":"new_cases", "variable":"variants_detected"}
+        {"name":"new_cases", "variable":"number_detections_mutation"}
     ]
 }
