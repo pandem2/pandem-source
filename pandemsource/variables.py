@@ -265,7 +265,7 @@ class Variables(worker.Worker):
          'tuples':[*({'attr':{'tag_source': tag+'_'+source}, 'attrs':{'tag':tag, 'source': source}} for tag in tags)]
        }
 
-    def lookup(self, variables, combinations, source, filter = None, include_source = True, include_tag = False, types=None):
+    def lookup(self, variables, combinations, source, filter = None, include_source = True, include_tag = False, types=['referential', 'geo_referential', 'characteristic']):
       dico_vars  = self.get_variables()
       modifiers = {v:{m['variable']:m['value'] for m in vardef['modifiers']} for v, vardef in dico_vars.items() if len(dico_vars[v]["modifiers"]) > 0}
       tag_source = self.read_variable("tag_source")
@@ -301,7 +301,7 @@ class Variables(worker.Worker):
       if filter is not None:
         filt.update(filter)
       res = {}
-      
+
       for var in variables:
         tuples = []
         if include_source:
@@ -313,16 +313,19 @@ class Variables(worker.Worker):
           f = {k:v for k, v in filt.items() if v is not None}
           f.update({"source":others})
           tuples = self.read_variable(var, filter = f)
-        # if currnet variable has modifiers we have to find the matching index for the tuple
-        key_map = {tuple((k, (v if var not in modifiers or not k in modifiers[var] else modifiers[var][k])) for k, v in comb):comb for comb in combinations}
+        # key_map will contain the non modified attributes for each combination as keys and the original combination as value
+        key_map = {tuple((k, v) for k, v in comb if var not in modifiers or k not in modifiers[var]):comb for comb in indexed_comb}
         if tuples is not None:
           for t in tuples:
-            keys = sorted(attr for attr in t["attrs"].keys() if dico_vars[attr]["type"] in types and (t["attrs"][attr] is not None or (var in modifiers and attr in modifiers[var])))
-            if tuple((k, t["attrs"][k]) for k in keys) in key_map:
-              key = key_map[tuple((k, t["attrs"][k]) for k in keys)]
+            # file_keys are the non null attrs from in the tuples to be considered as time series keys
+            file_keys = sorted(attr for attr in t["attrs"].keys() if dico_vars[attr]["type"] in types and (t["attrs"][attr] is not None)) # or (var in modifiers and attr in modifiers[var])
+            # free_keys are the keys in the file which are not modified
+            free_keys = list(attr for attr in file_keys if not var in modifiers or attr not in modifiers[var])
+            if tuple((k, t["attrs"][k]) for k in free_keys) in key_map:
+              key = key_map[tuple((k, t["attrs"][k]) for k in free_keys)]
               filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
               if key in indexed_comb:
-                if not key in res:
+                if key not in res:
                   res[key] = {}
                 if "obs" in t:
                   obs_name =  next(iter(t["obs"].keys()))
