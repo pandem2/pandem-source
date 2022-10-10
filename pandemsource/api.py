@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from datetime import datetime
 import tornado.escape
 import tornado.ioloop
 import tornado.web
@@ -14,10 +16,13 @@ import tornado.netutil
 import tornado.websocket
 from tornado_swagger.components import components
 from tornado_swagger.setup import setup_swagger
-import re
 import json
 
 l = logging.getLogger("pandem-api")
+
+@dataclass(frozen=True)
+class ConstantsNamespace:
+  JSON_EXT = ".json"
 
 
 class apiREST(worker.Worker):
@@ -32,6 +37,7 @@ class apiREST(worker.Worker):
         self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
         self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy()
+        self._api_proxy = self._orchestrator_proxy.get_actor('api').get().proxy()
         try:
             l.debug("Starting HTTP server")
             sockets = tornado.netutil.bind_sockets(self._api_port) 
@@ -39,6 +45,7 @@ class apiREST(worker.Worker):
                 storage_proxy=self._storage_proxy,
                 variables_proxy = self._variables_proxy,
                 pipeline_proxy = self._pipeline_proxy,
+                api_proxy = self._api_proxy,
                 sockets=sockets
             )
             self.server.start()
@@ -51,11 +58,12 @@ class apiREST(worker.Worker):
 
 class HttpServer(threading.Thread):
 
-    def __init__(self, storage_proxy, variables_proxy, pipeline_proxy, sockets): 
+    def __init__(self, storage_proxy, variables_proxy, pipeline_proxy, api_proxy, sockets): 
         super().__init__()
         self.storage_proxy = storage_proxy
         self.variables_proxy = variables_proxy
         self.pipeline_proxy = pipeline_proxy
+        self.api_proxy = api_proxy
         self.sockets = sockets
         self.app = None
         self.server = None
@@ -67,7 +75,7 @@ class HttpServer(threading.Thread):
             # start Tornado in a another thread than the main thread, we must
             # explicitly create an asyncio loop for the current thread.
             asyncio.set_event_loop(asyncio.new_event_loop())
-        self.app = Application(self.storage_proxy, self.variables_proxy, self.pipeline_proxy)
+        self.app = Application(self.storage_proxy, self.variables_proxy, self.pipeline_proxy, self.api_proxy)
         self.server = tornado.httpserver.HTTPServer(self.app)
         self.server.add_sockets(self.sockets)
         self.io_loop = tornado.ioloop.IOLoop.current()
@@ -81,7 +89,7 @@ class HttpServer(threading.Thread):
 class SourcesHandler(tornado.web.RequestHandler):
     def initialize(self, storage_proxy):
         self.storage_proxy = storage_proxy
-    def get(self):
+    async def get(self):
         """
         ---
         tags:
@@ -103,9 +111,9 @@ class SourcesHandler(tornado.web.RequestHandler):
                   schema:
                     type: string
         """
-        df_sources = self.storage_proxy.read_db('source').get()
-        df_jobs = self.storage_proxy.read_db('job').get()
-        df_issues = self.storage_proxy.read_db('issue').get()
+        df_sources = await self.storage_proxy.read_db('source')
+        df_jobs = await self.storage_proxy.read_db('job')
+        df_issues = await self.storage_proxy.read_db('issue')
         tags = {}
         sources = {s['name']:s for s in (df_sources.to_dict('records') if df_sources is not None else [])} 
         jobs = df_jobs.to_dict('records') if df_jobs is not None else []
@@ -158,7 +166,7 @@ class JobsBySourceHandler(tornado.web.RequestHandler):
     def initialize(self, storage_proxy, pipeline_proxy):
         self.storage_proxy = storage_proxy
         self.pipeline_proxy = pipeline_proxy
-    def get(self):
+    async def get(self):
         """
         ---
         tags:
@@ -188,8 +196,8 @@ class JobsBySourceHandler(tornado.web.RequestHandler):
                     type: string
         """
         source = self.get_argument('source', default = None)
-        df_issues = self.storage_proxy.read_db('issue').get()
-        df_jobs = self.storage_proxy.read_db('job').get()
+        df_issues = await self.storage_proxy.read_db('issue')
+        df_jobs = await self.storage_proxy.read_db('job')
         jobs_list = []
         for j in df_jobs.to_dict('records'):
           dls = j['dls_json']
@@ -213,7 +221,7 @@ class JobsBySourceHandler(tornado.web.RequestHandler):
         response = {'jobs' : jobs_list}
         self.write(response)
 
-    def delete(self):
+    async def delete(self):
         """
         ---
         tags:
@@ -237,13 +245,13 @@ class JobsBySourceHandler(tornado.web.RequestHandler):
                     type: string
         """
         job_id = self.get_argument('job_id', default = None)
-        self.pipeline_proxy.fail_job(int(job_id), delete_job = True).get()
+        await self.pipeline_proxy.fail_job(int(job_id), delete_job = True)
         self.write(job_id)
 
 class IssuesHandler(tornado.web.RequestHandler):
     def initialize(self, storage_proxy):
         self.storage_proxy = storage_proxy
-    def get(self):
+    async def get(self):
         """
         ---
         tags:
@@ -281,18 +289,18 @@ class IssuesHandler(tornado.web.RequestHandler):
         source = self.get_argument('source', default = None)
         job = self.get_argument('job_id', default = None)
 
-        sources = list(self.storage_proxy.read_db('source').get()['name'])
+        sources = list((await self.storage_proxy.read_db('source'))['name'])
         if source is not None and source not in sources:
             self.set_status(400)
             return self.write("Invalid or not found source")
         else:
-            df_jobs = self.storage_proxy.read_db('job').get()
+            df_jobs = await self.storage_proxy.read_db('job')
             if source is not None:
               df_jobs = df_jobs[df_jobs['source']==source]
             if job is not None:
               df_jobs = df_jobs[df_jobs['id'].astype(int)==int(job)]
 
-            df_issues = self.storage_proxy.read_db('issue').get()
+            df_issues = await self.storage_proxy.read_db('issue')
             if df_jobs is not None:
               dlss = {j['source']:j['dls_json'] for j in df_jobs.to_dict('records')}
             else :
@@ -315,7 +323,7 @@ class IssuesHandler(tornado.web.RequestHandler):
 class SourceDetailsHandler(tornado.web.RequestHandler):
     def initialize(self, storage_proxy):
         self.storage_proxy = storage_proxy
-    def get(self):
+    async def get(self):
         """
         ---
         tags:
@@ -346,8 +354,9 @@ class SourceDetailsHandler(tornado.web.RequestHandler):
         """
         source = self.get_argument('source', default = None)
         sources_path = util.pandem_path("files", "source-definitions")
-        dls_paths = self.storage_proxy.list_files(sources_path).get()
-        dlss = [self.storage_proxy.read_file(f['path']).get() for f in dls_paths if f['path'].endswith(".json")]
+        dls_paths = await self.storage_proxy.list_files(sources_path)
+        constants = ConstantsNamespace()
+        dlss = [(await self.storage_proxy.read_file(f['path'])) for f in dls_paths if f['path'].endswith(constants.JSON_EXT)]
         
         defs = {dls["scope"]["tags"][0]+ " - "+ dls["scope"]["source"] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else dls["scope"]["source"]:dls for dls in dlss}
         if source is not None:
@@ -359,7 +368,7 @@ class VariableListHandler(tornado.web.RequestHandler):
     def initialize(self, storage_proxy, variables_proxy):
         self.storage_proxy = storage_proxy
         self.variables_proxy = variables_proxy
-    def get(self):
+    async def get(self):
         """
         ---
         tags:
@@ -385,14 +394,15 @@ class VariableListHandler(tornado.web.RequestHandler):
 
 
         var_path = util.pandem_path("files", "variables")
-        var_paths = self.storage_proxy.list_files(var_path, include_files = False, include_dirs = True, recursive = False).get()
-        var_dic = self.variables_proxy.get_variables().get()
+        var_paths = await self.storage_proxy.list_files(var_path, include_files = False, include_dirs = True, recursive = False)
+        var_dic = await self.variables_proxy.get_variables()
         
         pub_vars = {v['path'] for v in var_paths }
 
         sources_path = util.pandem_path("files", "source-definitions")
-        dls_paths = self.storage_proxy.list_files(sources_path).get()
-        dlss = [self.storage_proxy.read_file(f['path']).get() for f in dls_paths if f['path'].endswith(".json")]
+        dls_paths = await self.storage_proxy.list_files(sources_path)
+        constants = ConstantsNamespace()
+        dlss = [(await self.storage_proxy.read_file(f['path'])) for f in dls_paths if f['path'].endswith(constants.JSON_EXT)]
         used_vars = {col["variable"] for dls in dlss for col in dls['columns'] if "variable" in col}
         found_vars = {}
         for v in var_dic:
@@ -411,7 +421,7 @@ class TimeSerieHandler(tornado.web.RequestHandler):
     def initialize(self, storage_proxy, variables_proxy):
         self.storage_proxy = storage_proxy
         self.variables_proxy = variables_proxy
-    def post(self):
+    async def post(self):
         """
         ---
         tags:
@@ -434,12 +444,10 @@ class TimeSerieHandler(tornado.web.RequestHandler):
                   schema:
                     type: string
         """
-        storage_proxy = self.storage_proxy
         variables_proxy = self.variables_proxy
-        var_dic = variables_proxy.get_variables().get()
+        var_dic = await variables_proxy.get_variables()
         query = tornado.escape.json_decode(self.request.body)
         if query is not None:
-          ts = variables_proxy.get_timeseries().get()
           comb = [(k, v) for (k,v) in query.items() if v is not None and k != 'indicator' and k != 'source']
           comb.sort(key = lambda v: v[0])
           source = query["source"]
@@ -447,7 +455,7 @@ class TimeSerieHandler(tornado.web.RequestHandler):
           variable = var_dic[indicator]["variable"]
           datevars = [v for v, varinfo in var_dic.items() if varinfo['type']=='date' and varinfo['variable']==v]
 
-          data = variables_proxy.lookup([variable], source = source, combinations = [tuple(comb)], filter = {d:None for d in datevars}).get()
+          data = await variables_proxy.lookup([variable], source = source, combinations = [tuple(comb)], filter = {d:None for d in datevars})
           # making an aggregation at day level
           resp = {}
           for key, values in data.items():
@@ -475,7 +483,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
         self.variables_proxy = variables_proxy
         self._timeseries_hash = ''
         self._timeseries_cache = ''
-    def get(self):
+    async def get(self):
         """
         ---
         tags:
@@ -501,16 +509,17 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
         storage_proxy = self.storage_proxy
         variables_proxy = self.variables_proxy
         # If no changes have been performed on timeseries and we have a let's try to reuse last value
-        if self._timeseries_cache != '' and self._timeseries_hash != '' and self._timeseries_hash == self.variables_proxy.timeseries_hash.get():
+        if self._timeseries_cache != '' and self._timeseries_hash != '' and self._timeseries_hash == (await self.variables_proxy.timeseries_hash):
             self.write(self._timeseries_cache)
         else:
             # recalculating time series
-            dlss = [storage_proxy.read_file(f["path"]).get() for f in storage_proxy.list_files(util.pandem_path("files", "source-definitions")).get() if f["name"].endswith(".json")]
+            constants = ConstantsNamespace()
+            dlss = [(await storage_proxy.read_file(f["path"])) for f in (await storage_proxy.list_files(util.pandem_path("files", "source-definitions"))) if f["name"].endswith(constants.JSON_EXT)]
             source_names = {dls["scope"]["source"]:dls["scope"]["tags"][0] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else dls["scope"]["name"] for dls in dlss}
             reference_users = {dls["scope"]["source"]:dls["scope"]["reference_user"] if "reference_user" in dls["scope"] else "" for dls in dlss}
             data_quality = {dls["scope"]["source"]:dls["scope"]["data_quality"] if "data_quality" in dls["scope"] else "" for dls in dlss}
             source_descriptions = {dls["scope"]["source"]:dls["scope"]["source_description"] if "source_description" in dls["scope"] else "" for dls in dlss}
-            var_dic = variables_proxy.get_variables().get()
+            var_dic = await variables_proxy.get_variables()
             
             # getting referential aliases
             ref_labels = {code:k for k, varinfo in var_dic.items() if varinfo["type"] == "referential_label" for code in varinfo["linked_attributes"]}
@@ -527,8 +536,8 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
             code_labels = {}
             code_attrs = {}
             no_labels = ["indicator__description", "source__reference_user", "source__source_description"]
-            ts = variables_proxy.get_timeseries().get()
-            self._timeseries_hash = variables_proxy.timeseries_hash.get()
+            ts = await variables_proxy.get_timeseries()
+            self._timeseries_hash = await variables_proxy.timeseries_hash
             ts_values = [{k:v for k, v in key} for key in ts.keys()]
             refs_read = set()
 
@@ -539,10 +548,10 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
                 if var in ref_attrs:
                   # Loading referential attrs if present 
                   for attr in ref_attrs[var]:
-                    if not (var, attr) in refs_read:
+                    if (var, attr) not in refs_read:
                       refs_read.add((var, attr))
                       if attr not in code_attrs:
-                         link = variables_proxy.get_referential(var).get()
+                         link = await variables_proxy.get_referential(var)
                       if link is not None:
                         code_attrs[attr] = {t['attr'][var]:t['attrs'][attr] for t in link if 'attrs' in t and 'attr' in t and attr in t['attrs'] and var in t['attr']}
                     # Taking label from referential
@@ -564,7 +573,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
                   # Loading referential labels if present 
                   label = ref_labels[ref_var]
                   if ref_var not in code_labels:
-                    labels = variables_proxy.get_referential(label).get()
+                    labels = await variables_proxy.get_referential(label)
                     if labels is not None:
                       code_labels[ref_var] = {t['attrs'][ref_var]:t['attr'][label] for t in labels if 'attrs' in t and 'attr' in t and label in t['attr'] and ref_var in t['attrs']}
                   # Taking label from referential if exists
@@ -602,7 +611,7 @@ class DatasetHandler(tornado.web.RequestHandler):
         self.storage_proxy = storage_proxy
         self.variables_proxy = variables_proxy
 
-    def post(self):
+    async def post(self):
         """
         ---
         tags:
@@ -625,13 +634,12 @@ class DatasetHandler(tornado.web.RequestHandler):
                   schema:
                     type: string
         """
-        storage_proxy = self.storage_proxy
         variables_proxy = self.variables_proxy
-        var_dic = variables_proxy.get_variables().get()
+        var_dic = await variables_proxy.get_variables()
         
         query = tornado.escape.json_decode(self.request.body)
         if query is not None:
-            ts = variables_proxy.get_timeseries().get()
+            ts = await variables_proxy.get_timeseries()
             needed_variables, query = self.__build_needed_variables(query, var_dic)
             filtered_ts = self.__filter_ts(query, needed_variables, ts)
 
@@ -639,8 +647,8 @@ class DatasetHandler(tornado.web.RequestHandler):
             data = {}
             columns = {'source'}
             for ((source, indicator), comb) in filtered_ts.items():
-                d = variables_proxy.lookup([var_dic[indicator]['variable']], source=source,
-                                          combinations=comb, filter={'reporting_period': None}).get()
+                d = await variables_proxy.lookup([var_dic[indicator]['variable']], source=source,
+                                          combinations=comb, filter={'reporting_period': None})
                 data[(source, indicator)] = d
                 columns.add(indicator)
 
@@ -745,6 +753,31 @@ class DatasetHandler(tornado.web.RequestHandler):
                     return rows[row_key]
 
 
+class SlowHandler(tornado.web.RequestHandler):
+    def initialize(self, storage_proxy, variables_proxy, api_proxy):
+        self.storage_proxy = storage_proxy
+        self.variables_proxy = variables_proxy
+        self.api_proxy = api_proxy
+
+    async def post(self):
+      total = 800
+      count = 0
+      for _ in range(0, total):
+        ref = await self.variables_proxy.get_referential("geo_code")
+        if ref is not None:
+          count += len(ref)
+      print(f"Total count is {count}")
+      self.write({'timeseries_length': count})
+
+
+class FastHandler(tornado.web.RequestHandler):
+    def initialize(self, storage_proxy, variables_proxy):
+        self.storage_proxy = storage_proxy
+        self.variables_proxy = variables_proxy
+    
+    def post(self):
+      self.write({'datetime': str(datetime.now())})
+
 @components.schemas.register
 class SourcesModel(object):
     """
@@ -827,7 +860,7 @@ class DatasetModel(object):
 
 class Application(tornado.web.Application):
 
-    def __init__(self, storage_proxy, variables_proxy, pipeline_proxy):
+    def __init__(self, storage_proxy, variables_proxy, pipeline_proxy, api_proxy):
         settings = {"debug": False}
         self._routes = [
           tornado.web.url(r"/jobs", JobsBySourceHandler, {'storage_proxy': storage_proxy, 'pipeline_proxy':pipeline_proxy}),
@@ -837,7 +870,9 @@ class Application(tornado.web.Application):
           tornado.web.url(r"/variable_list", VariableListHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
           tornado.web.url(r"/timeseries", TimeSeriesHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
           tornado.web.url(r"/timeserie", TimeSerieHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
-          tornado.web.url(r"/dataset", DatasetHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy})
+          tornado.web.url(r"/dataset", DatasetHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
+          tornado.web.url(r"/slow", SlowHandler, {'storage_proxy': storage_proxy, 'variables_proxy': variables_proxy, 'api_proxy': api_proxy}),
+          tornado.web.url(r"/fast", FastHandler, {'storage_proxy': storage_proxy, 'variables_proxy': variables_proxy})
         ]
         setup_swagger(
             self._routes,
