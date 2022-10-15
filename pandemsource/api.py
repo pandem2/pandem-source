@@ -596,10 +596,14 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
               # Adding source (DLS) associated values
               if "source" in values:
                 values["source__table"] = values["source"]
-                values["source__source_name"] = source_names[values["source"]]
-                values["source__reference_user"] = reference_users[values["source"]]
-                values["source__source_description"] = source_descriptions[values["source"]]
-                values["source__data_quality"] = data_quality[values["source"]]
+                if values["source"] in source_names:
+                  values["source__source_name"] = source_names[values["source"]]
+                if values["source"] in reference_users:
+                  values["source__reference_user"] = reference_users[values["source"]]
+                if values["source"] in source_descriptions:
+                  values["source__source_description"] = source_descriptions[values["source"]]
+                if values["source"] in data_quality:
+                  values["source__data_quality"] = data_quality[values["source"]]
 
 
             response = {"timeseries":ts_values}

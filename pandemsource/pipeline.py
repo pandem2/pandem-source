@@ -95,45 +95,111 @@ class Pipeline(worker.Worker):
         # Based on current status an action will be performed and the status will be updated
         # Jobs after submit that has just been submitted 
         # they will go to decompress or to format read
-        for job in self.job_steps['submitted_ended'].copy().values():
-            submitted_files = job['source_files']
-            if "decompress" not in job['dls_json']['acquisition'].keys():
+        jobs = self.job_steps['submitted_ended'].copy().values()
+        ipath = 0
+        done = False
+        while not done:
+          done = True
+          for job in jobs:
+            paths = job['source_files']
+            if ipath == 0:
+              if "decompress" not in job['dls_json']['acquisition'].keys():
                 self.update_job_step(job, 'read_format_started', 0.1)
-                self.send_to_readformat(submitted_files, job)
-            else:
+                self.pending_count[job["id"]] = len(paths)
+              else: 
+                self.pending_count[job["id"]] = len(paths) * len(filter_paths) 
+                filter_paths = job['dls_json']["acquisition"]["decompress"]["path"]
                 self.update_job_step(job, 'unarchive_started', 0.1)
-                self.send_to_unarchive(submitted_files, job)
-        
+            if ipath < len(paths):
+              done = False
+              if "decompress" not in job['dls_json']['acquisition'].keys():
+                self.send_to_readformat(paths[ipath], job)
+              else:
+                self.send_to_unarchive(paths[ipath], filter_paths, job)
+          ipath = ipath + 1
+
         # Jobs after decompression ends
-        for job in self.job_steps['unarchive_ended'].copy().values():
-            decompressed_files = self.decompressed_files[job['id']]
-            self.update_job_step(job, 'read_format_started', 0.2)
-            self.send_to_readformat(decompressed_files, job)
+        jobs = self.job_steps['unarchive_ended'].copy().values()
+        ipath = 0
+        done = False
+        while not done: 
+          done = True
+          for job in jobs:
+            paths = self.decompressed_files[job['id']]
+            if ipath == 0:
+              self.pending_count[job["id"]] = len(paths)
+              self.update_job_step(job, 'read_format_started', 0.2)
+            if ipath < len(paths):
+              done = False
+              self.send_to_readformat(paths[ipath], job)
+          ipath = ipath + 1
 
         # Jobs after read format ends
-        for job in self.job_steps['read_format_ended'].copy().values():
+        jobs = self.job_steps['read_format_ended'].copy().values()
+        ipath = 0
+        done = False
+        while not done: 
+          done = True
+          for job in jobs:
             dfs = self.job_df[job["id"]]
-            self.update_job_step(job, 'read_df_started', 0.3)
-            self.send_to_read_df(dfs, job)
+            paths = list(dfs.keys())
+            paths.sort()
+            if ipath == 0:
+              self.pending_count[job["id"]] = len(paths)
+              self.update_job_step(job, 'read_df_started', 0.3)
+            if ipath < len(paths):
+              done = False
+              path = paths[ipath]
+              self.send_to_read_df(dfs[path], path, job)
+          ipath = ipath + 1
         
         # Jobs after read df ends
-        for job in self.job_steps['read_df_ended'].copy().values():
+        jobs = self.job_steps['read_df_ended'].copy().values()
+        ipath = 0
+        done = False
+        while not done: 
+          done = True
+          for job in jobs:
             tuples = self.job_tuples[job["id"]]
-            self.update_job_step(job, 'standardize_started', 0.4)
-            self.send_to_standardize(tuples, job)
+            paths = list(tuples.keys())
+            paths.sort()
+            if ipath == 0:
+              self.pending_count[job["id"]] = len(paths)
+              self.update_job_step(job, 'standardize_started', 0.4)
+            if ipath < len(paths):
+              done = False
+              path = paths[ipath]
+              self.send_to_standardize(tuples[path], path, job)
+          ipath = ipath + 1
         
         # Jobs after standardize ends
-        for job in self.job_steps['standardize_ended'].copy().values():
+        jobs = self.job_steps['standardize_ended'].copy().values()
+        ipath = 0
+        done = False
+        while not done: 
+          done = True
+          for job in jobs:
             tuples = self.job_stdtuples[job["id"]]
-            # non standardized tuples can be deleted
-            self.job_tuples.pop(job["id"])
-            self.job_df.pop(job["id"])
-            if self.job_to_annotate(job):
+            paths = list(tuples.keys())
+            paths.sort()
+            if ipath == 0:
+              self.pending_count[job["id"]] = len(paths)
+              # non standardized tuples can be deleted
+              self.job_tuples.pop(job["id"])
+              self.job_df.pop(job["id"])
+              if self.job_to_annotate(job):
                 self.update_job_step(job, 'annotate_started', 0.5)
-                self.send_to_annotate(tuples, job)
-            else:
+              elif ipath == 0:
                 self.update_job_step(job, 'aggregate_started', 0.6)
+            
+            if ipath < len(paths):
+              done = False
+              path = paths[ipath]
+              if self.job_to_annotate(job):
+                self.send_to_annotate(tuples[path], path, job)
+              elif ipath == 0:
                 self.send_to_aggregate(tuples, job)
+          ipath = ipath + 1
 
         # Jobs after annnotate text ends
         for job in self.job_steps['annotate_ended'].copy().values():
@@ -200,22 +266,20 @@ class Pipeline(worker.Worker):
 
         self.update_job_step(job, 'submitted_ended', 0.05)
 
-    def send_to_readformat(self, paths, job):
-       self.pending_count[job["id"]] = len(paths)
+    def send_to_readformat(self, path, job):
        dls = job["dls_json"]
        format_name = dls["acquisition"]["format"]["name"].lower() if "format" in dls["acquisition"] and "name" in dls["acquisition"]["format"] else None
 
-       for file_path in paths:
-          if format_name == "csv" or file_path.endswith('.csv'):
-              self._frcsv_proxy.read_format_start(job, file_path)
-          elif format_name == "xml" or file_path.endswith('.rdf') or file_path.endswith('.xml'):
-              self._frxml_proxy.read_format_start(job, file_path)
-          elif format_name == "xls" or file_path.endswith(".xls") or file_path.endswith('.xlsx'):
-              self._frxls_proxy.read_format_start(job, file_path)
-          elif format_name == "json" or file_path.endswith('.json') or file_path.endswith('.json.gz'):
-              self._frjson_proxy.read_format_start(job, file_path)
-          else:
-              raise RuntimeError(f'Unsupported format in {file_path}')
+       if format_name == "csv" or path.endswith('.csv'):
+           self._frcsv_proxy.read_format_start(job, path)
+       elif format_name == "xml" or path.endswith('.rdf') or path.endswith('.xml'):
+           self._frxml_proxy.read_format_start(job, path)
+       elif format_name == "xls" or path.endswith(".xls") or path.endswith('.xlsx'):
+           self._frxls_proxy.read_format_start(job, path)
+       elif format_name == "json" or path.endswith('.json') or path.endswith('.json.gz'):
+           self._frjson_proxy.read_format_start(job, path)
+       else:
+           raise RuntimeError(f'Unsupported format in {path}')
 
     def read_format_end(self, job, path, df):
         if job["status"] == "failed":
@@ -226,12 +290,9 @@ class Pipeline(worker.Worker):
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'read_format_ended', 0.25)
 
-    def send_to_unarchive(self, paths, job):
-        filter_paths = job['dls_json']["acquisition"]["decompress"]["path"]
-        self.pending_count[job["id"]] = len(paths) * len(filter_paths) 
-        for archive_path in paths:
-          for filter_path in filter_paths:
-            self._unarchive_proxy.unarchive(archive_path, filter_path, job)
+    def send_to_unarchive(self, path, filter_paths, job):
+        for filter_path in filter_paths:
+          self._unarchive_proxy.unarchive(path, filter_path, job)
 
     
     def unarchive_end(self, archive_path, filter_path, bytes, job):
@@ -247,10 +308,8 @@ class Pipeline(worker.Worker):
         if self.pending_count[job["id"]] == 0:
             self.update_job_step(job, 'unarchive_ended', 0.15)
 
-    def send_to_read_df(self, dfs, job):
-        self.pending_count[job["id"]] = len(dfs)
-        for path, df in dfs.items():
-            self._dfreader_proxy.df2tuple(df, path, job, job["dls_json"])
+    def send_to_read_df(self, df, path, job):
+        self._dfreader_proxy.df2tuple(df, path, job, job["dls_json"])
 
     def read_df_end(self, tuples, n_tuples, issues, path, job): 
         if job["status"] == "failed":
@@ -272,12 +331,10 @@ class Pipeline(worker.Worker):
         else:
             self.update_job_step(job, job["step"], 0.3 + progress)
 
-    def send_to_standardize(self, tuples, job):
+    def send_to_standardize(self, tuples, path, job):
         if job["status"] == "failed":
           return
-        self.pending_count[job["id"]] = len(tuples)
-        for path, ttuples in tuples.items():
-            self._standardizer_proxy.standardize(ttuples, path, job, job["dls_json"])
+        self._standardizer_proxy.standardize(tuples, path, job, job["dls_json"])
 
     def standardize_end(self, tuples, n_tuples, issues, path, job): 
         if job["status"] == "failed":
@@ -307,10 +364,8 @@ class Pipeline(worker.Worker):
         else:
             self.update_job_step(job, job["step"], 0.4 + progress)
 
-    def send_to_annotate(self, tuples, job):
-        self.pending_count[job["id"]] = len(tuples)
-        for path, ttuples in tuples.items():
-            self._nlp_proxy.annotate(ttuples, path, job)
+    def send_to_annotate(self, tuples, path, job):
+        self._nlp_proxy.annotate(tuples, path, job)
 
     def annotate_end(self, tuples, path, job):
         if job["status"] == "failed":

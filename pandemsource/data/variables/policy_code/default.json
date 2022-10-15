@@ -1,0 +1,82 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "government_policy": "No contact tracing"
+            },
+            "attr": {
+                "policy_code": "no_contact_tracing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "2",
+                "source": "pandem2",
+                "file": "",
+                "government_policy": "Limited contact tracing"
+            },
+            "attr": {
+                "policy_code": "limited_contact_tracing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "3",
+                "source": "pandem2",
+                "file": "",
+                "government_policy": "Comprehensive contact tracing"
+            },
+            "attr": {
+                "policy_code": "comprehensive_contact_tracing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "4",
+                "source": "pandem2",
+                "file": "",
+                "government_policy": "No testing"
+            },
+            "attr": {
+                "policy_code": "no_testing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "5",
+                "source": "pandem2",
+                "file": "",
+                "government_policy": "Testing specific population with symptomps"
+            },
+            "attr": {
+                "policy_code": "symptoms_restricted_testing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "6",
+                "source": "pandem2",
+                "file": "",
+                "government_policy": "Testing population with symptomps"
+            },
+            "attr": {
+                "policy_code": "symptoms_testing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "7",
+                "source": "pandem2",
+                "file": "",
+                "government_policy": "Testing open to entire population"
+            },
+            "attr": {
+                "policy_code": "open_testing"
+            }
+        }
+    ]
+}
+

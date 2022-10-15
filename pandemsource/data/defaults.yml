@@ -10,6 +10,15 @@ pandem:
     nlp:
       active: True
       models_path:  ""
+      evaluation_steps:
+        - ["aspect_classification_ohe", "emotion_classification_multi"]
+        - ["aspect_classification_ohe", "sentiment_classification"]
+        - ["aspect_classification_ohe", "suggestion_classification"]
+      aliases:
+        emotion_classification_multi: emotion
+        sentiment_classification: sentiment
+        suggestion_classification: suggestion
+        aspect_classification_ohe: aspect
       languages:
         en:
           - emotion_classification_multi
@@ -34,30 +43,31 @@ pandem:
           - non-suggestion
           - suggestion 
         aspect_classification_ohe:
-          - healthcare worker
-          - vaccine mandate
-          - care home
-          - death rate
-          - social distancing rule
-          - positive for covid
+          - healthcare-worker
+          - vaccine-mandate
+          - care-home
+          - death-rate
+          - social-distancing-rule
+          - positive-for-covid
           - covid
-          - public health
+          - public-health
           - coronavirus
-          - covid case
+          - covid-case
           - vaccine
-          - relief bill
-          - covid test
+          - relief-bill
+          - covid-test
           - govt
           - corona
           - pandemic
           - mask
-          - dose of vaccine
+          - dose-of-vaccine
           - flu
           - school
-          - immune system
+          - immune-system
           - business
           - patient
       use_sudo: false
+      chunk_size: 500
       tensorflow_server_host:  "localhost"
       tensorflow_server_port:  8501
       tensorflow_server_protocol:  "http"

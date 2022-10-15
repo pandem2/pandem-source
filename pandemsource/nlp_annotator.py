@@ -24,6 +24,9 @@ class NLPAnnotator(worker.Worker):
           self._tf_version = settings["pandem"]["source"]['nlp']["tensorflow_server_version"]
           self._model_categories = settings["pandem"]["source"]["nlp"]["categories"]
           self._model_languages = settings["pandem"]["source"]["nlp"]["languages"]
+          self._chunk_size = settings["pandem"]["source"]["nlp"]["chunk_size"]
+          self._aliases = settings["pandem"]["source"]["nlp"]["aliases"]
+          self._evaluation_steps = settings["pandem"]["source"]["nlp"]["evaluation_steps"]
     def on_start(self):
         super().on_start()
         if self.run:
@@ -42,7 +45,8 @@ class NLPAnnotator(worker.Worker):
         # gathering information about nlp categories
         endpoints = self.model_endpoints()
         categories = {m:self._model_categories[m] for m in endpoints.keys() if (m in self._model_categories) }
-        
+        steps = self._evaluation_steps
+        model_aliases = {m:(self._aliases[m] if m in self._aliases else m) for m in categories}
         #gatherint information for geo annotation
         variables = self._variables_proxy.get_variables().get()
         geos = {var["variable"] for var in variables.values() if var["type"] == "geo_referential"}
@@ -51,17 +55,17 @@ class NLPAnnotator(worker.Worker):
           for var in variables.values() 
           if var["type"] in ["referential_alias", "referential_label"] and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos
         }
-        aliases = {}
+        geo_aliases = {}
         for alias_var, code_var in alias_vars.items():
           alias_values = self._variables_proxy.read_variable(alias_var, {}).get()
           if alias_values is not None:
             alias_map = {t["attr"][alias_var].lower():t["attrs"][code_var] for t in alias_values if "attr" in t and "attrs" in t and alias_var in t["attr"] and code_var in t["attrs"]} 
-            if code_var not in aliases:
-              aliases[code_var] = alias_map
+            if code_var not in geo_aliases:
+              geo_aliases[code_var] = alias_map
             else :
-              aliases[code_var].update(alias_map)
+              geo_aliases[code_var].update(alias_map)
         
-        alias_regex = {code_var:re.compile('|'.join([f"\\b{re.escape(alias)}\\b" for alias in aliases[code_var]])) for code_var in aliases}
+        alias_regex = {code_var:re.compile('|'.join([f"\\b{re.escape(alias)}\\b" for alias in geo_aliases[code_var]])) for code_var in geo_aliases}
 
         text_field = "article_text"
         lang_field = "article_language"
@@ -71,8 +75,9 @@ class NLPAnnotator(worker.Worker):
         annotated = []
         count = 0
         for lang in self._model_languages:
-          for to_annotate in self.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), 10000):
-            # Annotating using tensorflow categories
+          for to_annotate in self.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), self._chunk_size):
+            # Getting annotations for chunks using tensorflow server for all categories in language
+            annotations = {}
             for m in categories.keys():
               if m in self._model_languages[lang]: 
                 texts = (t["attrs"][text_field] for t in to_annotate)
@@ -80,21 +85,26 @@ class NLPAnnotator(worker.Worker):
                 result = requests.post(f"{endpoints[m]}:predict", data = data, headers = {'content-type': "application/json"}).content
                 #print(f"++++++++++++++++++++++++++++++  {m}")
                 #pprint(json.loads(result))
-                annotations = json.loads(result)["predictions"]
-                for t, pred in zip(to_annotate, annotations):
-                  #best = functools.reduce(lambda a, b: a if a[1]>b[1] else b, enumerate(pred))[0]
-                  in_class = [a for a, b in enumerate(pred) if b >=0.5]
-                  for ic in in_class:
-                    at = copy.deepcopy(t)
-                    # adding default predictions as all for all categories
-                    for mm in categories.keys():
-                      if mm in self._model_languages[lang]: 
-                        at["attrs"][f"article_cat_{mm}"] = "All"
-                    # creating a new tuple with the positive category for this model
-                    at["attrs"][f"article_cat_{m}"] = categories[m][ic]
-                    annotated.append(at)
-                  # updating exitsting tuple with category ALL
-                  t["attrs"][f"article_cat_{m}"] = "All"
+                res =  json.loads(result)
+                if "predictions" not in res:
+                  raise ValueError(f"Not prediction found on tensorflow response: {res}")
+                annotations[m] = res["predictions"]
+            # creating annotated tuples per step
+            for step in steps:
+              for i in range(0, len(to_annotate)):
+                #getting default predection per model
+                predictions = {m:[(m,None)] for m in categories.keys()}
+                #getting positive predictions on step models
+                for m in step:
+                  predictions[m] = [(m, a) for a, b in enumerate(annotations[m][i]) if b >=0.5]
+                
+                #generating a tuple for each combination of positive predictions
+                model_classes = [*itertools.product(*predictions.values()) ]
+                for allclasses in model_classes:
+                  at = copy.deepcopy(to_annotate[i])
+                  for m, ic in allclasses:
+                    at["attrs"][model_aliases[m]] = categories[m][ic] if ic is not None else "All"
+                  annotated.append(at)
             count = count + len(to_annotate)
             l.debug(f"{count} articles annotated")
         l.debug("Evaluating geolocation")
@@ -118,7 +128,7 @@ class NLPAnnotator(worker.Worker):
               if match is not None:
                 matched_alias = match.group()
                 at = copy.deepcopy(t)
-                at["attrs"][geo_var] = aliases[geo_var][matched_alias]
+                at["attrs"][geo_var] = geo_aliases[geo_var][matched_alias]
                 geo_annotated.append(at)
               t["attrs"][geo_var] = "All"
             count = count + 1
@@ -135,7 +145,7 @@ class NLPAnnotator(worker.Worker):
         for t in list_of_tuples['tuples']:
           if 'attrs' in t and lang_field in t['attrs']:
             t['attrs'].pop(lang_field)
-              
+        
         ret = self._storage_proxy.to_job_cache(job["id"], f"std_{path}", list_of_tuples).get()
         self._pipeline_proxy.annotate_end(ret, path = path, job = job)
         return ret

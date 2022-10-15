@@ -187,6 +187,7 @@ class DataframeReader(worker.Worker):
         col_issues = self.check_df_columns(df = df, job = job, dls = dls, file_name = path, variables = variables)
         issues = list([i for i in col_issues.values() if i is not None]) 
         types_ok = dict((t["name"],  t["name"] in col_issues and col_issues[t["name"]] is None) for t in  dls['columns'])
+        col_scopes = dict((t["name"],  t["scope"] if "scope" in t else {}) for t in  dls['columns'])
         col_vars = dict((t["name"], t["variable"]) for t in  dls['columns'] if 'variable' in t)
         formats = {v:self.format_for(v, dls, variables) for v in col_vars.values()}
         col_types = dict((k,variables[v]["type"]) for k,v in col_vars.items() if v in variables)
@@ -197,13 +198,24 @@ class DataframeReader(worker.Worker):
             ("action" in t and t["action"] == "insert" or col_types[t["name"]] in ["observation", "indicator", "resource"])
         )
         attr_cols = {}
+        insert_scope = {}
         for col in insert_cols.keys():
+          # Defining attributes fo reach insert columns
           typ = col_types[col]
           if typ in ["observation", "indicator", "resource"]:
             attr_cols[col] =  [k for k, v in col_types.items() if v not in  ["observation", "indicator", "resource"] and types_ok[k]]
           else:
             attr_cols[col] =  [k for k, v in col_vars.items() if types_ok[k] and v not in  ["observation", "indicator", "resource"] and k != col]
+        
+          # dealing with custom scopes defined on DLS columns
+          insert_scope[col] = {}
+          for c in attr_cols[col]:
+            insert_scope[col].update(col_scopes[c])
+          insert_scope[col].update(col_scopes[col])
+        
+
         tuples = []
+        creation = datetime.now().isoformat()
         for row in range(len(df)):
             for col, group in insert_cols.items():
                 tup = {
@@ -211,6 +223,7 @@ class DataframeReader(worker.Worker):
                     "line_number":df["line_number"][row]
                     ,"source":dls["scope"]["source"]
                     ,"file":file_name
+                    ,"created_on": creation
                   },
                 }
                 self.translate_or_issue(
@@ -244,7 +257,10 @@ class DataframeReader(worker.Worker):
                         var_name = col_vars[attr_col],
                         variables = variables
                     )
-                tuples.append(tup)
+                # adding custom scopes
+                tup["attrs"].update(insert_scope[col])
+                if group in tup:
+                  tuples.append(tup)
         ret = {"scope":dls["scope"].copy()}
         ret["scope"]["file_name"] = file_name
         # validating that globals are property instantiated

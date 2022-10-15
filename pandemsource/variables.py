@@ -152,15 +152,15 @@ class Variables(worker.Worker):
               for modifier in aliases[var]["modifiers"]:
                 tt["attrs"][modifier['variable']] = modifier['value']
           return tt
-    def mem(self, msg):
-      import psutil
-      print(f"------{msg}: Used Mem: {psutil.virtual_memory().used / (1024*1024*1024)}")
+    #def mem(self, msg):
+      #import psutil
+      #print(f"------{msg}: Used Mem: {psutil.virtual_memory().used / (1024*1024*1024)}")
 
     def write_variable(self, input_tuples, step, job):
         # if input_tuples is in cache get its value
         if type(input_tuples) == CacheValue:
           input_tuples = input_tuples.value()
-        self.mem("pub 0")
+        #self.mem("pub 0")
         variables = self.get_variables()
         partition_dict = defaultdict(list)
         if step ==0:
@@ -182,7 +182,7 @@ class Variables(worker.Worker):
                         var_name = list(t[key].keys())[0]
                 if var_name is not None:
                   partition_dict[var_name].append(t)
-            self.mem("pub 1")
+            #self.mem("pub 1")
 
             # building the dict tuples per destination files
             partition_dict_final = defaultdict(lambda: defaultdict(list))
@@ -190,7 +190,7 @@ class Variables(worker.Worker):
                 for t in tuple_list:
                     file_name = self.get_partition(t, variables[var]["partition"])
                     partition_dict_final[var][file_name].append(t)
-            self.mem("pub 3")
+            #self.mem("pub 3")
             
             # identifying the scope of data that will be replaced by current tuples
             update_filter = []
@@ -202,7 +202,7 @@ class Variables(worker.Worker):
             
             # Iterating on each variable to write
             for var, tuples_dict in partition_dict_final.items():
-                self.mem("pub 4")
+                #self.mem("pub 4")
                 var_dir = util.pandem_path('files/variables', var)
                 if not os.path.exists(var_dir):
                     os.makedirs(var_dir)
@@ -318,7 +318,7 @@ class Variables(worker.Worker):
         if tuples is not None:
           for t in tuples:
             # file_keys are the non null attrs from in the tuples to be considered as time series keys
-            file_keys = sorted(attr for attr in t["attrs"].keys() if dico_vars[attr]["type"] in types and (t["attrs"][attr] is not None)) # or (var in modifiers and attr in modifiers[var])
+            file_keys = sorted(attr for attr in t["attrs"].keys() if attr in dico_vars and dico_vars[attr]["type"] in types and (t["attrs"][attr] is not None)) # or (var in modifiers and attr in modifiers[var])
             # free_keys are the keys in the file which are not modified
             free_keys = list(attr for attr in file_keys if not var in modifiers or attr not in modifiers[var])
             if tuple((k, t["attrs"][k]) for k in free_keys) in key_map:

@@ -226,21 +226,44 @@ def do_start(args, *other):
     return None
   
   if args.restart_job > 0:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = False, restart_job = args.restart_job, retry_active = True, force_acquire = args.force_acquire, no_nlp = args.no_nlp)
+    orchestrator_ref = Orchestration.start(
+      settings, 
+      start_acquisition = False, 
+      retry_failed = False, 
+      restart_job = args.restart_job, 
+      retry_active = True, 
+      force_acquire = args.force_acquire, 
+      no_nlp = args.no_nlp
+    )
     orch = orchestrator_ref.proxy()
   elif args.limit_collection is not None:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = False, retry_failed = args.retry_failed, restart_job = args.restart_job, retry_active = not args.not_retry_active, force_acquire = args.force_acquire, no_nlp = args.no_nlp)
+    orchestrator_ref = Orchestration.start(
+      settings, start_acquisition = False, 
+      retry_failed = args.retry_failed, 
+      restart_job = args.restart_job, 
+      retry_active = 
+      not args.not_retry_active, 
+      force_acquire = args.force_acquire, 
+      no_nlp = args.no_nlp
+    )
     orch = orchestrator_ref.proxy()
     storage_proxy = orch.get_actor("storage").get().proxy()
     dls_files = storage_proxy.list_files('source-definitions').get()
     dls_dicts = [storage_proxy.read_file(file_name['path']).get() for file_name in dls_files if file_name['path'].endswith(".json")]
     for source_name in args.limit_collection.split(","):
-      dlss = list(filter(lambda dls: dls['scope']['source'] == source_name or (source_name in dls['scope']['tags'] and (dls['acquisition'].get("active") != false)), dls_dicts))
+      dlss = list(filter(lambda dls: dls['scope']['source'] == source_name or (source_name in dls['scope']['tags'] and (dls['acquisition'].get("active") != False)), dls_dicts))
       for dls in dlss:
         acquisition_proxy = orch.get_actor(f"acquisition_{dls['acquisition']['channel']['name']}").get().proxy()
         acquisition_proxy.add_datasource(dls, args.force_acquire)
   else:
-    orchestrator_ref = Orchestration.start(settings, start_acquisition = not args.no_acquire, retry_failed = args.retry_failed, retry_active = not args.not_retry_active, force_acquire = args.force_acquire, no_nlp = args.no_nlp)
+    orchestrator_ref = Orchestration.start(
+      settings, 
+      start_acquisition = not args.no_acquire, 
+      retry_failed = args.retry_failed, 
+      retry_active = not args.not_retry_active, 
+      force_acquire = args.force_acquire, 
+      no_nlp = args.no_nlp
+    )
     orch = orchestrator_ref.proxy()
 
   # launching pandem2source app

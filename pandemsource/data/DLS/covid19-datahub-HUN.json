@@ -44,8 +44,13 @@
       {"name":"hosp", "variable":"hospitalised_infected_patients"},
       {"name":"icu", "variable":"icu_patients"},
       {"name":"vent", "variable":"number_of_patients_with_ventilator"},
-      {"name":"contact_tracing", "variable":"contact_tracing_policy_code"},
-      {"name":"testing_policy", "variable":"testing_policy_code"},
+      {"name":"no_tracing", "variable":"implemented_policy", "scope":{"policy_code":"no_contact_tracing"}},
+      {"name":"limited_tracing", "variable":"implemented_policy", "scope":{"policy_code":"limited_contact_tracing"}},
+      {"name":"comprehensive_tracing", "variable":"implemented_policy", "scope":{"policy_code":"comprehensive_contact_tracing"}},
+      {"name":"no_testing", "variable":"implemented_policy", "scope":{"policy_code":"no_testing"}},
+      {"name":"symptoms_limited_testing", "variable":"implemented_policy", "scope":{"policy_code":"symptoms_restricted_testing"}},
+      {"name":"symptoms_testing", "variable":"implemented_policy", "scope":{"policy_code":"symptoms_testing"}},
+      {"name":"open_testing", "variable":"implemented_policy", "scope":{"policy_code":"open_testing"}},
       {"name":"population", "variable":"population"},
       {"name":"key_nuts", "variable":"geo_code"}
     ]
