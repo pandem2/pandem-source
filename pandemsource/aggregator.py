@@ -1,11 +1,13 @@
 import time
 from . import worker
 from abc import ABC, abstractmethod, ABCMeta
-import logging as l
 import numpy as np
 import copy
 import json
 from .util import JsonEncoder
+import logging
+
+l = logging.getLogger("pandem.aggregator")
 
 class Aggregator(worker.Worker):
   __metaclass__ = ABCMeta  
@@ -19,32 +21,38 @@ class Aggregator(worker.Worker):
       self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
 
   def aggregate(self, list_of_tuples, job):
-    list_of_tuples = self.prepare_tuples(list_of_tuples)
+    list_of_tuples = self.distribute_tuples_by_var(list_of_tuples, job["id"])
 
     variables = self._variables_proxy.get_variables().get()
-    cumm = {}
-    untouched = []
     geos = {var["variable"] for var in variables.values() if var["type"] == "geo_referential"}
     geo_parents = {var["linked_attributes"][0]:var["variable"] for var in variables.values() if var["type"] == "referential_parent" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos}
 
     var_asc = {code:self.rel_ascendants(self.descendants(code, parent)) for code, parent in geo_parents.items()}
-    for t in [t for t in list_of_tuples['tuples'] if "attr" in t or "obs" in t]:
-      aggr_func =  self.tuple_aggregate_function(t, variables)
-      if aggr_func is None:
-        untouched.append(t)
-      else:
-        for aggr_key, tt in self.pairs_to_aggregate(t, var_asc, variables):
-          if not aggr_key in cumm:
-            cumm[aggr_key] = tt
-          else:
-            var_name = list(t["obs"].keys())[0]
-            cumm[aggr_key]["obs"][var_name] = aggr_func([cumm[aggr_key]["obs"][var_name], tt["obs"][var_name]])
+    nvars = len(list_of_tuples)
+    ndone = 0
+    for var, var_tuples in list_of_tuples.items():
+      # getting vartuples value from cache
+      var_tuples = var_tuples.value()
+      cumm = {}
+      untouched = []
+      for t in [t for t in var_tuples['tuples'] if "attr" in t or "obs" in t]:
+        aggr_func =  self.tuple_aggregate_function(t, variables)
+        if aggr_func is None:
+          untouched.append(t)
+        else:
+          for aggr_key, tt in self.pairs_to_aggregate(t, var_asc, variables):
+            if not aggr_key in cumm:
+              cumm[aggr_key] = tt
+            else:
+              var_name = list(t["obs"].keys())[0]
+              cumm[aggr_key]["obs"][var_name] = aggr_func([cumm[aggr_key]["obs"][var_name], tt["obs"][var_name]])
 
-    result = list_of_tuples.copy()
-    result['tuples'] = untouched + [*cumm.values()]
-    
-    ret = self._storage_proxy.to_job_cache(job["id"], f"agg", result).get()
-    self._pipeline_proxy.aggregate_end(ret, job = job)
+      result = var_tuples.copy()
+      result['tuples'] = untouched + [*cumm.values()]
+      
+      ret = self._storage_proxy.to_job_cache(job["id"], f"agg_{var}", result).get()
+      ndone = ndone + 1
+      self._pipeline_proxy.aggregate_end(tuples = ret, var = var, progress = ndone/nvars, job = job)
 
   def descendants(self, code, parent):
     codes = self._variables_proxy.get_referential(code).get()
@@ -121,22 +129,39 @@ class Aggregator(worker.Worker):
             if(code != asc): # we have to remove the idenntity since it was already added
               yield (json.dumps({list(t["obs"].keys())[0]:[(key,c["attrs"][key]) for key in keys]}, cls=JsonEncoder), c)
 
-  def prepare_tuples(self, tuples):
-    tts = {
-      "tuples":[],
-      "scope":{"update_scope":{}}
-    }
+  def distribute_tuples_by_var(self, tuples, job_id):
+    tts = {}
     for p, tt in tuples.items():
       if tt is not None:
         # getting tuples from cache
         tt = tt.value()
-        tts['tuples'].extend(tt['tuples'])
-        for u in tt['scope']['update_scope']:
-          v = u["value"] if type(u["value"]) in [list, set] else [u["value"]]
-          if u['variable'] in tts['scope']['update_scope'] :
-             tts['scope']['update_scope'][u['variable']].update(v)
-          else:
-             tts['scope']['update_scope'][u['variable']] = set(v)
+        vars_in_path = set()
+        for t in tt['tuples']:
+          var = None
+          for group in t.keys():
+            if group !="attrs":
+              var = next(iter(t[group].keys()))
+          # initialization of the variables container (once per variable)
+          if var not in tts and var is not None:
+            tts[var] = {
+              "tuples":[],
+              "scope":{"update_scope":{}}
+            }
+          # If current variable is the first variable in path add all tuples of this variable
+          if var not in vars_in_path:
+            tts[var]['tuples'].extend(t for t in tt['tuples'] if var in t[group])
+            vars_in_path.add(var)
+            # updating the update scope 
+            for u in tt['scope']['update_scope']:
+              v = u["value"] if type(u["value"]) in [list, set] else [u["value"]]
+              if u['variable'] in tts[var]['scope']['update_scope'] :
+                 tts[var]['scope']['update_scope'][u['variable']].update(v)
+              else:
+                 tts[var]['scope']['update_scope'][u['variable']] = set(v)
 
-    tts['scope']['update_scope'] = [{"variable":k, "value":list(v)} for k, v in tts['scope']['update_scope'].items()]
+    for var in tts.keys(): 
+      tts[var]['scope']['update_scope'] = [{"variable":k, "value":list(v)} for k, v in tts[var]['scope']['update_scope'].items()]
+      #storing results distributed by variables on cache
+      tts[var] = self._storage_proxy.to_job_cache(job_id, f"agg_{var}", tts[var]).get()
+    l.debug("Tuples redistributed by variables")
     return tts

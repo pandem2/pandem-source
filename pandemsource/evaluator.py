@@ -77,9 +77,7 @@ class Evaluator(worker.Worker):
             return False
       return True
 
-    def plan_calculate(self, list_of_tuples, job):
-        # getting tuples from cache
-        list_of_tuples = list_of_tuples.value()['tuples']
+    def plan_calculate(self, dic_of_tuples, job):
         
         var_dic = self._dict_of_variables
         modifiers = self._modifiers
@@ -88,29 +86,34 @@ class Evaluator(worker.Worker):
         obs_keys = {}
         obs_aliases = {}
         next_keys = {}
-        for t in list_of_tuples:
-          if "obs" in t and "attrs" in t: 
-            base_name = next(iter(t["obs"].keys()))
-            var_names = [base_name]
-            # evaluating if current tuple is a derived variable (to allow proper detection of derivated user provided variables)
-            if 'aliases' in  var_dic[base_name]:
-              for alias in var_dic[base_name]['aliases']:
-                if all(m['variable'] in t['attrs'] and t['attrs'][m['variable']] == m['value'] for m in alias['modifiers']):
-                  var_names.append(alias['alias'])
-            
-            for var_name in var_names:
-              if var_name in params_set or var_name in parameters.keys():
-                if var_name not in obs_keys:
-                  obs_keys[var_name] = {
-                    "comb":set(),
-                    "dates":set()
-                  }
-                date_attrs = set(vn for vn in t["attrs"].keys() if var_dic[vn]['type'] == 'date' and t["attrs"][vn] is not None)
-                independent_attrs = [t for t in t["attrs"].keys() if t not in modifiers[var_name] or  modifiers[var_name][t] is not None]
-                sorted_attrs = list(sorted(vn for vn in independent_attrs if var_dic[vn]['type'] not in ['not_characteristic', 'date', 'private'] and t["attrs"][vn] is not None))
-                if len(sorted_attrs) > 0 and len(date_attrs)>0:
-                  obs_keys[var_name]["comb"].add(tuple((vn, t["attrs"][vn]) for vn in sorted_attrs))
-                  obs_keys[var_name]["dates"].add(tuple((vn, t["attrs"][vn]) for vn in date_attrs))
+       
+        for var, ttuples in dic_of_tuples.items():
+          # getting tuples from cache
+          list_of_tuples = ttuples.value()['tuples']
+          
+          for t in list_of_tuples:
+            if "obs" in t and "attrs" in t: 
+              base_name = next(iter(t["obs"].keys()))
+              var_names = [base_name]
+              # evaluating if current tuple is a derived variable (to allow proper detection of derivated user provided variables)
+              if 'aliases' in  var_dic[base_name]:
+                for alias in var_dic[base_name]['aliases']:
+                  if all(m['variable'] in t['attrs'] and t['attrs'][m['variable']] == m['value'] for m in alias['modifiers']):
+                    var_names.append(alias['alias'])
+              
+              for var_name in var_names:
+                if var_name in params_set or var_name in parameters.keys():
+                  if var_name not in obs_keys:
+                    obs_keys[var_name] = {
+                      "comb":set(),
+                      "dates":set()
+                    }
+                  date_attrs = set(vn for vn in t["attrs"].keys() if var_dic[vn]['type'] == 'date' and t["attrs"][vn] is not None)
+                  independent_attrs = [t for t in t["attrs"].keys() if t not in modifiers[var_name] or  modifiers[var_name][t] is not None]
+                  sorted_attrs = list(sorted(vn for vn in independent_attrs if var_dic[vn]['type'] not in ['not_characteristic', 'date', 'private'] and t["attrs"][vn] is not None))
+                  if len(sorted_attrs) > 0 and len(date_attrs)>0:
+                    obs_keys[var_name]["comb"].add(tuple((vn, t["attrs"][vn]) for vn in sorted_attrs))
+                    obs_keys[var_name]["dates"].add(tuple((vn, t["attrs"][vn]) for vn in date_attrs))
 
 
         var_obs = {}

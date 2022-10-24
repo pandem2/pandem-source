@@ -211,13 +211,20 @@ class Storage(worker.Worker):
       key = str(key)
       with self.get_job_cache(job_id) as cache:
         cache[key] = data
+        cache.close()
       return CacheValue(job_id, key, self._self_proxy)
 
     def from_job_cache(self, job_id, key):
       job_id = int(job_id)
       key = str(key)
       with self.get_job_cache(job_id) as cache:
-        return cache[key]
+        try:
+          ret =  cache[key]
+        except KeyError:
+          ret = None
+        finally: 
+          cache.close()
+        return ret
 
     def delete_job_cache(self, job_id):
       job_id = int(job_id)

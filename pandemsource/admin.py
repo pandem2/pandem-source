@@ -274,4 +274,3 @@ def list_sources(local = True, default = False, missing_local = False, missing_d
   return ret
 
 
-

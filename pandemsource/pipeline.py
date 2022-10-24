@@ -9,7 +9,8 @@ from collections import defaultdict
 from . import worker
 from . import util
 from abc import ABC, abstractmethod, ABCMeta
-
+from .util import printMem
+import pickle
 import logging
 
 l = logging.getLogger("pandem.pipeline")
@@ -44,17 +45,18 @@ class Pipeline(worker.Worker):
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
         self.job_stdtuples = defaultdict(dict)
-        self.job_aggrtuples = {}
+        self.job_aggrtuples = defaultdict(dict)
         self.job_precalinds = {}
         self.job_indicators = {}
         self.job_issues = defaultdict(list)
         self.pending_count = {}
+        self.pending_total = {}
 
         
 
         self.job_dicos = [
           self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.job_aggrtuples, 
-          self.job_precalinds, self.job_indicators, self.pending_count, self.job_issues
+          self.job_precalinds, self.job_indicators, self.pending_count, self.pending_total, self.job_issues
         ]
 
         self.last_step = "ended"
@@ -216,18 +218,32 @@ class Pipeline(worker.Worker):
             self.send_to_precalculate(tuples, job)
         
         # Jobs after precalculate ends
-        for job in self.job_steps['precalculate_ended'].copy().values():
-            tuples = self.job_aggrtuples[job["id"]]
-            # aggregated tuples are not necessary anymore
-            self.job_aggrtuples.pop(job["id"])
+        jobs = self.job_steps['precalculate_ended'].copy().values()
+        ivar = 0
+        done = False
+        while not done: 
+          done = True
+          for job in jobs:
+            var_list = [*self.job_aggrtuples[job["id"]].keys()]
+            if ivar == 0:
+              self.pending_count[job["id"]] = len(var_list)
+              self.pending_total[job["id"]] = len(var_list)
+              self.update_job_step(job, 'publish_started', 0.9)
+            if ivar < len(var_list):
+              done = False
+              tuples = self.job_aggrtuples[job["id"]][var_list[ivar]]
+              self.send_to_publish(tuples, job)
+            if ivar == len(var_list):
+              # aggregated tuples are not necessary anymore
+              self.job_aggrtuples.pop(job["id"])
+          ivar = ivar + 1
 
-            self.update_job_step(job, 'publish_started', 0.9)
-            self.send_to_publish(tuples, job)
 
         # Jobs after calculate ends
         for job in self.job_steps['calculate_ended'].copy().values():
             indicators_tuples = self.job_indicators[job["id"]]
             self.update_job_step(job, 'publish_started', 0.9)
+            self.pending_count[job["id"]] = 1
             self.send_to_publish(indicators_tuples, job)
 
         # Jobs after publish indicator ended
@@ -378,11 +394,16 @@ class Pipeline(worker.Worker):
     def send_to_aggregate(self, tuples, job):
         self._aggregate_proxy.aggregate(tuples, job)
 
-    def aggregate_end(self, tuples, job): 
+    def aggregate_end(self, tuples, var, progress, job): 
         if job["status"] == "failed":
           return
-        self.job_aggrtuples[job["id"]] = tuples
-        self.update_job_step(job, 'aggregate_ended', 0.65)
+        
+        self.job_aggrtuples[job["id"]][var] = tuples
+        
+        if progress == 1:
+          self.update_job_step(job, 'aggregate_ended', 0.7)
+        else:
+          self.update_job_step(job, job["step"], 0.6 + progress / 10)
     
     def send_to_precalculate(self, tuples, job):
         self._evaluator_proxy.plan_calculate(tuples, job)
@@ -405,16 +426,23 @@ class Pipeline(worker.Worker):
 
     def send_to_publish(self, tuples, job):
         calc_step = self.job_precalstep[job['id']]
+
         self._variables_proxy.write_variable(tuples, calc_step, job)
     
     def publish_end(self, job): 
         if job["status"] == "failed":
           return
-        self.update_job_step(job, 'publish_ended', 0.95)
+        self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
+        progress =  ((self.pending_total[job["id"]] - self.pending_count[job["id"]]) / self.pending_total[job["id"]])/10
+        if self.pending_count[job["id"]] == 0:
+          self.update_job_step(job, 'publish_ended', 1)
+        else:
+          self.update_job_step(job, job["step"], 0.9 + progress)
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step, progress):
         l.debug(f"Changing to step {step} for job {int(job['id'])} source {job['dls_json']['scope']['source']} {round(progress*100, 1)}%")
+        printMem()
         # removing job from current step dict
         if job["step"] in self.job_steps and job["id"]:
           if job["id"] in self.job_steps[job["step"]]:

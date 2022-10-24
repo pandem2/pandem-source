@@ -9,6 +9,7 @@ import datetime
 import numpy
 from collections import defaultdict
 from .util import JsonEncoder
+from .util import printMem
 import logging
 import pickle
 import copy
@@ -152,15 +153,13 @@ class Variables(worker.Worker):
               for modifier in aliases[var]["modifiers"]:
                 tt["attrs"][modifier['variable']] = modifier['value']
           return tt
-    #def mem(self, msg):
-      #import psutil
-      #print(f"------{msg}: Used Mem: {psutil.virtual_memory().used / (1024*1024*1024)}")
 
     def write_variable(self, input_tuples, step, job):
         # if input_tuples is in cache get its value
         if type(input_tuples) == CacheValue:
           input_tuples = input_tuples.value()
-        #self.mem("pub 0")
+
+        printMem("pub 0")
         variables = self.get_variables()
         partition_dict = defaultdict(list)
         if step ==0:
@@ -182,7 +181,7 @@ class Variables(worker.Worker):
                         var_name = list(t[key].keys())[0]
                 if var_name is not None:
                   partition_dict[var_name].append(t)
-            #self.mem("pub 1")
+            printMem("pub 1")
 
             # building the dict tuples per destination files
             partition_dict_final = defaultdict(lambda: defaultdict(list))
@@ -190,7 +189,7 @@ class Variables(worker.Worker):
                 for t in tuple_list:
                     file_name = self.get_partition(t, variables[var]["partition"])
                     partition_dict_final[var][file_name].append(t)
-            #self.mem("pub 3")
+            printMem("pub 2")
             
             # identifying the scope of data that will be replaced by current tuples
             update_filter = []
@@ -202,7 +201,7 @@ class Variables(worker.Worker):
             
             # Iterating on each variable to write
             for var, tuples_dict in partition_dict_final.items():
-                #self.mem("pub 4")
+                printMem("pub 3")
                 var_dir = util.pandem_path('files/variables', var)
                 if not os.path.exists(var_dir):
                     os.makedirs(var_dir)

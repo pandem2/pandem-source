@@ -5,6 +5,13 @@ import numpy
 import io
 import getpass
 import yaml
+import psutil
+import logging
+l = logging.getLogger("pandem.perf")
+
+
+def printMem(msg = ""):
+  l.debug(f"{msg} Used Mem: {psutil.virtual_memory().used / (1024*1024*1024)}")
 
 def check_pandem_home():
   if os.environ.get("PANDEM_HOME") is None:
@@ -76,3 +83,67 @@ class JsonEncoder(json.JSONEncoder):
     else:
       return super().default(z)
 
+def compress(x, get_id = {}, get_val = {}, i = [0]):
+  if type(x) == dict:
+    items = [*x.items()]
+    x.clear()
+    for k, v in items:
+      k = compress(k, get_id, get_val, i)
+      v = compress(v, get_id, get_val, i)
+      x[k] = v
+    return x
+  elif type(x) in (list, tuple):
+    for j in range(0, len(x)):
+      x[j] = compress(x[j], get_id, get_val, i)
+    return x
+  else:
+    if x in get_val:
+      x = get_val[x]
+    else:
+      get_val[x] = i[0]
+      get_id[i[0]] = x
+      x = i[0]
+      i[0] = i[0] + 1
+    return x
+
+class NA():
+  pass
+
+#from dataclasses import dataclass
+#@dataclass(frozen=True)
+#class strdic:
+#  _val: str
+#  def __init__(self, dic):
+#    t = sorted(tuple(val.items()), lambda t:t[0])
+#    self._val = json.dumps(t,cls=JsonEncoder)
+#  def val():
+#    return dict(*json.loads(self._val,cls=JsonEncoder))
+
+class tuples():
+  def __init__(self, tuples):
+    self._2id = {}
+    self._2val = {}
+    self._i = 0
+
+    self._vars = [self.id(next(iter(t["obs" if "obs" in t else "attr"].keys()))) for t in tuples]
+    self._group = "obs" if "obs" in tuples[0] else "attr"
+    self._vals = [next(iter(t["obs"].values())) for t in tuples] if self._group == "obs" else [self.id(next(iter(t["attr"].values()))) for t in tuples]
+    self._attrs = [self.id(t["attrs"]) for t in tuples]
+
+  def id(self, val):
+    if type(val) == dict:
+      val = tuple(sorted(list(filter(lambda v: v[0]!="line_number", val.items())), key = lambda t:t[0]))
+    if val in self._2id:
+      return self._2id
+    else:
+      self._2id[val] = self._i
+      self._2val[self._i] = val
+      self._i = self._i + 1
+      return self._i
+
+  def val(self, id):
+    v = self._2val[id]
+    if type(v) == tuple:
+      return dict(*v)
+    else:
+      return v
