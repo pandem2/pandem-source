@@ -135,9 +135,9 @@ class Evaluator(worker.Worker):
                     obs_pars =  list([p for p in params if var_dic[p]['type'] in {'observation', 'indicator', 'resource'}])
                     base_pars =  list([var_dic[p]["variable"] for p in obs_pars])
                     # in order to test this indicator we need to find at least the first observation on the current values
-                    l.debug(f"ind {ind} -> obs_pars {obs_pars} base_pars {base_pars}")
+                    #l.debug(f"ind {ind} -> obs_pars {obs_pars} base_pars {base_pars}")
                     if len(obs_pars) > 0 and (base_pars[0] in obs_keys or obs_pars[0] in obs_keys):
-                      l.debug("go")
+                      #l.debug("go")
                       main_obs = obs_pars[0]
                       main_base = base_pars[0]
                       # We need to identify all tuples present on all obs_pars that respect the attr pars  
@@ -196,11 +196,11 @@ class Evaluator(worker.Worker):
                                     comb.pop(j)
                                 else:
                                   comb.pop(j)
-                            if ind == "vaccination_coverage" and step == 1: #obs_to_test == "population":
-                                breakpoint()
+                            #if ind == "vaccination_coverage" and step == 1: #obs_to_test == "population":
+                            #    breakpoint()
                         # The remaining combination have passed all validations to calculate the candidate indicator
                         if len(comb) > 0:
-                          l.debug("added!")
+                          #l.debug("added!")
                           # applying modifiers of inticators to the remaining tuples
                           if ind in modifiers:
                             for mk, mv in modifiers[ind].items():
