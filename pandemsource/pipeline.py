@@ -442,7 +442,7 @@ class Pipeline(worker.Worker):
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step, progress):
         l.debug(f"Changing to step {step} for job {int(job['id'])} source {job['dls_json']['scope']['source']} {round(progress*100, 1)}%")
-        printMem()
+        #printMem()
         # removing job from current step dict
         if job["step"] in self.job_steps and job["id"]:
           if job["id"] in self.job_steps[job["step"]]:

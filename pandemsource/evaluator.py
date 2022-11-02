@@ -135,12 +135,14 @@ class Evaluator(worker.Worker):
                     obs_pars =  list([p for p in params if var_dic[p]['type'] in {'observation', 'indicator', 'resource'}])
                     base_pars =  list([var_dic[p]["variable"] for p in obs_pars])
                     # in order to test this indicator we need to find at least the first observation on the current values
-                    if len(obs_pars) > 0 and  base_pars[0] in obs_keys:
+                    l.debug(f"ind {ind} -> obs_pars {obs_pars} base_pars {base_pars}")
+                    if len(obs_pars) > 0 and (base_pars[0] in obs_keys or obs_pars[0] in obs_keys):
+                      l.debug("go")
                       main_obs = obs_pars[0]
                       main_base = base_pars[0]
                       # We need to identify all tuples present on all obs_pars that respect the attr pars  
-                      comb = list(obs_keys[main_base]["comb"])
-                      dates = obs_keys[main_base]["dates"]
+                      comb = list(obs_keys[main_obs]["comb"]) if main_obs in obs_keys else list(obs_keys[main_base]["comb"])
+                      dates = obs_keys[main_obs]["dates"] if main_obs in obs_keys else obs_keys[main_base]["dates"]
                       date_filter = {base_date: {v for date_comb in dates for k, v in date_comb if k == base_date}}
                       #date_filter.update(mofifiers[date_par])
                       # we can proceed the date_par has been found
@@ -159,19 +161,18 @@ class Evaluator(worker.Worker):
                                }
                             # iterating over current possible combinations
                             j = 0
-                            #if ind == "incidence" and obs_to_test == "population":
-                            #    breakpoint()
                             while j < len(comb):
                                 # the current combination should exists on obs_keys for the current parameter base observation
                                 # tuple must contain the attrs_pars unless the current observation overrides it with a modifier
                                 attr_pars_ok = True
-                                # testing independent keys which is attributes not modified by the variable
                                 key = comb[j]
+                                # testing independent keys which is attributes not modified by the variable
                                 for attr_par in attr_pars:
                                   ignore_attr = attr_par in modifiers[obs_to_test]
                                   if not ignore_attr and not any(k == attr_par for k, v in key):
                                     attr_pars_ok = False
                                     break
+
                                 if attr_pars_ok:
                                   # checking that tuple contains the modifiers of the current observation unless is null
                                   attrs_obs_ok = True
@@ -184,7 +185,10 @@ class Evaluator(worker.Worker):
                                     # checking if the current combination exists for the expected base variable
                                     # exluding modifiers
                                     indep_key = tuple([(k, v) for k, v in key if k not in modifiers[obs_to_test] or modifiers[obs_to_test][k] is not None])
-                                    if base_to_test in obs_keys and indep_key in obs_keys[base_to_test]["comb"]:
+                                    if ((obs_to_test in obs_keys and key in obs_keys[obs_to_test]["comb"]) or 
+                                      (base_to_test in obs_keys and key in obs_keys[base_to_test]["comb"]) or
+                                      (obs_to_test in obs_keys and indep_key in obs_keys[obs_to_test]["comb"]) or 
+                                      (base_to_test in obs_keys and indep_key in obs_keys[base_to_test]["comb"])):
                                       j = j + 1
                                     else:
                                       comb.pop(j)
@@ -192,8 +196,19 @@ class Evaluator(worker.Worker):
                                     comb.pop(j)
                                 else:
                                   comb.pop(j)
+                            if ind == "vaccination_coverage" and step == 1: #obs_to_test == "population":
+                                breakpoint()
                         # The remaining combination have passed all validations to calculate the candidate indicator
                         if len(comb) > 0:
+                          l.debug("added!")
+                          # applying modifiers of inticators to the remaining tuples
+                          if ind in modifiers:
+                            for mk, mv in modifiers[ind].items():
+                              for j in range(0, len(comb)):
+                                for jj in range(0, len(comb[j])):
+                                  if mk == comb[j][jj][0] and mv != comb[j][jj][1]:
+                                    comb[j] = tuple(((a, (b if a != mk else mv)) for a, b in comb[j]))
+                                    
                           next_keys[ind] = {
                             "comb":set(comb),
                             "dates":dates
