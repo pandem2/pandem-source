@@ -112,6 +112,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,number_of_visits_per_100_low_ci,,indicator,people/people,,"source, geo_code",,,[]
 03_patient,number_of_visits_per_100_high_ci,,indicator,people/people,,"source, geo_code",,,[]
 04_tests,performed_tests,,observation,qty,,"Source, test_result, geo_code",,,[]
+04_tests,new_performed_tests,,observation,qty,,"Source, test_result, geo_code","cum_perf_tests_to_daily(reporting_period, performed_tests)",,[]
 04_tests,positive_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""positive""}]"
 04_tests,negative_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""negative""}]"
 04_tests,inconclusive_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""inconclusive""}]"
@@ -126,14 +127,15 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 05_vaccination,doses_injected,Number of vaccine doses injected all types of vaccines combined by week and country,observation,qty,,"Source, vaccination_status, geo_code",,,[]
 05_vaccination,new_doses_injected,Number of vaccine doses injected all types of vaccines combined by week and country,observation,qty,,"Source, vaccination_status, geo_code","cum_doses_to_daily(reporting_period, doses_injected)",,[]
 05_vaccination,people_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,,[]
+05_vaccination,new_people_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,,
 05_vaccination,vaccination_coverage,Number of vaccinated individuals divided by the size of the target population,observation,people,,"Source, vaccination_status, geo_code","vaccination_coverage(reporting_period, people_fully_vaccinated, population, pathogen_code)",,[]
 05_vaccination,one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}]"
 05_vaccination,two_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}]"
 05_vaccination,three_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}]"
 05_vaccination,people_fully_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"":""vaccination_status"", ""value"":""fully_vaccinated""}]"
-05_vaccination,new_people_fully_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","cum_fully_vacc_to_daily(reporting_period, people_fully_vaccinated)",people_vaccinated,"[{""variable"":""vaccination_status"", ""value"":""fully_vaccinated""}]"
+05_vaccination,new_people_fully_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","cum_fully_vacc_to_daily(reporting_period, people_fully_vaccinated)",new_people_vaccinated,"[{""variable"":""vaccination_status"", ""value"":""fully_vaccinated""}]"
 05_vaccination,at_least_one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"":""vaccination_status"", ""value"":""one_dose_at_least""}]"
-05_vaccination,new_at_least_one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","cum_to_daily(reporting_period, new_at_least_one_dose_vaccinated)",people_vaccinated,"[{""variable"":""vaccination_status"", ""value"":""one_dose_at_least""}]"
+05_vaccination,new_at_least_one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","cum_to_daily(reporting_period, new_at_least_one_dose_vaccinated)",new_people_vaccinated,"[{""variable"":""vaccination_status"", ""value"":""one_dose_at_least""}]"
 05_vaccination,one_dose_vaccinated_infected,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
 05_vaccination,two_doses_vaccinated_infected,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
 05_vaccination,three_doses_vaccinated_infected,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"

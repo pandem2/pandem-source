@@ -196,8 +196,6 @@ class Evaluator(worker.Worker):
                                     comb.pop(j)
                                 else:
                                   comb.pop(j)
-                            #if ind == "vaccination_coverage" and step == 1: #obs_to_test == "population":
-                            #    breakpoint()
                         # The remaining combination have passed all validations to calculate the candidate indicator
                         if len(comb) > 0:
                           #l.debug("added!")
