@@ -299,15 +299,20 @@ class Variables(worker.Worker):
 
       for var in variables:
         tuples = []
+        base_var = dico_vars[var]["variable"]
+        # making this query work with aliases variables
+        if base_var != dico_vars:
+          if var in modifiers:
+            filt.update(modifiers[var])
+           
         if include_source:
           f = {k:v for k, v in filt.items() if v is not None}
           f.update({"source":source})
-          # TODO make read variable work with alias variables so it can return active cases and confirmed cases on the same query
-          tuples = self.read_variable(var, filter = f)
+          tuples = self.read_variable(base_var, filter = f)
         if include_tag and (tuples is None or len(tuples) == 0):
           f = {k:v for k, v in filt.items() if v is not None}
           f.update({"source":others})
-          tuples = self.read_variable(var, filter = f)
+          tuples = self.read_variable(base_var, filter = f)
         # key_map will contain the non modified attributes for each combination as keys and the original combination as value
         key_map = {tuple((k, v) for k, v in comb if var not in modifiers or k not in modifiers[var]):comb for comb in indexed_comb}
         if tuples is not None:

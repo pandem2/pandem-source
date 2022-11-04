@@ -282,7 +282,7 @@ class Evaluator(worker.Worker):
                     attrs = {p:vars_dic[p]["variable"] for p in params[ind] if p not in set(obs.keys())}
                     # iterating though each combination and launching the scripts to calculate the results
                     if len(combis) > 0: 
-                      data = self._variables_proxy.lookup(list(obs.values()), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
+                      data = self._variables_proxy.lookup(list(obs.keys()), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
                       # getting sorted dates
                       dates = sorted({v["attrs"][base_date] for row in data.values() for v in row[main_base] })
                       # writing parameters matrices 

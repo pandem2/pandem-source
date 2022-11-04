@@ -681,7 +681,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
           # Adding data points if required
           if f_key:
             values["key"] = orig_values
-          if f_data:
+          if f_data and values["indicator"] in var_dic:
             comb = [(k, v) for k, v in orig_values.items() if v is not None and k != 'indicator' and k != 'source']
             comb.sort(key = lambda p:p[0])
             source = values["source__table"]
