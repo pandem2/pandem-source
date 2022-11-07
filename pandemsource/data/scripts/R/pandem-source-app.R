@@ -370,7 +370,9 @@ server <- function(input, output, session, ...) {
             data <- httr::content(resp)$timeserie
             json <- jsonlite::toJSON(data, auto_unbox=T, null = "null")
             res_df <- as.data.frame(jsonlite::fromJSON(json, simplifyDataFrame=T))
-            res_df$source <- df[["source__source_name"]][[i]]
+            if (nrow(res_df) > 0) {
+              res_df$source <- df[["source__source_name"]][[i]]
+            }
             res_df
          } else {
            stop("Error while obatining data series")
@@ -401,15 +403,17 @@ server <- function(input, output, session, ...) {
         )
         df_labels <- sapply(1:nrow(ts_df), function(i) {
           json <- ts_df$key[[i]]
-          keys <-  jsonlite::fromJSON(json)
-          if(col == "indicator")
-            label = ts_df$indicator[[i]]
-          else if(col %in% names(keys)) {
-            label = labels[[as.character(keys[[col]])]]
+          if (length(json) != 0) {
+            keys <-  jsonlite::fromJSON(json)
+            if(col == "indicator")
+              label = ts_df$indicator[[i]]
+            else if(col %in% names(keys)) {
+              label = labels[[as.character(keys[[col]])]]
+            }
+            else 
+              label = NA
+            label
           }
-          else 
-            label = NA
-          label
         })
         if(col == "indicator")
           title <- paste(unique(labels), collapse = ", ")
@@ -466,18 +470,20 @@ server <- function(input, output, session, ...) {
          # Validate if minimal requirements for rendering are met 
          progress_set(value = 0.15, message = "Generating line chart", rep)
          ts_df$date <- as.Date(ts_df$date)
-         chart <- plot_timeseries(ts_df, title = title, scale = input$timeseries_scale, period = input$timeseries_period)
+         if (nrow(ts_df) > 0) {
+          chart <- plot_timeseries(ts_df, title = title, scale = input$timeseries_scale, period = input$timeseries_period)
          
-         # Setting size based on container size
-         height <- session$clientData$output_line_chart_height
-         width <- session$clientData$output_line_chart_width
-	       
-         # returning empty chart if no data is found on chart
-         chart_not_empty(chart)
-         
+          # Setting size based on container size
+          height <- session$clientData$output_line_chart_height
+          width <- session$clientData$output_line_chart_width
+          
+          # returning empty chart if no data is found on chart
+          chart_not_empty(chart)
+          
 
-         # transforming chart on plotly
-         gg <- plotly::ggplotly(chart, height = height, width = width, tooltip = c("label")) %>% plotly::config(displayModeBar = FALSE) 
+          # transforming chart on plotly
+          gg <- plotly::ggplotly(chart, height = height, width = width, tooltip = c("label")) %>% plotly::config(displayModeBar = FALSE) 
+         }
       }) 
       progress_close(env = rep)
     }

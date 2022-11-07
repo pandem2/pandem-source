@@ -109,8 +109,8 @@ class Pipeline(worker.Worker):
                 self.update_job_step(job, 'read_format_started', 0.1)
                 self.pending_count[job["id"]] = len(paths)
               else: 
-                self.pending_count[job["id"]] = len(paths) * len(filter_paths) 
                 filter_paths = job['dls_json']["acquisition"]["decompress"]["path"]
+                self.pending_count[job["id"]] = len(paths) * len(filter_paths) 
                 self.update_job_step(job, 'unarchive_started', 0.1)
             if ipath < len(paths):
               done = False
@@ -325,6 +325,7 @@ class Pipeline(worker.Worker):
             self.update_job_step(job, 'unarchive_ended', 0.15)
 
     def send_to_read_df(self, df, path, job):
+        print("DF_READER")
         self._dfreader_proxy.df2tuple(df, path, job, job["dls_json"])
 
     def read_df_end(self, tuples, n_tuples, issues, path, job): 

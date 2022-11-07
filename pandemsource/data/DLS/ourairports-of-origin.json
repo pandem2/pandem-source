@@ -1,0 +1,38 @@
+{
+    "scope":{
+        "source":"ourairports-of-origin",
+        "source_description":"List of Airports and Airport Codes by country for origin countries",
+        "tags":["OurAirports"],
+        "data_quality":"Open data",
+        "frequency":"daily",
+        "frequency_start_hour":1,
+        "frequency_end_hour":1,
+        "reference_user":"David Megginson - Data Standards Specialist",
+        "reporting_email":"",
+        "globals":[
+            {"variable": "source"}
+        ],
+        "update_scope":[
+            {"variable":"source"}
+        ]
+    },
+    "acquisition":{
+        "channel":{
+            "name":"git",
+            "branch":"main",
+            "url": "https://github.com/davidmegginson/ourairports-data.git",
+            "match": "airports\\.csv"
+        },
+        "format": {
+            "name":"csv",
+            "decimal_sign":".",
+            "thousands_separator":"",
+            "date_format":"%Y-%m-%d",
+            "encoding":"UTF-8"
+        }
+    },
+    "columns":[
+        {"name":"ident", "variable":"geo_airport_origin_code", "action":"insert"},
+        {"name": "iso_country", "variable":"iso_country_origin_code_2"}
+    ]
+}

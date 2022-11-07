@@ -146,9 +146,19 @@ def main(a):
     help="Reset pandem flight related information to system defaults", 
   )
   reset_parser.add_argument(
+    "--airports",
+    action="store_true",
+    help="Reset pandem airports related information to system defaults", 
+  )
+  reset_parser.add_argument(
     "--owid",
     action="store_true",
     help="Reset pandem owid related information to system defaults"
+  )
+  reset_parser.add_argument(
+    "--geonames",
+    action="store_true",
+    help="Reset pandem geonames related information to system defaults"
   )
 
   reset_parser.set_defaults(func = do_reset)
@@ -363,9 +373,16 @@ def do_reset(args, *other):
     admin.reset_source("medisys")
   if args.flights or args.restore_factory_defaults:
     admin.reset_source("ourairports")
+    admin.reset_source("ourairports-of-origin")
     admin.reset_source("opensky-network-coviddataset")
+  if args.airports or args.restore_factory_defaults:
+    admin.reset_source("ourairports")
+    admin.reset_source("ourairports-of-origin")
   if args.owid or args.restore_factory_defaults:
     admin.reset_source("owid-covid19-excess-mortality")
+  if args.geonames or args.restore_factory_defaults:
+    admin.reset_source("geonames-countries")
+    admin.reset_source("geonames-countries-of-origin") 
 
 def do_list(args, *other):
   if args.sources or args.missing_sources or args.package_sources or args.missing_package_sources:
