@@ -19,6 +19,8 @@ class FormatReaderCSV(formatreader.FormatReader):
           params["thousands"] =  dls["acquisition"]["format"]["thousands_separator"]
         if "encoding" in dls["acquisition"]["format"]:
           params["encoding"] =  dls["acquisition"]["format"]["encoding"]
+        if "engine" in dls["acquisition"]["format"]:
+          params["engine"] = dls["acquisition"]["format"]["engine"]
         
         if file_bytes != '':
             df = pd.read_csv(**params) 

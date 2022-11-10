@@ -43,9 +43,12 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 13_referentials,reporting_time,Instant in which a measure is being reported,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""instant""}]"
 13_referentials,reporting_week,Week on which a measure  is being reported. It is expected to be IsoWeek.,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""isoweek""}]"
 13_referentials,reporting_month,Month on which a measure is being reported,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""month""}]"
-13_referentials,period_type,"Type of period: ""date"", ""isoweek"", ""month"", ""instant""",characteristic,,,,,,[]
+13_referentials,reporting_year,Year on which a measure is being reported,date,date,,,,reporting_period,"[{""variable"": ""period_type"", ""value"": ""year""}]"
+13_referentials,period_type,"Type of period: ""date"", ""isoweek"", ""month"", ""instant"", ""year""",characteristic,,,,,,[]
 13_referentials,visit_type_code,,referential,,,,,,[]
 13_referentials,visit_type_name,,referential_label,,visit_type_code,,,,[]
+13_referentials,isco_08_code,International Standard Classification of Occupations Code,referential,,,,,,[]
+13_referentials,isco_08_label,International Standard Classification of Occupations Name,referential_label,,isco_08_code,,,,[]
 01_cases,incidence_1000,Number of confirmed cases each 1000 people,indicator,people/people,,"source, case_status, geo_code","incidence_1000(reporting_period, confirmed_cases, population, pathogen_code)",,[]
 01_cases,incidence_1000_low_ci,Lower Confidence Index of Number of confirmed cases each 1000 people,indicator,people/people,,"source, case_status, geo_code",,,[]
 01_cases,incidence_1000_high_ci,High Confidence Index of Number of confirmed cases each 1000 people,indicator,people/people,,"source, case_status, geo_code",,,[]
@@ -111,6 +114,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,number_of_visits_per_100,,indicator,people/people,,"source, geo_code",,,[]
 03_patient,number_of_visits_per_100_low_ci,,indicator,people/people,,"source, geo_code",,,[]
 03_patient,number_of_visits_per_100_high_ci,,indicator,people/people,,"source, geo_code",,,[]
+03_patient,number_of_hospital_staff,Health personnel by country and NUTS2,resource,people,,,,,[]
 04_tests,performed_tests,,observation,qty,,"Source, test_result, geo_code",,,[]
 04_tests,new_performed_tests,,observation,qty,,"Source, test_result, geo_code","cum_perf_tests_to_daily(reporting_period, performed_tests)",,[]
 04_tests,positive_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,"[{""variable"": ""test_result"", ""value"": ""positive""}]"

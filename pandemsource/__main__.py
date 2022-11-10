@@ -150,6 +150,11 @@ def main(a):
     action="store_true",
     help="Reset pandem owid related information to system defaults"
   )
+  reset_parser.add_argument(
+    "--health-resources-eurostat",
+    action="store_true",
+    help="Reset pandem health resources staff related information to system defaults"
+  )
 
   reset_parser.set_defaults(func = do_reset)
 
@@ -366,6 +371,10 @@ def do_reset(args, *other):
     admin.reset_source("opensky-network-coviddataset")
   if args.owid or args.restore_factory_defaults:
     admin.reset_source("owid-covid19-excess-mortality")
+  if args.health_resources_eurostat or args.restore_factory_defaults:
+    admin.reset_source("health-resources-national-eurostat")
+    admin.reset_source("health-resources-nuts2-eurostat")
+    admin.reset_source("isco-08-ilo")
 
 def do_list(args, *other):
   if args.sources or args.missing_sources or args.package_sources or args.missing_package_sources:
