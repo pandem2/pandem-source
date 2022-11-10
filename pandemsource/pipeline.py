@@ -325,7 +325,6 @@ class Pipeline(worker.Worker):
             self.update_job_step(job, 'unarchive_ended', 0.15)
 
     def send_to_read_df(self, df, path, job):
-        print("DF_READER")
         self._dfreader_proxy.df2tuple(df, path, job, job["dls_json"])
 
     def read_df_end(self, tuples, n_tuples, issues, path, job): 
