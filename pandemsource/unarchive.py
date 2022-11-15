@@ -1,9 +1,9 @@
-import os
 from . import worker
-from abc import ABC, abstractmethod, ABCMeta
-import time
+from abc import ABCMeta
+from gzip import GzipFile
 from zipfile import ZipFile
 from io import BytesIO
+import subprocess
 
 class Unarchive(worker.Worker):
     __metaclass__ = ABCMeta  
@@ -17,12 +17,15 @@ class Unarchive(worker.Worker):
     def loop_actions(self):
         pass
     
-    def unarchive(self, archive_path, filter_path, job): 
-        #print('here in unarchive')
-        # print(f'files_to_filter: {files_to_filter}')
-        with ZipFile(archive_path) as zip_archive:
-            self._pipeline_proxy.unarchive_end(archive_path, filter_path, BytesIO(zip_archive.read(filter_path)).read(), job)
-
+    def unarchive(self, archive_path, filter_path, job):
+        process = subprocess.run(["file", "-b", "--mime-type", archive_path], capture_output=True)
+        archive_type = process.stdout.decode("utf8").strip()
+        if archive_type == "application/zip":
+            with ZipFile(archive_path) as zip_archive:
+                self._pipeline_proxy.unarchive_end(archive_path, filter_path, BytesIO(zip_archive.read(filter_path)).read(), job)
+        elif archive_type == "application/gzip":
+            with GzipFile(archive_path) as gzip_archive:
+                self._pipeline_proxy.unarchive_end(archive_path, filter_path, gzip_archive.read(), job)
 
        
 

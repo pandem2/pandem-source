@@ -156,9 +156,15 @@ def main(a):
     help="Reset pandem owid related information to system defaults"
   )
   reset_parser.add_argument(
+<<<<<<< HEAD
     "--geonames",
     action="store_true",
     help="Reset pandem geonames related information to system defaults"
+=======
+    "--health-resources-eurostat",
+    action="store_true",
+    help="Reset pandem health resources staff related information to system defaults"
+>>>>>>> origin/health-care-staff
   )
 
   reset_parser.set_defaults(func = do_reset)
@@ -383,6 +389,10 @@ def do_reset(args, *other):
   if args.geonames or args.restore_factory_defaults:
     admin.reset_source("geonames-countries")
     admin.reset_source("geonames-countries-of-origin") 
+  if args.health_resources_eurostat or args.restore_factory_defaults:
+    admin.reset_source("health-resources-national-eurostat")
+    admin.reset_source("health-resources-nuts2-eurostat")
+    admin.reset_source("isco-08-ilo")
 
 def do_list(args, *other):
   if args.sources or args.missing_sources or args.package_sources or args.missing_package_sources:
