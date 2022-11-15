@@ -42,16 +42,20 @@
     },
     "columns": [
         {
-            "name": "isco08"
+            "name": "isco08",
+            "variable": "isco_08_code"
         },
         {
-            "name": "geo\\time"
+            "name": "geo\\time",
+            "variable": "geo_code"
         },
         {
-            "name": "year"
+            "name": "year",
+            "variable": "reporting_year"
         },
         {
-            "name": "number_of_hospital_staff"
+            "name": "number_of_hospital_staff",
+            "variable": "number_of_hospital_staff"
         }
     ]
 }

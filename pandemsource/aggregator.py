@@ -27,6 +27,10 @@ class Aggregator(worker.Worker):
     geos = {var["variable"] for var in variables.values() if var["type"] == "geo_referential"}
     geo_parents = {var["linked_attributes"][0]:var["variable"] for var in variables.values() if var["type"] == "referential_parent" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos}
 
+    tuples = self._variables_proxy.get_referential("geo_code").get()
+    if tuples is not None:
+      parents = [tupl['attrs']['geo_parent'] for tupl in tuples if 'geo_parent' in tupl['attrs']]
+
     var_asc = {code:self.rel_ascendants(self.descendants(code, parent)) for code, parent in geo_parents.items()}
     nvars = len(list_of_tuples)
     ndone = 0
@@ -40,7 +44,7 @@ class Aggregator(worker.Worker):
         if aggr_func is None:
           untouched.append(t)
         else:
-          for aggr_key, tt in self.pairs_to_aggregate(t, var_asc, variables):
+          for aggr_key, tt in self.pairs_to_aggregate(t, var_asc, variables, parents):
             if not aggr_key in cumm:
               cumm[aggr_key] = tt
             else:
@@ -108,7 +112,7 @@ class Aggregator(worker.Worker):
     else:
         return None
 
-  def pairs_to_aggregate(self, t, var_asc, variables):
+  def pairs_to_aggregate(self, t, var_asc, variables, parents):
     if not "attrs" in t or len(t["attrs"].keys()) == 0:
       yield ('', t)
     else:
@@ -121,6 +125,8 @@ class Aggregator(worker.Worker):
       for code_var, ascendants in var_asc.items():
         if code_var in t["attrs"] and t["attrs"][code_var] in ascendants:
           code =  t["attrs"][code_var]
+          if code in parents:
+            continue
           for asc in ascendants[code]:
             c = copy.deepcopy(t)
             c["attrs"][code_var] = asc

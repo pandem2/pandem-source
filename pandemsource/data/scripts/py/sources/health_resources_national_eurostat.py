@@ -1,9 +1,9 @@
 import pandas as pd
 import re
-from tqdm import tqdm
 
 def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     df = fix_csv_tsv_mix_format_issues(df)
+    df = df[(df['unit'].str.contains("NR"))]
     df = df.drop(columns=["unit","wstatus", "line_number"])
     df = df.melt(id_vars=["isco08", "geo\\time", "file"], var_name="year", value_name="number_of_hospital_staff")
     df.reset_index(drop=True)
@@ -42,7 +42,7 @@ def remove_letters_in_numeric_columns(df: pd.DataFrame) -> pd.DataFrame:
 def separate_multiple_isco_codes(df: pd.DataFrame) -> pd.DataFrame:
     rows_with_multiple_isco_codes = df[df['isco08'].str.contains("_")]
     data = []
-    for index, row in tqdm(rows_with_multiple_isco_codes.iterrows()):
+    for index, row in rows_with_multiple_isco_codes.iterrows():
         isco08_codes = row["isco08"].split("_")
         for code in isco08_codes:
             data.append([code, row["geo\\time"], row["file"], row["year"], row["number_of_hospital_staff"]])
