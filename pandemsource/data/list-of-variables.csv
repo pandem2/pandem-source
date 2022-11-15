@@ -25,9 +25,12 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,pathogen_alias,Predefined alias for a pathogens,referential_alias,,pathogen_code,,,,[]
 13_referentials,geo_code,Unique code for identifying geographic entities,geo_referential,,,source,,,[]
 13_referentials,iso_country_code_2,Two letters ISO code for countries,referential,,,source,,geo_code,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_2""}]"
+13_referentials,iso_country_origin_code_2,Two letters ISO code for origin countries,referential,,,source,,country_of_origin_code,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_origin_2""}]"
 13_referentials,iso_country_code_3,Three letters ISO code for countries,referential_alias,,geo_code,source,,,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_3""}]"
 13_referentials,geo_name,Name of a geographic entity,referential_label,,"geo_code, geo_parent",source,,,[]
 13_referentials,country_name,Name of a Country,referential_alias,,geo_code,source,,geo_name,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""country_name""}]"
+13_referentials,country_of_origin_code,Two letters ISO code for origin countries,referential,,,source,,,[]
+13_referentials,country_of_origin,Name of a geographic entity,referential_label,,country_of_origin_code,source,,,[]
 13_referentials,geo_parent,Code of the parent of a geographic location,referential_parent,,geo_code,source,,,[]
 13_referentials,geo_level,"Geographical level, e.g. Country, NUTS_1, NUTS_2, NUTS_3",characteristic,,geo_code,source,,,[]
 13_referentials,geo_local_code,Unique geographical code within a particular source,referential_alias,,geo_code,source,,,"[{""variable"":""alias_group"", ""value"":""local_code""}]"
@@ -298,4 +301,5 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 12_population_study,suggestion,,characteristic,,,,,,[]
 12_population_study,aspect,,characteristic,,,,,,[]
 13_referentials,geo_airport_code,International airport identifier,referential_alias,,geo_code,,,,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_2""}]"
+13_referentials,geo_airport_origin_code,International airport identifier for origin countries,referential_alias,,country_of_origin_code,"source, country_of_origin_code",,,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_origin_2""}]"
 13_referentials,incoming_flights,Number of international incoming flights per country ,observation,qty,,"source, geo_code",,,[]
