@@ -156,20 +156,19 @@ def main(a):
     help="Reset pandem owid related information to system defaults"
   )
   reset_parser.add_argument(
-<<<<<<< HEAD
     "--geonames",
     action="store_true",
     help="Reset pandem geonames related information to system defaults"
-=======
+  )
+  reset_parser.add_argument(
     "--health-resources-eurostat",
     action="store_true",
     help="Reset pandem health resources staff related information to system defaults"
->>>>>>> origin/health-care-staff
   )
 
   reset_parser.set_defaults(func = do_reset)
 
-  # Launch pandem source listt command
+  # Launch pandem source list command
   start_parser = subs.add_parser("list", help = "List elements on this Pandem-Source instance")
   start_parser.add_argument(
     "--sources",
