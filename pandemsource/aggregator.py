@@ -154,7 +154,7 @@ class Aggregator(worker.Worker):
               "scope":{"update_scope":{}}
             }
           # If current variable is the first variable in path add all tuples of this variable
-          if var not in vars_in_path:
+          if var not in vars_in_path and group in t:
             tts[var]['tuples'].extend(t for t in tt['tuples'] if var in t[group])
             vars_in_path.add(var)
             # updating the update scope 
