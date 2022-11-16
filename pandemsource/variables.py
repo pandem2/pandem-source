@@ -110,7 +110,7 @@ class Variables(worker.Worker):
                 try:
                   var_tuples = self._storage_proxy.read_file(file['path']).get()['tuples']
                 except Exception as e:
-                  l.(f"Error found while reading file {file['path']}")
+                  l.error(f"Error found while reading file {file['path']}")
                   raise e
                 requested_vars = []
                 for var_tuple in var_tuples:
