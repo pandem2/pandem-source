@@ -29,7 +29,7 @@ class Aggregator(worker.Worker):
 
     tuples = self._variables_proxy.get_referential("geo_code").get()
     if tuples is not None:
-      parents = [tupl['attrs']['geo_parent'] for tupl in tuples if 'geo_parent' in tupl['attrs']]
+      parents = {tupl['attrs']['geo_parent'] for tupl in tuples if 'geo_parent' in tupl['attrs']}
 
     var_asc = {code:self.rel_ascendants(self.descendants(code, parent)) for code, parent in geo_parents.items()}
     nvars = len(list_of_tuples)
