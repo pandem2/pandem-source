@@ -107,7 +107,11 @@ class Variables(worker.Worker):
                     if not can_ignore:
                         target_files.append(file)
             for file in target_files:
-                var_tuples = self._storage_proxy.read_file(file['path']).get()['tuples']
+                try:
+                  var_tuples = self._storage_proxy.read_file(file['path']).get()['tuples']
+                except Exception as e:
+                  l.(f"Error found while reading file {file['path']}")
+                  raise e
                 requested_vars = []
                 for var_tuple in var_tuples:
                     if all(att in var_tuple['attrs'].keys() for att in filter.keys()):
