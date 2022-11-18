@@ -1,0 +1,61 @@
+{
+    "scope": {
+        "source": "health-resources-beds-eurostat",
+        "source_description": "Hospital beds by NUTS2 regions",
+        "tags": [
+            "Eurostats NUTS"
+        ],
+        "data_quality": "Official",
+        "frequency": "daily",
+        "frequency_start_hour": 1,
+        "frequency_end_hour": 1,
+        "reference_user": "Eurostat",
+        "reporting_email": "",
+        "globals": [],
+        "update_scope": [
+            {
+                "variable": "source"
+            }
+        ]
+    },
+    "acquisition": {
+        "channel": {
+            "name": "url",
+            "url": "https://ec.europa.eu/eurostat/estat-navtree-portlet-prod/BulkDownloadListing?file=data/hlth_rs_bdsrg.tsv.gz"
+        },
+        "decompress": {
+            "format": "gz",
+            "path": [
+                "health_rs_bdsrg.tsv"
+            ]
+        },
+        "format": {
+            "name": "csv",
+            "decimal_sign": ".",
+            "thousands_separator": "",
+            "sep": "[\t,]",
+            "engine": "python",
+            "date_format": "%Y",
+            "encoding": "UTF-8",
+            "index_col": "False"
+        }
+    },
+    "columns": [
+        {
+            "name": "geo\\time",
+            "variable": "geo_code"
+        },
+        {
+            "name": "year",
+            "variable": "reporting_year"
+        },
+        {
+            "name": "number_of_hospital_beds",
+            "variable": "number_of_curative_beds"
+        },
+        {
+            "name": "number_of_hospital_beds_per_100k",
+            "variable": "number_of_curative_beds_per_100k"
+        }
+    ]
+}

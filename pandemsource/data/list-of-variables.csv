@@ -90,9 +90,12 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,length_of_stay,,observation,days,,,,,[]
 03_patient,number_of_hospital_staff,,resource,people,,"Source, resource_type, geo_code",,,[]
 03_patient,number_of_resources,,resource,qty,,"Source, resource_type, geo_code",,,[]
+03_patient,resources_per_capita,,resource,qty,,"Source, resource_type, geo_code",,,[]
 03_patient,number_of_operable_beds,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""bed""}, {""variable"": ""bed_type"", ""value"": ""operable""}]"
 03_patient,number_of_icu_operable_beds,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""bed""}, {""variable"": ""bed_type"", ""value"": ""icu""}]"
 03_patient,number_of_lctf_beds,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""bed""}, {""variable"": ""response_type"", ""value"": ""ltcf""}]"
+03_patient,number_of_curative_beds,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""bed""}, {""variable"": ""bed_type"", ""value"": ""curative""}]"
+03_patient,number_of_curative_beds_per_100k,,resource,qty,,"Source, resource_per_capital, geo_code",,resources_per_capita,"[{""variable"": ""resource_type"", ""value"": ""bed""}, {""variable"": ""bed_type"", ""value"": ""curative"", ""magnitude"": ""100k""}]"
 03_patient,number_of_nurses_available,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""staff_type"", ""value"": ""nurse""}]"
 03_patient,number_of_physicians_available,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""staff_type"", ""value"": ""physician""}]"
 03_patient,number_of_icu_specialist_anesthesiologist_available,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""staff_type"", ""value"": ""icu_specialist-anesthesiologist""}]"
