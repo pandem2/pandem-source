@@ -11,13 +11,14 @@ pandem:
       active: True
       models_path:  ""
       evaluation_steps:
+        - ["aspect_classification_ohe"]
         - ["aspect_classification_ohe", "emotion_classification_multi"]
         - ["aspect_classification_ohe", "sentiment_classification"]
         - ["aspect_classification_ohe", "suggestion_classification"]
       aliases:
         emotion_classification_multi: emotion
         sentiment_classification: sentiment
-        suggestion_classification: suggestion
+        suggestion_classification: is_suggestion
         aspect_classification_ohe: aspect
       languages:
         en:

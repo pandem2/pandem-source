@@ -9,6 +9,7 @@ import subprocess
 import time
 import requests
 import logging
+import pickle
 from . import util
 
 l = logging.getLogger("pandem-admin")
@@ -255,6 +256,14 @@ def list_sources_dir(p):
          s, t = (js["scope"].get("source"), js["scope"].get("tags"))
          ret[s] = t[0] if len(t) > 0 else s
   return ret
+
+def list_jobs(source = None):
+  job_paths = util.pandem_path("database", "jobs.pickle")
+  with open(job_paths, 'rb') as f:
+    df = pickle.load(f)
+  if source is not None:
+    df = df[df["source"]==source]
+  return df
 
 def list_sources(local = True, default = False, missing_local = False, missing_default = False):
   local_map = list_sources_dir(util.pandem_path("files", "source-definitions"))

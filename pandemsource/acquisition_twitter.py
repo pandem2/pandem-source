@@ -7,6 +7,7 @@ import json
 import gzip
 from datetime import datetime
 import os
+import glob
 from math import inf
 import re
 import logging
@@ -16,14 +17,16 @@ l = logging.getLogger("pandem.twitter")
 class AcquisitionTwitter(acquisition.Acquisition):
     def __init__(self, name, orchestrator_ref, settings): 
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings, channel = "twitter")
-    
+
     def on_start(self):
         super().on_start()
+        self._storage_proxy = self._orchestrator_proxy.get_actor("storage").get().proxy()
         # Getting twitter credentials
         self._api_key=util.get_or_set_secret("twitter-api-key") 
         self._api_key_secret=util.get_or_set_secret("twitter-api-key-secret") 
         self._access_token=util.get_or_set_secret("twitter-access-token") 
         self._access_token_secret=util.get_or_set_secret("twitter-access-token-secret") 
+        self._replay_dir = util.pandem_path("files", "twitter", "v1.1", "replay")
         self._filter_dir = util.pandem_path("files", "twitter", "v1.1", "tweets")
         self._filter_arc_dir = util.pandem_path("files", "twitter", "v1.1", "archived")
         if not os.path.exists(self._filter_dir):
@@ -32,6 +35,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
           os.makedirs(name = self._filter_arc_dir)
 
     def add_datasource(self, dls, force_acquire):
+      l.debug("hola")
       if len(self.current_sources) > 0:
         raise ValueError("Twitter aqquisition support only a singlr DLS, others will be ignored")
       if "acquisition" in dls and "channel" in dls["acquisition"] and "topics" in dls["acquisition"]["channel"]:
@@ -99,6 +103,28 @@ class AcquisitionTwitter(acquisition.Acquisition):
        return lfile
     
     def new_files(self, dls, last_hash):
+        # testing if we need to replay files
+        replay = False
+        if os.path.exists(self._replay_dir):
+          files_to_replay = glob.glob(f"{self._replay_dir}/**/*.json.gz", recursive = True)
+          if len(files_to_replay) > 0:
+            # testing if pipeline is not full if so the file will not be sent
+            twitter_steps = self._storage_proxy.read_db('job', lambda j:j.status == 'in progress' and j.source == 'twitter').get()["step"]
+            saturated = len(twitter_steps) > len(twitter_steps.unique())
+            if saturated:
+              return {"hash":last_hash, "files":[]}  
+            else:
+              to_archive = files_to_replay[0]
+              to_arc = os.path.split(to_archive)[1]
+              l.debug(f"replaying twitter file {to_arc}")
+              arc = os.path.join(self._filter_arc_dir, to_arc[0:10])
+              os.makedirs(arc, exist_ok = True)
+              dest = os.path.join(arc, to_arc)
+              os.rename(to_archive, dest)
+              current_hash = to_arc
+              return {"hash":to_archive, "files":[dest]}  
+
+
         existing_files = list(filter(lambda f: f.endswith(".json.gz"), os.listdir(self._filter_dir)))
         # files to archive which are those with a name alphabetically lesser or equal than the current hash
         if last_hash is not None and last_hash !=  "":

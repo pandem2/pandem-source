@@ -1,0 +1,1 @@
+cumsum(article_count)

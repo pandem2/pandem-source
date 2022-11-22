@@ -97,13 +97,18 @@ class NLPAnnotator(worker.Worker):
                 #getting positive predictions on step models
                 for m in step:
                   predictions[m] = [(m, a) for a, b in enumerate(annotations[m][i]) if b >=0.5]
+                  if len(predictions[m]) == 0:
+                    predictions[m] = [(m, -1)]
                 
                 #generating a tuple for each combination of positive predictions
                 model_classes = [*itertools.product(*predictions.values()) ]
                 for allclasses in model_classes:
                   at = copy.deepcopy(to_annotate[i])
                   for m, ic in allclasses:
-                    at["attrs"][model_aliases[m]] = categories[m][ic] if ic is not None else "All"
+                    if ic == -1:
+                      at["attrs"][model_aliases[m]] = "None"
+                    elif ic is not None:
+                      at["attrs"][model_aliases[m]] = categories[m][ic]
                   annotated.append(at)
             count = count + len(to_annotate)
             l.debug(f"{count} articles annotated")

@@ -24,7 +24,7 @@
         "main_group":"disease",
         "topics": {
           "COVID-19":{
-            "phrases":["covid-19", "covid"],
+            "phrases":["covid-19", "covid", "covid19"],
             "group":"disease"
           },
           "Dengue fever [classical dengue]":{ 
@@ -34,26 +34,6 @@
           "Ebola virus disease":{
             "phrases":["ebola"],
             "group":"disease"
-          },
-          "lock-down":{
-            "phrases":["lock down", "confinamiento", "confinnement"],
-            "group":"government_measure"
-          },
-          "school-closing":{
-            "phrases":["school closing", "fermeture école", "cerrar clases", "cierran clases", "cierre de clases"],
-            "group":"government_measure"
-          },
-          "vaccination": {
-            "phrases":["vaccination", "vacuna", "vacunas", "vaccins", "jabs", "jab"],
-            "group":"government_measure"
-          },
-          "masks":{
-            "phrases":["masks", "FFP2", "mascarillas", "masque", "masques"],
-            "group":"government_measure"
-          },
-          "tests":{
-            "phrases":["PCR", "antígenos", "antigène", "antigene", "antigénique", "antigen"],
-            "group":"government_measure"
           }
         },
         "excluded_phrases":["something-noisy"],
@@ -71,7 +51,6 @@
       {"name":"id", "variable":"article_id", "path":"@id"},
       {"name":"created_at", "variable":"article_created_at", "path":"@created_at"},
       {"name":"topic_disease", "variable":"pathogen_name", "path":"@topic_disease/*"},
-      {"name":"topic_government_measure", "variable":"topic", "path":"@topic_government_measure/*"},
       {"name":"text", "variable":"article_text", "path":"@text"},
       {"name":"reporting_time", "variable":"reporting_time", "path":"@reporting_time"},
       {"name":"lang", "variable":"article_language", "path":"@lang"},

@@ -32,30 +32,9 @@
           "Ebola virus disease":{
             "categories":["EbolaHemorrhagicFever"],
             "group":"disease"
-          },
-          "lock-down":{
-            "phrases":["lock down", "confinamiento", "confinnement"],
-            "group":"government_measure"
-          },
-          "school-closing":{
-            "phrases":["school closing", "fermeture école", "cerrar clases", "cierran clases", "cierre de clases"],
-            "group":"government_measure"
-          },
-          "vaccination": {
-            "phrases":["vaccination", "vacuna", "vacunas", "vaccins", "jabs", "jab"],
-            "group":"government_measure"
-          },
-          "masks":{
-            "phrases":["masks", "FFP2", "mascarillas", "porter masque"],
-            "group":"government_measure"
-          },
-          "tests":{
-            "phrases":["PCR", "antígenos", "antigène", "antigene", "antigénique", "antigen"],
-            "group":"government_measure"
           }
         },
-        "excluded_phrases":["something-noisy"],
-        "include_retweets":false
+        "excluded_phrases":["something-noisy"]
       },
       "format": {
         "name":"json",
@@ -68,7 +47,6 @@
     "columns":[
       {"name":"guid", "variable":"article_id", "path":"@guid"},
       {"name":"topic_disease", "variable":"pathogen_name", "path":"@topic_disease/*"},
-      {"name":"topic_government_measure", "variable":"topic", "path":"@topic_government_measure/*"},
       {"name":"text", "variable":"article_text", "path":"@text"},
       {"name":"publish_time", "variable":"article_created_at", "path":"@pub_date"},
       {"name":"reporting_time", "variable":"reporting_time", "path":"@rep_date"},

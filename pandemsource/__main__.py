@@ -169,30 +169,43 @@ def main(a):
   reset_parser.set_defaults(func = do_reset)
 
   # Launch pandem source list command
-  start_parser = subs.add_parser("list", help = "List elements on this Pandem-Source instance")
-  start_parser.add_argument(
+  list_parser = subs.add_parser("list", help = "List elements on this Pandem-Source instance")
+  list_parser.add_argument(
+    "-s",
+    "--source", 
+    type=str, 
+    required = False,
+    default = None,
+    help="Source for which to display the required information" 
+  )
+  list_parser.add_argument(
+    "--jobs",
+    action="store_true",
+    help="List existing jobs in this instance", 
+  )
+  list_parser.add_argument(
     "--sources",
     action="store_true",
     help="List existing sources in this instance", 
   )
   
-  start_parser.add_argument(
+  list_parser.add_argument(
     "--missing-sources",
     action="store_true",
     help="List sources embedded on pandemSource package not present on this instance", 
   )
-  start_parser.add_argument(
+  list_parser.add_argument(
     "--package-sources",
     action="store_true",
     help="List sources embedded on pandemSource package", 
   )
-  start_parser.add_argument(
+  list_parser.add_argument(
     "--missing-package-sources",
     action="store_true",
     help="List existing sources in this instance not present on pandemSource package", 
   )
 
-  start_parser.set_defaults(func = do_list)
+  list_parser.set_defaults(func = do_list)
 
   
   util.check_pandem_home()
@@ -394,7 +407,10 @@ def do_reset(args, *other):
     admin.reset_source("isco-08-ilo")
 
 def do_list(args, *other):
-  if args.sources or args.missing_sources or args.package_sources or args.missing_package_sources:
+  if args.jobs:
+    df = admin.list_jobs(args.source)
+    print(df[["source", "step", "status"]])
+  elif args.sources or args.missing_sources or args.package_sources or args.missing_package_sources:
     sources = admin.list_sources(local = args.sources, default = args.package_sources, missing_local = args.missing_sources, missing_default = args.missing_package_sources)
     for line in pd.DataFrame(sources,columns=["Source", "Tag"]).to_string().split("\n"):
         print(line)

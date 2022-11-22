@@ -301,6 +301,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 12_population_study,article_text,,private,,,,,,[]
 12_population_study,article_language,,characteristic,,,,,,[]
 12_population_study,article_count,Number of mass media or social media articles by publication date over a particular topic. These articles are classified using Machine learning algorithms on several public health topics,observation,qty,,"source, topic, geo_code",,,[]
+12_population_study,cum_article_count,Cummulative number of mass media or social media articles by publication date over a particular topic. These articles are classified using Machine learning algorithms on several public health topics,observation,qty,,"source, topic, geo_code","cum_articles(reporting_period, article_count)",,[]
 12_population_study,article_alert,,indicator,,,"source, topic, geo_code",,,[]
 12_population_study,sentiment,,characteristic,,,,,,[]
 12_population_study,emotion,,characteristic,,,,,,[]
