@@ -306,6 +306,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 12_population_study,sentiment,,characteristic,,,,,,[]
 12_population_study,emotion,,characteristic,,,,,,[]
 12_population_study,suggestion,,characteristic,,,,,,[]
+12_population_study,is_suggestion,,characteristic,,,,,,[]
 12_population_study,aspect,,characteristic,,,,,,[]
 13_referentials,geo_airport_code,International airport identifier,referential_alias,,geo_code,,,,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_2""}]"
 13_referentials,geo_airport_origin_code,International airport identifier for origin countries,referential_alias,,country_of_origin_code,"source, country_of_origin_code",,,"[{""variable"": ""geo_level"", ""value"": ""country""},{""variable"":""alias_group"", ""value"":""iso_origin_2""}]"
