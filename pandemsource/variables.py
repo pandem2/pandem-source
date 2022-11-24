@@ -265,6 +265,14 @@ class Variables(worker.Worker):
        }
 
     def lookup(self, variables, combinations, source, filter = None, include_source = True, include_tag = False, types=['referential', 'geo_referential', 'characteristic']):
+      # doing recursive calls if the combination includes different granularities
+      granularities = {tuple(k for k, v in t) for t in combinations}
+      if len(granularities) > 1:
+        ret = {}
+        for gr in granularities:
+          combs = [t for t in combinations if tuple(k for k, v in t) == gr]
+          ret.update(self.lookup(variables, combs, source, filter, include_source, include_tag, types))
+        return ret
       dico_vars  = self.get_variables()
       modifiers = {v:{m['variable']:m['value'] for m in vardef['modifiers']} for v, vardef in dico_vars.items() if len(dico_vars[v]["modifiers"]) > 0}
       tag_source = self.read_variable("tag_source")
@@ -305,7 +313,7 @@ class Variables(worker.Worker):
         tuples = []
         base_var = dico_vars[var]["variable"]
         # making this query work with aliases variables
-        if base_var != dico_vars:
+        if base_var in dico_vars:
           if var in modifiers:
             filt.update(modifiers[var])
            
