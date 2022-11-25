@@ -98,7 +98,10 @@ class Variables(worker.Worker):
                     for var_val in file_name.split('.')[:-1]:
                         var = var_val.split('=')[0]
                         val = var_val.split('=')[1]
-                        if var in filter and type(filter[var]) in [list, set] and val not in filter[var]:
+                        if val == "@None@" and var in filter and filter[var] is not None:
+                            can_ignore = True
+                            break
+                        elif var in filter and type(filter[var]) in [list, set] and val not in filter[var]:
                             can_ignore = True
                             break
                         elif var in filter and type(filter[var]) not in [list, set] and filter[var] != val:
@@ -129,7 +132,8 @@ class Variables(worker.Worker):
         if partition is None:
           return 'default.json'
         else:
-          return '.'.join([key + '=' + str(val) for key, val in tuple['attrs'].items() if key in partition]) + '.json'
+          #return '.'.join([key + '=' + str(val) for key, val in tuple['attrs'].items() if key in partition]) + '.json'
+          return '.'.join([key + '=' + str(tuple['attrs'][key] if key in tuple['attrs'] and tuple['attrs'][key] is not None else '@None@') for key in partition]) + '.json'
 
     def remove_attrs(self, t, private_attrs):
         if "attrs" in t:

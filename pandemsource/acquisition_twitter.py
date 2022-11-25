@@ -35,7 +35,6 @@ class AcquisitionTwitter(acquisition.Acquisition):
           os.makedirs(name = self._filter_arc_dir)
 
     def add_datasource(self, dls, force_acquire):
-      l.debug("hola")
       if len(self.current_sources) > 0:
         raise ValueError("Twitter aqquisition support only a singlr DLS, others will be ignored")
       if "acquisition" in dls and "channel" in dls["acquisition"] and "topics" in dls["acquisition"]["channel"]:
