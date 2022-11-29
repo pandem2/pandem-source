@@ -405,6 +405,7 @@ def do_reset(args, *other):
     admin.reset_source("health-resources-national-eurostat")
     admin.reset_source("health-resources-nuts2-eurostat")
     admin.reset_source("isco-08-ilo")
+    admin.reset_source("health-resources-beds-eurostat")
 
 def do_list(args, *other):
   if args.jobs:
