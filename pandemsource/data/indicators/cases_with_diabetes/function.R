@@ -1,0 +1,1 @@
+round(confirmed_cases * 0.01 * 4, 0)

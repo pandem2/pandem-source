@@ -1,5 +1,7 @@
 import pandas as pd
+import numpy as np
 import time
+
 
 # Disable the false positive "SettingWithCopyWarning"
 pd.options.mode.chained_assignment = None
@@ -44,6 +46,7 @@ def df_transform(df: pd.DataFrame) -> pd.DataFrame:
   final_df = pd.concat([excess_death_all_ages, excess_death_age_groups])
   final_df['line_number'] = range(1, len(final_df)+1)
   final_df['excess_death'] = pd.to_numeric(final_df['excess_death'])
+  final_df.replace([np.inf, -np.inf], np.nan, inplace=True)
   return final_df
 
 

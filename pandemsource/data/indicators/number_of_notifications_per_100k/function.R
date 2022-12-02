@@ -1,0 +1,1 @@
+100000 * number_of_notifications / population

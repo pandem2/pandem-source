@@ -20,7 +20,7 @@ get_df_age_group <- function() {
 
 get_df_variants <- function() {
     json_payload <- '{
-        "select": ["number_detections_variant", "variant", "geo_code", "reporting_week"],
+        "select": ["confirmed_cases", "variant", "geo_code", "reporting_week"],
         "filter": {
             "source": "ecdc-covid19-variants"
         }
@@ -54,8 +54,8 @@ normalize_dataframe <- function(df) {
     if ("geo_code" %in% colnames(df)) {
       names(df)[names(df) == "geo_code"] <- "country_code"
     }
-    if ("number_detections_variant" %in% colnames(df)) {
-      names(df)[names(df) == "number_detections_variant"] <- "new_cases"
+    if ("variant" %in% colnames(df)) {
+      names(df)[names(df) == "confirmed_cases"] <- "new_cases"
       df$number_sequenced <- NA
     }
     if ("age_group" %in% colnames(df)) {

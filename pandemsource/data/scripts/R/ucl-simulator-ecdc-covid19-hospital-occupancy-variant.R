@@ -49,7 +49,7 @@ get_df_hospital_occupancy <- function() {
 
 get_df_variants <- function() {
     json_payload <- '{
-        "select": ["number_detections_variant", "variant", "geo_code", "reporting_week"],
+        "select": ["confirmed_cases", "variant", "geo_code", "reporting_week"],
         "filter": {
             "source": "ecdc-covid19-variants"
         }
@@ -89,8 +89,8 @@ normalize_dataframe <- function(df) {
         fun2 <- function(country_name) eu_countries(country_name)
         df$country_code <- mapply(fun2, df$country_code)
     }
-    if ("number_detections_variant" %in% colnames(df)) {
-        names(df)[names(df) == "number_detections_variant"] <- "new_cases"
+    if ("variant" %in% colnames(df)) {
+        names(df)[names(df) == "confirmed_cases"] <- "new_cases"
         df$number_sequenced <- NA
     }
     if ("weekly_hospital_occupancy" %in% colnames(df)) {
