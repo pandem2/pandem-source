@@ -1,2 +1,1 @@
-cumulative_infected_deaths / icu_patients
-# TODO: fix this indicator
+deaths_infected / hospitalised_infected_patients_in_icu 

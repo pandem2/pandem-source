@@ -39,7 +39,8 @@ class Evaluator(worker.Worker):
     def get_indicators(self, var_dic):
         # Read the formulas of all indicators 
         formulas = {var:var_dic['formula'] for var, var_dic in var_dic.items() if var_dic['formula']} 
-        # Parse parameters from the functions/formula text and store them in parameters dict: for each indicator, returning a list for each parameters. e.g. parameters[“incidence”]=[“reporting_period”, “number_of_cases”, “population”]
+        # Parse parameters from the functions/formula text and store them in parameters dict: 
+        # for each indicator, returning a list for each parameters. e.g. parameters[“incidence”]=[“reporting_period”, “number_of_cases”, “population”]
         parameters = {ind:re.findall (r'([^(, )]+)(?!.*\()', formula) for ind, formula in formulas.items()}
         modifiers = {ind:({m["variable"]:m["value"] for m in var_dic[ind]["modifiers"]}) if "modifiers" in var_dic[ind] else {} for ind in var_dic}
         # Build indicators dict that returns for each variable used on an indicator a list of indicators where this variable is used. eg. indicators[“population”]=[“Incidence”, “prevalence, …”]
@@ -78,29 +79,38 @@ class Evaluator(worker.Worker):
       return True
 
     def plan_calculate(self, dic_of_tuples, job):
-        
+        # defined variables 
         var_dic = self._dict_of_variables
+        # modifiers for each variable
         modifiers = self._modifiers
+        # all variables being used as parameters in a set
         params_set = self._params_set
+        # parameters contails the needed parameters for calculating each variable containing a function definition
         parameters = self._parameters
+        # obs_keys will contain all of the variables found on the tuples with its date period and combinations
         obs_keys = {}
+        
         obs_aliases = {}
         next_keys = {}
-       
+        
+        # iterating over all tuples in the pipeline 
         for var, ttuples in dic_of_tuples.items():
           # getting tuples from cache
           list_of_tuples = ttuples.value()['tuples']
           
           for t in list_of_tuples:
             if "obs" in t and "attrs" in t: 
+              # getting the base variale of the tuple
               base_name = next(iter(t["obs"].keys()))
+              # var_names are the variables that could be matched using this base variables
               var_names = [base_name]
-              # evaluating if current tuple is a derived variable (to allow proper detection of derivated user provided variables)
+              # evaluating if current tuple is an alias of the base variable to allow applying formulas on derivated variables
               if 'aliases' in  var_dic[base_name]:
                 for alias in var_dic[base_name]['aliases']:
                   if all(m['variable'] in t['attrs'] and t['attrs'][m['variable']] == m['value'] for m in alias['modifiers']):
                     var_names.append(alias['alias'])
-              
+              # at this point var_names will contain all matching variables that matches the current tuple
+              # for each matched variables we will add its combinations in obs_keys
               for var_name in var_names:
                 if var_name in params_set or var_name in parameters.keys():
                   if var_name not in obs_keys:
@@ -110,14 +120,18 @@ class Evaluator(worker.Worker):
                     }
                   date_attrs = set(vn for vn in t["attrs"].keys() if var_dic[vn]['type'] == 'date' and t["attrs"][vn] is not None)
                   independent_attrs = [t for t in t["attrs"].keys() if t not in modifiers[var_name] or  modifiers[var_name][t] is not None]
-                  sorted_attrs = list(sorted(vn for vn in independent_attrs if var_dic[vn]['type'] not in ['not_characteristic', 'date', 'private'] and t["attrs"][vn] is not None))
+                  sorted_attrs = list(sorted(
+                    vn for vn in independent_attrs 
+                    if var_dic[vn]['type'] not in ['not_characteristic', 'date', 'private'] 
+                      and t["attrs"][vn] is not None
+                      and var_dic[vn]["linked_attributes"] is None
+                  ))
                   if len(sorted_attrs) > 0 and len(date_attrs)>0:
                     obs_keys[var_name]["comb"].add(tuple((vn, t["attrs"][vn]) for vn in sorted_attrs))
                     obs_keys[var_name]["dates"].add(tuple((vn, t["attrs"][vn]) for vn in date_attrs))
 
 
         var_obs = {}
-
         indicators_to_cal = {}
         step = 0
         stop = False
@@ -143,7 +157,7 @@ class Evaluator(worker.Worker):
                       # We need to identify all tuples present on all obs_pars that respect the attr pars  
                       comb = list(obs_keys[main_obs]["comb"]) if main_obs in obs_keys else list(obs_keys[main_base]["comb"])
                       dates = obs_keys[main_obs]["dates"] if main_obs in obs_keys else obs_keys[main_base]["dates"]
-                      date_filter = {base_date: {v for date_comb in dates for k, v in date_comb if k == base_date}}
+                      date_filter = {base_date: {str(v) for date_comb in dates for k, v in date_comb if k == base_date}}
                       #date_filter.update(mofifiers[date_par])
                       # we can proceed the date_par has been found
                       if len(date_filter[base_date]) > 0:
@@ -153,8 +167,8 @@ class Evaluator(worker.Worker):
                             base_to_test = base_pars[i]
                             # if the current obs base variable is not on obs key we have to look for it on published data
                             if len(comb) > 0 and base_to_test not in obs_keys:
-                               # if the current obs has null mofifiers we have to delete those from lookup key
-                               pub_comb = self._variables_proxy.lookup([base_to_test], comb, job['dls_json']['scope']['source'], date_filter, include_source = False, include_tag = True).get()
+                               # if the current obs has null modifiers we have to delete those from lookup key
+                               pub_comb = self._variables_proxy.lookup([obs_to_test], comb, job['dls_json']['scope']['source'], date_filter, include_source = False, include_tag = True).get()
                                obs_keys[base_to_test] = {
                                  "comb":set(pub_comb.keys()),
                                  "dates":dates

@@ -375,6 +375,7 @@ def do_reset(args, *other):
     admin.reset_source("ecdc-covid19-variants")
     admin.reset_source("ecdc-covid19-age-group")
     admin.reset_source("ecdc-covid19-measures")
+    admin.reset_source("ecdc-covid19-weekly")
     admin.reset_source("ecdc-covid19-daily")
     admin.reset_source("ecdc-covid19-weekly-hospital-occupancy")
   if args.serotracker or args.restore_factory_defaults:

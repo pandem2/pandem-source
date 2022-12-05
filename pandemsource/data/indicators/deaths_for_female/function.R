@@ -1,1 +1,1 @@
-round(confirmed_cases * 0.5 * 1, 0)
+round(deaths_infected * 0.5 * 1, 0)

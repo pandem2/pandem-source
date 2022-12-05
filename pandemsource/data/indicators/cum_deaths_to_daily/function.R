@@ -1,1 +1,1 @@
-c(0, diff(cumulative_deaths))
+c(0, diff(cumulative_infected_deaths))

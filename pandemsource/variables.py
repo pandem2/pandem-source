@@ -43,6 +43,8 @@ class Variables(worker.Worker):
                               "formula": v['formula'],
                               "modifiers": v['modifiers'],
                               "description": v['description'],
+                              "no_report":v['no_report'],
+                              "synthetic_formula":v['synthetic_formula'],
                               "type": v['type']
                               }
                               for v in var_list if v['base_variable']==var['variable']]
@@ -54,6 +56,8 @@ class Variables(worker.Worker):
                           alias_dict = base_dict.copy()
                           alias_dict['formula'] = alias['formula'] if alias['formula'] is not None else None #base_dict['formula']
                           alias_dict['modifiers'] = alias['modifiers']
+                          alias_dict['no_report'] = alias['no_report']
+                          alias_dict['synthetic_formula'] = alias['synthetic_formula']
                           alias_dict['description'] = alias['description'] if alias['description'] is not None else alias_dict['description']
                           alias_dict['type'] = alias['type'] if alias['type'] is not None else alias_dict['type']
                           dic_variables[alias['alias']] = alias_dict
@@ -227,7 +231,7 @@ class Variables(worker.Worker):
                     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
                         with open(file_path, 'w+') as f:
                             json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
-                    # If file exists already then we need to remove lines on the replacement scope
+                    # If step = 0 and file exists already then we need to remove lines on the replacement scope
                     # We do that by appending to tuples_list any existing row not in the replacement scope and then overriding the file 
                     else:
                         with open(file_path, 'r') as f:
@@ -237,12 +241,15 @@ class Variables(worker.Worker):
                               raise ValueError(f"Error while interpreting file {f} as JSON")
                         for tup in last_tuples['tuples']:
                             cond_count = len(update_filter)
-                            for filt in update_filter: 
+                            if step is None or step == 0:
+                              for filt in update_filter: 
                                 if filt['variable'] in tup['attrs'].keys() and tup['attrs'][filt['variable']] in filt['value']:
                                     cond_count = cond_count - 1
-                            # addding the tuple of one of the conditions failed
-                            if cond_count > 0:
-                                tuples_list.append(tup)            
+                              # addding the tuple of one of the conditions failed
+                              if cond_count > 0:
+                                tuples_list.append(tup)
+                            else:
+                                tuples_list.append(tup)
                         # replacing the file
                         with open(file_path, 'w') as f:
                             json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
@@ -320,34 +327,47 @@ class Variables(worker.Worker):
         if base_var in dico_vars:
           if var in modifiers:
             filt.update(modifiers[var])
-           
-        if include_source:
-          f = {k:v for k, v in filt.items() if v is not None}
-          f.update({"source":source})
-          tuples = self.read_variable(base_var, filter = f)
-        if include_tag and (tuples is None or len(tuples) == 0):
-          f = {k:v for k, v in filt.items() if v is not None}
-          f.update({"source":others})
-          tuples = self.read_variable(base_var, filter = f)
-        # key_map will contain the non modified attributes for each combination as keys and the original combination as value
-        key_map = {tuple((k, v) for k, v in comb if var not in modifiers or k not in modifiers[var]):comb for comb in indexed_comb}
-        if tuples is not None:
-          for t in tuples:
-            # file_keys are the non null attrs from in the tuples to be considered as time series keys
-            file_keys = sorted(attr for attr in t["attrs"].keys() if attr in dico_vars and dico_vars[attr]["type"] in types and (t["attrs"][attr] is not None)) # or (var in modifiers and attr in modifiers[var])
-            # free_keys are the keys in the file which are not modified
-            free_keys = list(attr for attr in file_keys if not var in modifiers or attr not in modifiers[var])
-            if tuple((k, t["attrs"][k]) for k in free_keys) in key_map:
-              key = key_map[tuple((k, t["attrs"][k]) for k in free_keys)]
-              filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
-              if key in indexed_comb:
-                if key not in res:
-                  res[key] = {}
-                if "obs" in t:
-                  obs_name =  next(iter(t["obs"].keys()))
-                  if not obs_name in res[key]:
-                    res[key][obs_name] = []
-                  res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
+        
+
+        tries = 2
+        found = False
+        while tries > 0 and not found:
+            if tries == 2 and include_source:
+              f = {k:v for k, v in filt.items() if v is not None}
+              f.update({"source":source})
+              tuples = self.read_variable(base_var, filter = f)
+            if tries == 1 and include_tag:
+              f = {k:v for k, v in filt.items() if v is not None}
+              f.update({"source":others})
+              tuples = self.read_variable(base_var, filter = f)
+            # key_map will contain the non modified attributes for each combination as keys and the original combination as value
+            key_map = {tuple((k, v) for k, v in comb if var not in modifiers or k not in modifiers[var]):comb for comb in indexed_comb}
+            if tuples is not None:
+              for t in tuples:
+                # file_keys are the non null attrs from in the tuples to be considered as time series keys
+                file_keys = sorted(
+                  attr for attr in t["attrs"].keys() 
+                    if attr in dico_vars and 
+                      dico_vars[attr]["type"] in types 
+                      and (t["attrs"][attr] is not None)
+                      and dico_vars[attr]["linked_attributes"] is None
+                  ) # or (var in modifiers and attr in modifiers[var])
+                # free_keys are the keys in the file which are not modified
+                free_keys = list(attr for attr in file_keys if not var in modifiers or attr not in modifiers[var])
+                if tuple((k, t["attrs"][k]) for k in free_keys) in key_map:
+                  key = key_map[tuple((k, t["attrs"][k]) for k in free_keys)]
+                  filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
+                  if key in indexed_comb:
+                    found = True
+                    if key not in res:
+                      res[key] = {}
+                    if "obs" in t:
+                      obs_name =  next(iter(t["obs"].keys()))
+                      if not obs_name in res[key]:
+                        res[key][obs_name] = []
+                      res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
+            tries = tries - 1
+            tuples = None
       return res
       
 
@@ -396,7 +416,7 @@ class Variables(worker.Worker):
                 
                 # Fitting an alias if possible
                 for alias in var_dic[var_name]["aliases"]:
-                  if len(alias['modifiers']) > len(modifiers):
+                  if len(alias['modifiers']) > len(modifiers) and not alias['no_report']:
                     if all(m['variable'] in t['attrs'] and (m['value'] is None or t['attrs'][m['variable']] == m['value']) for m in alias['modifiers']):
                       obs_name = alias['alias']
           
