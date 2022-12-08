@@ -1,0 +1,1 @@
+round(deaths_infected * 3 / 21, 0)
