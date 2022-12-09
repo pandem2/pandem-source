@@ -417,9 +417,8 @@ class Variables(worker.Worker):
                 # Fitting an alias if possible
                 for alias in var_dic[var_name]["aliases"]:
                   if len(alias['modifiers']) > len(modifiers) and not alias['no_report']:
-                    if all(m['variable'] in t['attrs'] and (m['value'] is None or t['attrs'][m['variable']] == m['value']) for m in alias['modifiers']):
+                    if all(m['value'] is None or (m['variable'] in t['attrs'] and t['attrs'][m['variable']] == m['value']) for m in alias['modifiers']):
                       obs_name = alias['alias']
-          
                 # getting tuple key
                 key = []
                 key.append(("indicator", obs_name))

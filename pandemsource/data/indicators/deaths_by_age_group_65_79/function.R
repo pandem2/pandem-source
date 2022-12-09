@@ -1,0 +1,1 @@
+round(deaths_infected * 5 / 21, 0)

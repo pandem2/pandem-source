@@ -1,0 +1,1 @@
+hospital_admissions + sample(1:10, 1, replace = TRUE)

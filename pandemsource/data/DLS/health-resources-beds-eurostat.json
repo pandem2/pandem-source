@@ -50,12 +50,28 @@
             "variable": "reporting_year"
         },
         {
-            "name": "number_of_hospital_beds",
-            "variable": "number_of_curative_beds"
+            "name": "number_of_icu_operable_beds",
+            "variable": "number_of_icu_operable_beds"
         },
         {
-            "name": "number_of_hospital_beds_per_100k",
-            "variable": "number_of_curative_beds_per_100k"
+            "name": "number_of_icu_operable_beds_per_100k",
+            "variable": "number_of_icu_operable_beds_per_100k"
+        },
+        {
+            "name": "number_of_operable_beds",
+            "variable": "number_of_operable_beds"
+        },
+        {
+            "name": "number_of_operable_beds_per_100k",
+            "variable": "number_of_operable_beds_per_100k"
+        },
+        {
+            "name": "number_of_non_icu_beds",
+            "variable": "number_of_non_icu_beds"
+        },
+        {
+            "name": "number_of_non_icu_beds_per_100k",
+            "variable": "number_of_non_icu_beds_per_100k"
         }
     ]
 }

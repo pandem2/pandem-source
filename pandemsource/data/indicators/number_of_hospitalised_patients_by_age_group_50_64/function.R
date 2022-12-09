@@ -1,0 +1,1 @@
+round(hospitalised_infected_patients * 4 / 21, 0)

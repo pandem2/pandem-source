@@ -1,42 +1,73 @@
 {
-  "scope":{
-    "source":"ecdc-covid19-weekly",
+  "scope": {
+    "source": "ecdc-covid19-weekly",
     "source_description": "Data on the weekly number of new reported COVID-19 cases and deaths by EU/EEA country. Data collected by the ECDC",
-    "tags":["ECDC COVID-19"],
-    "data_quality":"Official",
-    "frequency":"daily",
-    "frequency_start_hour":4,
-    "frequency_end_hour":4,
-    "reference_user":"TESSy (ECDC)",
-    "reporting_email":"surveillance@ecdc.europa.eu",
-    "globals":[
-      {"variable":"source"},
-      {"variable":"pathogen_name", "value":"COVID-19"}
+    "tags": [
+      "ECDC COVID-19"
     ],
-    "update_scope":[
-      {"variable":"source"},
-      {"variable":"reporting_week"}
-
+    "data_quality": "Official",
+    "frequency": "daily",
+    "frequency_start_hour": 4,
+    "frequency_end_hour": 4,
+    "reference_user": "TESSy (ECDC)",
+    "reporting_email": "surveillance@ecdc.europa.eu",
+    "globals": [
+      {
+        "variable": "source"
+      },
+      {
+        "variable": "pathogen_name",
+        "value": "COVID-19"
+      }
+    ],
+    "update_scope": [
+      {
+        "variable": "source"
+      },
+      {
+        "variable": "reporting_week"
+      }
     ]
   },
-  "acquisition":{
-    "channel":{
-      "name":"url",
+  "acquisition": {
+    "channel": {
+      "name": "url",
       "url": "https://opendata.ecdc.europa.eu/covid19/nationalcasedeath_eueea_daily_ei/csv/data.csv"
     },
     "format": {
-      "name":"csv",
-      "decimal_sign":".",
-      "thousands_separator":"",
-      "date_format":"isoweek",
-      "encoding":"UTF-8"
+      "name": "csv",
+      "decimal_sign": ".",
+      "thousands_separator": "",
+      "date_format": "isoweek",
+      "encoding": "UTF-8"
     }
   },
-  "columns":[
-    {"name":"week", "variable":"reporting_week"},
-    {"name":"cases", "variable":"confirmed_cases"},
-    {"name":"deaths", "variable":"deaths_infected"},
-    {"name":"geoId", "variable":"geo_code"},
-    {"name":"popData2020", "variable":"population"}
-  ]
+  "columns": [
+    {
+      "name": "week",
+      "variable": "reporting_week"
+    },
+    {
+      "name": "cases",
+      "variable": "confirmed_cases"
+    },
+    {
+      "name": "deaths",
+      "variable": "deaths_infected"
+    },
+    {
+      "name": "geoId",
+      "variable": "geo_code"
+    },
+    {
+      "name": "popData2020",
+      "variable": "population"
+    }
+  ],
+  "synthetize": {
+    "active": true,
+    "tags": [
+      "missing_real_data_2022"
+    ]
+  }
 }

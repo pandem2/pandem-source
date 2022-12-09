@@ -1,0 +1,1 @@
+hospitalised_infected_patients * 0 + 11

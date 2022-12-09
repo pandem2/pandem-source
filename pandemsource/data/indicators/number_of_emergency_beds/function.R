@@ -1,0 +1,1 @@
+number_of_operable_beds * 0
