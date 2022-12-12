@@ -1,0 +1,1 @@
+round(population * 0.02, 0)
