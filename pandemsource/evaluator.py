@@ -326,7 +326,7 @@ class Evaluator(worker.Worker):
                               if v is not None:
                                 all_none = False
                             # writing the values on the parameter file 
-                            jsonf.write(json.dumps(param_values))
+                            jsonf.write(json.dumps([(v if v != float('inf') else None) for v in param_values]))
                           jsonf.write("]")
                           if all_none:
                             can_run = False
