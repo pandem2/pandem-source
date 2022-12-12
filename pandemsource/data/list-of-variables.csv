@@ -110,8 +110,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,bed_type,,characteristic,,,,,,,,
 03_patient,standarise_mortality_by_age,,observation,,,"source, geo_code",,,,,
 03_patient,standarise_mortality_by_age_infected_people,,observation,,,"source, geo_code",,standarise_mortality_by_age,,,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
-03_patient,excess_mortality,,indicator,,,"source, geo_code",,,,,
-03_patient,excess_mortality_ltcf,,indicator,,,"source, geo_code","excess_mortality_ltcf(reporting_date, excess_mortality_pscore)",,,,"[{""variable"": ""care_type"", ""value"": ""ltcf""}]"
+03_patient,excess_mortality_ltcf,,indicator,,,"source, geo_code","excess_mortality_ltcf(reporting_date, excess_mortality_pscore)",excess_mortality_pscore,TRUE,missing_real_data_2022,"[{""variable"": ""care_type"", ""value"": ""ltcf""}]"
 03_patient,excess_mortality_pscore,,indicator,ratio,,"source, geo_code",,,,,
 03_patient,average_stay_length,,observation,days,,,,,,,
 03_patient,average_stay_length_at_icu,,observation,days,,,,average_stay_length,,,"[{""variable"": ""bed_type"", ""value"": ""icu""}]"

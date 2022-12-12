@@ -1,1 +1,1 @@
-round(excess_mortality_pscore * 0.001 * 5, 0)
+excess_mortality_pscore *  5

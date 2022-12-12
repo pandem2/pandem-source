@@ -93,7 +93,7 @@ class Evaluator(worker.Worker):
         obs_aliases = {}
         next_keys = {}
         
-        # iterating over all tuples in the pipeline 
+        # iterating over all tuples in the pipeline to pu 
         for var, ttuples in dic_of_tuples.items():
           # getting tuples from cache
           list_of_tuples = ttuples.value()['tuples']
@@ -135,6 +135,8 @@ class Evaluator(worker.Worker):
         indicators_to_cal = {}
         step = 0
         stop = False
+        # we are going to iterate over all available indicator trying to evaluate them based on the data on the tuples and published
+        # the loop will keep going as long as new indicator - combinations are produced
         while not stop:
             stop = True
             for ind, params in parameters.items():
@@ -145,24 +147,43 @@ class Evaluator(worker.Worker):
                     continue
                   if synthetic_formula not in dls['synthetize']['tags']:
                     continue
-                # not trying a varibale being already present
-                if not ind in obs_keys:
+                # preparing variables to evaluate if the current indicator can be calculated
+                mod = modifiers[ind]
+                date_par = next(p for p in params if var_dic[p]['type'] == 'date')
+                base_date = var_dic[date_par]['variable']
+                no_date_pars = [p for p in params if p != date_par]
+                attr_pars =  [p for p in no_date_pars if var_dic[p]['type'] not in {'observation', 'indicator', 'resource'}]
+                obs_pars =  list([p for p in params if var_dic[p]['type'] in {'observation', 'indicator', 'resource'}])
+                base_pars =  list([var_dic[p]["variable"] for p in obs_pars])
+                main_obs = obs_pars[0] if len(obs_pars)>0 else None
+                main_base = base_pars[0] if len(base_pars)>0 else None
+                # identifying the combinations available for the first parameter so we can identify if new combinations can be calculated for this indicator
+                comb = set()
+                # getting all exixting combinations for the main obs 
+                for ptest in obs_keys:
+                  if main_base == var_dic[ptest]['variable']:
+                    for c in obs_keys[ptest]["comb"]:
+                      sc = dict(c)
+                      if all(sc[k] == v for k, v in modifiers[main_obs].items() if v is not None):
+                        comb.add(c)
+                #if main_obs in obs_keys:
+                #  comb = obs_keys[main_obs]["comb"]
+                #elif main_base in obs_keys:
+                #  comb = obs_keys[main_base]["comb"]
+                #else:
+                #  comb = set()
+                # removing already existing combitaions
+                # comb = comb if ind not in obs_keys else comb - obs_keys[ind]["comb"]
+                # in order to test this indicator we need to find at least the first observation on the current values
+                if ind in obs_keys and ind == "mortality_rate":
+                  breakpoint()
+                if len(comb) > 0:
+                    comb = list(comb) 
                     # testing the tuples than satisfy the provided parameters
-                    mod = modifiers[ind]
-                    date_par = next(p for p in params if var_dic[p]['type'] == 'date')
-                    base_date = var_dic[date_par]['variable']
-                    no_date_pars = [p for p in params if p != date_par]
-                    attr_pars =  [p for p in no_date_pars if var_dic[p]['type'] not in {'observation', 'indicator', 'resource'}]
-                    obs_pars =  list([p for p in params if var_dic[p]['type'] in {'observation', 'indicator', 'resource'}])
-                    base_pars =  list([var_dic[p]["variable"] for p in obs_pars])
-                    # in order to test this indicator we need to find at least the first observation on the current values
                     #l.debug(f"ind {ind} -> obs_pars {obs_pars} base_pars {base_pars}")
                     if len(obs_pars) > 0 and (base_pars[0] in obs_keys or obs_pars[0] in obs_keys):
                       #l.debug("go")
-                      main_obs = obs_pars[0]
-                      main_base = base_pars[0]
                       # We need to identify all tuples present on all obs_pars that respect the attr pars  
-                      comb = list(obs_keys[main_obs]["comb"]) if main_obs in obs_keys else list(obs_keys[main_base]["comb"])
                       dates = obs_keys[main_obs]["dates"] if main_obs in obs_keys else obs_keys[main_base]["dates"]
                       date_filter = {base_date: {str(v) for date_comb in dates for k, v in date_comb if k == base_date}}
                       #date_filter.update(mofifiers[date_par])
@@ -219,30 +240,38 @@ class Evaluator(worker.Worker):
                                   comb.pop(j)
                         # The remaining combination have passed all validations to calculate the candidate indicator
                         if len(comb) > 0:
-                          #l.debug("added!")
-                          # applying modifiers of inticators to the remaining tuples
+                          # applying modifiers of indicators to the remaining tuples
                           if ind in modifiers:
-                            for mk, mv in modifiers[ind].items():
-                              for j in range(0, len(comb)):
-                                for jj in range(0, len(comb[j])):
-                                  if mk == comb[j][jj][0] and mv != comb[j][jj][1]:
-                                    comb[j] = tuple(((a, (b if a != mk else mv)) for a, b in comb[j]))
+                            for j in range(0, len(comb)):
+                              dcomb = dict(comb[j])
+                              dcomb.update(modifiers[ind])
+                              comb[j] = tuple(sorted(((k, v) for k,v in dcomb.items() if v is not None), key = lambda p: p[0]))
                                     
+                          new_combs = set(comb) - (obs_keys[ind]["comb"] if ind in obs_keys else set())
                           next_keys[ind] = {
-                            "comb":set(comb),
+                            "comb": new_combs,
                             "dates":dates
                           }
                           # adding the found indicator to the list to calculate
-                          indicators_to_cal[ind] = {
-                            "step":step + 1,
-                            "comb":set(comb),
-                            "dates":dates,
-                            "date_par":date_par
-                          }
-                          # we have found something new so we will try to performa a new step
-                          stop = False
+                          if len(new_combs) > 0:
+                            l.debug(f"added! {ind}->{len(new_combs)}")
+                            indicators_to_cal[ind] = {
+                              "step":step + 1,
+                              "comb":new_combs,
+                              "dates":dates,
+                              "date_par":date_par
+                            }
+                            # we have found something new so we will try to performa a new step
+                            stop = False
             step = step + 1
-            obs_keys.update(next_keys)
+            breakpoint()
+            # updating obs_keys using next_keys (indicators that will be calculated on this step)
+            for k, v in next_keys.items():
+              if k not in obs_keys:
+                obs_keys[k] = v
+              else:
+                obs_keys[k]["comb"] = obs_keys[k]["comb"].union(v["comb"])
+                obs_keys[k]["dates"] = obs_keys[k]["dates"].union(v["dates"])
             next_keys.clear()
         self._pipeline_proxy.precalculate_end(indicators_to_cal, job=job)
 
