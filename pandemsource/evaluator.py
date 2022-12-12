@@ -138,6 +138,13 @@ class Evaluator(worker.Worker):
         while not stop:
             stop = True
             for ind, params in parameters.items():
+                synthetic_formula = var_dic[ind]['synthetic_formula']
+                dls = job['dls_json']
+                if synthetic_formula is not None:
+                  if 'synthetize' not in dls or 'active' in dls['synthetize'] and not dls['synthetize']['active']:
+                    continue
+                  if synthetic_formula not in dls['synthetize']['tags']:
+                    continue
                 # not trying a varibale being already present
                 if not ind in obs_keys:
                     # testing the tuples than satisfy the provided parameters

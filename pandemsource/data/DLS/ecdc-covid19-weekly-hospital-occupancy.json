@@ -38,5 +38,11 @@
         {"name":"daily_icu_occupancy", "variable":"hospitalised_infected_patients_in_icu"},
         {"name":"weekly_new_hospital_admissions_per_100k", "variable":"hospital_admissions_per_100k"},
         {"name":"weekly_new_icu_admissions_per_100k", "variable":"icu_admissions_per_100k"}
-    ]
+    ],
+    "synthetize": {
+        "active": true,
+        "tags": [
+            "missing_real_data_2022"
+        ]
+    }
 }

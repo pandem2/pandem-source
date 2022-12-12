@@ -1,1 +1,1 @@
-deaths_infected / hospitalised_infected_patients_in_icu 
+deaths_infected / hospitalised_infected_patients_in_icu

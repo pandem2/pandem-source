@@ -82,7 +82,7 @@ class Variables(worker.Worker):
 
 
     def read_variable(self,variable_name, filter = {}):
-        # l.debug(f"requesting {variable_name} with filter = {filter}" )       
+        #l.debug(f"requesting {variable_name} with filter = {filter}" )       
         dir_path = util.pandem_path('files/variables/', variable_name)
         variables = self.get_variables()
         if os.path.isdir(dir_path):
@@ -417,17 +417,15 @@ class Variables(worker.Worker):
                 # Fitting an alias if possible
                 for alias in var_dic[var_name]["aliases"]:
                   if len(alias['modifiers']) > len(modifiers) and not alias['no_report']:
-                    if all(m['variable'] in t['attrs'] and (m['value'] is None or t['attrs'][m['variable']] == m['value']) for m in alias['modifiers']):
+                    if all(m['value'] is None or (m['variable'] in t['attrs'] and t['attrs'][m['variable']] == m['value']) for m in alias['modifiers']):
                       obs_name = alias['alias']
-          
                 # getting tuple key
                 key = []
                 key.append(("indicator", obs_name))
                 to_ignore = ['not_characteristic', 'date']
-                key.extend([(k, v) for k,v in t["attrs"].items() if v is not None and k in var_dic and var_dic[k]["type"] not in to_ignore or k == "source"])
+                key.extend([(k, v) for k,v in t["attrs"].items() if v is not None and k in var_dic and var_dic[k]["type"] not in to_ignore and var_dic[k]["linked_attributes"] is None or k == "source"])
                 key.sort(key = lambda p:p[0])
                 key = tuple(key)
-          
           
                 # getting dates
                 dates = [str(v) for k,v in t["attrs"].items() if k in var_dic and var_dic[k]["type"] == "date"]
