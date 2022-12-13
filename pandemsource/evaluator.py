@@ -132,7 +132,7 @@ class Evaluator(worker.Worker):
 
 
         var_obs = {}
-        indicators_to_cal = {}
+        indicators_to_cal = []
         step = 0
         stop = False
         # we are going to iterate over all available indicator trying to evaluate them based on the data on the tuples and published
@@ -159,12 +159,12 @@ class Evaluator(worker.Worker):
                 main_base = base_pars[0] if len(base_pars)>0 else None
                 # identifying the combinations available for the first parameter so we can identify if new combinations can be calculated for this indicator
                 comb = set()
-                # getting all exixting combinations for the main obs 
+                # getting all exixsting combinations for the main obs 
                 for ptest in obs_keys:
                   if main_base == var_dic[ptest]['variable']:
                     for c in obs_keys[ptest]["comb"]:
                       sc = dict(c)
-                      if all(sc[k] == v for k, v in modifiers[main_obs].items() if v is not None):
+                      if all(k in sc and sc[k] == v for k, v in modifiers[main_obs].items() if v is not None):
                         comb.add(c)
                 #if main_obs in obs_keys:
                 #  comb = obs_keys[main_obs]["comb"]
@@ -175,9 +175,8 @@ class Evaluator(worker.Worker):
                 # removing already existing combitaions
                 # comb = comb if ind not in obs_keys else comb - obs_keys[ind]["comb"]
                 # in order to test this indicator we need to find at least the first observation on the current values
-                if ind in obs_keys and ind == "mortality_rate":
-                  breakpoint()
                 if len(comb) > 0:
+                    scomb = comb
                     comb = list(comb) 
                     # testing the tuples than satisfy the provided parameters
                     #l.debug(f"ind {ind} -> obs_pars {obs_pars} base_pars {base_pars}")
@@ -193,14 +192,32 @@ class Evaluator(worker.Worker):
                         for i in range(0, len(obs_pars)):
                             obs_to_test = obs_pars[i]
                             base_to_test = base_pars[i]
-                            # if the current obs base variable is not on obs key we have to look for it on published data
-                            if len(comb) > 0 and base_to_test not in obs_keys:
-                               # if the current obs has null modifiers we have to delete those from lookup key
-                               pub_comb = self._variables_proxy.lookup([obs_to_test], comb, job['dls_json']['scope']['source'], date_filter, include_source = False, include_tag = True).get()
-                               obs_keys[base_to_test] = {
-                                 "comb":set(pub_comb.keys()),
-                                 "dates":dates
-                               }
+                            if i == 0:
+                              pcomb = comb
+                            else:
+                              pcomb = set()
+                              for ptest in obs_keys:
+                                if base_to_test == var_dic[ptest]['variable']:
+                                  for c in obs_keys[ptest]["comb"]:
+                                    sc = dict(c)
+                                    if all(k in sc and sc[k] == v for k, v in modifiers[obs_to_test].items() if v is not None):
+                                      pcomb.add(c)
+                                # if the current obs is missing combination we will see if there is published data for it
+                              missing_combs = set()
+                              for cc in comb:
+                                applied = dict(cc)
+                                applied.update(modifiers[obs_to_test])
+                                applied = (tuple(sorted(((k, v) for k,v in applied.items() if v is not None), key = lambda p: p[0])))
+                                if not applied in pcomb:  
+                                  missing_combs.add(applied)
+                              if len(missing_combs) > 0 :
+                                # if the current obs has null modifiers we have to delete those from lookup key
+                                pub_comb = self._variables_proxy.lookup([base_to_test], missing_combs, job['dls_json']['scope']['source'], date_filter, include_source = False, include_tag = True).get()
+                                if len(pub_comb) > 0:
+                                  obs_keys[obs_to_test] = {
+                                    "comb":set(pub_comb.keys()).union(pcomb),
+                                    "dates":dates
+                                  }
                             # iterating over current possible combinations
                             j = 0
                             while j < len(comb):
@@ -227,7 +244,8 @@ class Evaluator(worker.Worker):
                                     # checking if the current combination exists for the expected base variable
                                     # exluding modifiers
                                     indep_key = tuple([(k, v) for k, v in key if k not in modifiers[obs_to_test] or modifiers[obs_to_test][k] is not None])
-                                    if ((obs_to_test in obs_keys and key in obs_keys[obs_to_test]["comb"]) or 
+                                    if( i == 0 or 
+                                      (obs_to_test in obs_keys and key in obs_keys[obs_to_test]["comb"]) or 
                                       (base_to_test in obs_keys and key in obs_keys[base_to_test]["comb"]) or
                                       (obs_to_test in obs_keys and indep_key in obs_keys[obs_to_test]["comb"]) or 
                                       (base_to_test in obs_keys and indep_key in obs_keys[base_to_test]["comb"])):
@@ -254,17 +272,16 @@ class Evaluator(worker.Worker):
                           }
                           # adding the found indicator to the list to calculate
                           if len(new_combs) > 0:
-                            l.debug(f"added! {ind}->{len(new_combs)}")
-                            indicators_to_cal[ind] = {
+                            #l.debug(f"added! {ind}->{len(new_combs)}")
+                            indicators_to_cal.append((ind, {
                               "step":step + 1,
                               "comb":new_combs,
                               "dates":dates,
                               "date_par":date_par
-                            }
+                            }))
                             # we have found something new so we will try to performa a new step
                             stop = False
             step = step + 1
-            breakpoint()
             # updating obs_keys using next_keys (indicators that will be calculated on this step)
             for k, v in next_keys.items():
               if k not in obs_keys:
@@ -273,6 +290,8 @@ class Evaluator(worker.Worker):
                 obs_keys[k]["comb"] = obs_keys[k]["comb"].union(v["comb"])
                 obs_keys[k]["dates"] = obs_keys[k]["dates"].union(v["dates"])
             next_keys.clear()
+
+
         self._pipeline_proxy.precalculate_end(indicators_to_cal, job=job)
 
        
@@ -320,7 +339,7 @@ class Evaluator(worker.Worker):
             # mixing indicators to calculate on all paths
             if indicators_to_cal and len(indicators_to_cal) > 0:
                 # looping trough all indicators
-                for ind, ind_map in indicators_to_cal.items():
+                for ind, ind_map in indicators_to_cal:
                     combis = ind_map["comb"]
                     l.debug(f"calculating {ind} in {source} for {len(combis)} combinations")
                     # creating scripts for indicator
@@ -348,6 +367,10 @@ class Evaluator(worker.Worker):
                           all_none = True
                           for date in dates:
                             # one element per combination
+
+                            #for comb in combis:
+                            #if comb in data and p in obs and obs[p] not in data[comb]:
+                            #  breakpoint()
                             param_values = [self._get_param_value(p, comb, date, data, obs, attrs, main_par, base_date) for comb in combis]
                             jsonf.write(sep)
                             sep = ","
@@ -407,12 +430,12 @@ class Evaluator(worker.Worker):
         if comb in data:
           row = data[comb]
           # if the parameter is an observation we will look into the associated row attribute getting the date from attrs 
-          if param in obs:
+          if param in obs and obs[param] in row:
             for v in row[obs[param]]:
               if v["attrs"][base_date] == date:
                 return v["value"]
           # if not an observation then the result is expected to be on attrs or in combination
-          else:
+          elif not param in obs:
             for v in row[obs[main_par]]:
               if v["attrs"][base_date] == date:
                 if attrs[param] in v["attrs"]:

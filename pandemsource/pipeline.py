@@ -251,7 +251,7 @@ class Pipeline(worker.Worker):
             calc_step = self.job_precalstep[job['id']] + 1
             self.job_precalstep[job['id']] = calc_step
             # recreating the indicators to calculate for the current step
-            ind_in_step = {k:v for k,v in self.job_precalinds[job['id']].items() if v["step"] == calc_step}
+            ind_in_step = [(k,v) for k,v in self.job_precalinds[job['id']] if v["step"] == calc_step]
             if len(ind_in_step) > 0:
               self.update_job_step(job, 'calculate_started', 0.8)
               self.send_to_calculate(ind_in_step, job)
