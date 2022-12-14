@@ -259,11 +259,14 @@ class Evaluator(worker.Worker):
                         # The remaining combination have passed all validations to calculate the candidate indicator
                         if len(comb) > 0:
                           # applying modifiers of indicators to the remaining tuples
+                          origcombs = dict()
                           if ind in modifiers:
                             for j in range(0, len(comb)):
                               dcomb = dict(comb[j])
                               dcomb.update(modifiers[ind])
-                              comb[j] = tuple(sorted(((k, v) for k,v in dcomb.items() if v is not None), key = lambda p: p[0]))
+                              new_comb = tuple(sorted(((k, v) for k,v in dcomb.items() if v is not None), key = lambda p: p[0]))
+                              origcombs[new_comb] = comb[j]
+                              comb[j] = new_comb
                                     
                           new_combs = set(comb) - (obs_keys[ind]["comb"] if ind in obs_keys else set())
                           next_keys[ind] = {
@@ -275,7 +278,7 @@ class Evaluator(worker.Worker):
                             #l.debug(f"added! {ind}->{len(new_combs)}")
                             indicators_to_cal.append((ind, {
                               "step":step + 1,
-                              "comb":new_combs,
+                              "comb":[origcombs[c] for c in new_combs],
                               "dates":dates,
                               "date_par":date_par
                             }))
@@ -368,10 +371,6 @@ class Evaluator(worker.Worker):
                           all_none = True
                           for date in dates:
                             # one element per combination
-
-                            #for comb in combis:
-                            #if comb in data and p in obs and obs[p] not in data[comb]:
-                            #  breakpoint()
                             param_values = [self._get_param_value(p, comb, date, data, obs, attrs, main_par, base_date) for comb in combis]
                             jsonf.write(sep)
                             sep = ","
