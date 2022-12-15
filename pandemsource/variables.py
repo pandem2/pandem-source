@@ -166,7 +166,7 @@ class Variables(worker.Worker):
                 tt["attrs"][modifier['variable']] = modifier['value']
           return tt
 
-    def write_variable(self, input_tuples, step, job):
+    def write_variable(self, input_tuples, step, delete_stamp, job):
         # if input_tuples is in cache get its value
         if type(input_tuples) == CacheValue:
           input_tuples = input_tuples.value()
@@ -174,7 +174,7 @@ class Variables(worker.Worker):
         variables = self.get_variables()
         partition_dict = defaultdict(list)
         if step ==0:
-            self.write_variable(self.tag_source_var(job["dls_json"]), None, job)
+            self.write_variable(self.tag_source_var(job["dls_json"]), None, None, job)
 
         if input_tuples['tuples']:
             # building a dictionary with destination files for tuples depending on variable name at their partitioning schema
@@ -239,9 +239,10 @@ class Variables(worker.Worker):
                               last_tuples = json.load(f)
                             except:
                               raise ValueError(f"Error while interpreting file {f} as JSON")
+                        delete_old = delete_stamp is None or os.path.getmtime(file_path) < delete_stamp
                         for tup in last_tuples['tuples']:
                             cond_count = len(update_filter)
-                            if step is None or step == 0:
+                            if delete_old:
                               for filt in update_filter: 
                                 if filt['variable'] in tup['attrs'].keys() and tup['attrs'][filt['variable']] in filt['value']:
                                     cond_count = cond_count - 1

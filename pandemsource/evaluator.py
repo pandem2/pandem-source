@@ -392,6 +392,8 @@ class Evaluator(worker.Worker):
                             with open(self.pandem_path(result_path)) as f:
                                 r = json.load(f)
                             assert(len(r) == len(combis))
+                            #if ind == "incidence":
+                            #  breakpoint()
                             for combi_res, comb in zip(r, combis):
                               for date, value in zip(dates, combi_res):
                                 ind_date_tuple = {'obs': {ind:value if value != "NA" else None},
@@ -403,7 +405,7 @@ class Evaluator(worker.Worker):
                                 result['tuples'].append(ind_date_tuple)
                         else:
                             l.warning(f'result file {result_path} not found')
-            
+             
             result['scope'] = {}            
             result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
 

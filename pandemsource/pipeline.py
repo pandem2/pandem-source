@@ -41,6 +41,7 @@ class Pipeline(worker.Worker):
 
         self.job_steps = defaultdict(dict)
         self.decompressed_files = defaultdict(list)
+        self.job_precalstamp= {}
         self.job_precalstep = {}
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
@@ -56,7 +57,7 @@ class Pipeline(worker.Worker):
 
         self.job_dicos = [
           self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.job_aggrtuples, 
-          self.job_precalinds, self.job_indicators, self.pending_count, self.pending_total, self.job_issues
+          self.job_precalinds, self.job_indicators, self.pending_count, self.pending_total, self.job_issues, self.job_precalstamp, self.job_precalstep
         ]
 
         self.last_step = "ended"
@@ -413,6 +414,7 @@ class Pipeline(worker.Worker):
           return
         self.job_precalinds[job["id"]] = indicators_to_calculate
         self.job_precalstep[job["id"]] = 0
+        self.job_precalstamp[job["id"]] = time.time()
         self.update_job_step(job, 'precalculate_ended', 0.75)
 
     def send_to_calculate(self, indicators_to_calculate, job): 
@@ -425,9 +427,10 @@ class Pipeline(worker.Worker):
         self.update_job_step(job, 'calculate_ended', 0.85)
 
     def send_to_publish(self, tuples, job):
+        
         calc_step = self.job_precalstep[job['id']]
-
-        self._variables_proxy.write_variable(tuples, calc_step, job)
+        calc_stamp = self.job_precalstamp[job['id']] 
+        self._variables_proxy.write_variable(tuples, calc_step, calc_stamp, job)
     
     def publish_end(self, job): 
         if job["status"] == "failed":
