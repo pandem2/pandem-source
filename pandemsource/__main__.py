@@ -96,6 +96,11 @@ def main(a):
     help="Restore the default script folder in pandem-home"
   )
   reset_parser.add_argument(
+    "--input-local",
+    action="store_true",
+    help="Restore the default input-local folder in pandem-home"
+  )
+  reset_parser.add_argument(
     "--covid19-datahub", 
     action="store_true", 
     help="Reset covid19-datahub datasource to system defaults", 
@@ -164,6 +169,11 @@ def main(a):
     "--health-resources-eurostat",
     action="store_true",
     help="Reset pandem health resources staff related information to system defaults"
+  )
+  reset_parser.add_argument(
+    "--pandem-2-2023-fx",
+    action="store_true",
+    help="Reset pandem 2023 functional exercise related information to system defaults"
   )
 
   reset_parser.set_defaults(func = do_reset)
@@ -306,6 +316,8 @@ def do_reset(args, *other):
     admin.reset_default_folders("input-local", "input-local-defaults", "dfcustom", "scripts", "variables", "indicators", "img")
   if args.scripts:
     admin.reset_default_folders("scripts")
+  if args.input_local:
+    admin.reset_default_folders("input-local")
   if args.variables or args.restore_factory_defaults:
     admin.reset_variables()
   if args.covid19_datahub or args.ecdc_covid19 or args.restore_factory_defaults:
@@ -407,6 +419,10 @@ def do_reset(args, *other):
     admin.reset_source("health-resources-nuts2-eurostat")
     admin.reset_source("isco-08-ilo")
     admin.reset_source("health-resources-beds-eurostat")
+  if args.pandem_2_2023_fx or args.restore_factory_defaults:
+    admin.reset_default_folders("input-local")
+    admin.reset_source("pandem-2-2023-fx-DEU")
+    admin.reset_source("pandem-2-2023-fx-NLD")
 
 def do_list(args, *other):
   if args.jobs:
