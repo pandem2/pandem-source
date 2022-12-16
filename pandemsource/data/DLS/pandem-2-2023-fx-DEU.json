@@ -61,11 +61,17 @@
         },
         {
             "name": "deaths",
-            "variable": "number_of_deaths"
+            "variable": "deaths_infected"
         },
         {
             "name": "population",
             "variable": "population"
         }
-    ]
+    ],
+    "synthetize": {
+        "active": true,
+        "tags": [
+            "fx2023"
+        ]
+    }
 }

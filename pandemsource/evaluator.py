@@ -142,10 +142,13 @@ class Evaluator(worker.Worker):
             for ind, params in parameters.items():
                 synthetic_formula = var_dic[ind]['synthetic_formula']
                 dls = job['dls_json']
-                if synthetic_formula is not None:
-                  if 'synthetize' not in dls or 'active' in dls['synthetize'] and not dls['synthetize']['active']:
+                # by default, if the tag of the synthetic formula is empty, we calculate the indicator
+                if synthetic_formula and 'synthetize' in dls:
+                  # if DLS information is available, we look at the 'active' status
+                  if 'active' in dls['synthetize'] and not dls['synthetize']['active']:
                     continue
-                  if synthetic_formula not in dls['synthetize']['tags']:
+                  # if tags are available in DLS, we check the tag of the synthetic formula is in the DLS tags
+                  if not set(synthetic_formula).intersection(set(dls['synthetize']['tags'])):
                     continue
                 # preparing variables to evaluate if the current indicator can be calculated
                 mod = modifiers[ind]
@@ -392,6 +395,8 @@ class Evaluator(worker.Worker):
                             with open(self.pandem_path(result_path)) as f:
                                 r = json.load(f)
                             assert(len(r) == len(combis))
+                            if ind == "deaths_hospitalized_rate":
+                              breakpoint()
                             for combi_res, comb in zip(r, combis):
                               for date, value in zip(dates, combi_res):
                                 ind_date_tuple = {'obs': {ind:value if value != "NA" else None},
