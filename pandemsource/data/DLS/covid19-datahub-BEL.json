@@ -1,57 +1,152 @@
 {
-    "scope":{
-      "source":"covid19-datahub-BEL",
-      "source_description":"Unified dataset by collecting worldwide fine-grained case data, merged with exogenous variables helpful for a better understanding of COVID-19.",
-      "tags":["COVID-19 Datahub"],
-      "data_quality":"Official (third-party compilation)",
-      "frequency":"daily",
-      "frequency_start_hour":2,
-      "frequency_end_hour":2,
-      "reference_user":"COVID-19 Data Hub (Emanuele Guidotti)",
-      "reporting_email":"",
-      "globals":[
-        {"variable":"source"},
-        {"variable":"pathogen_name", "value":"COVID-19"}
-      ],
-      "update_scope":[
-        {"variable":"source"},
-        {"variable":"geo_code"}
-      ]
-    },
-    "acquisition":{
-      "active":true,
-      "channel":{
-        "name":"git-local",
-        "changed_by": {"script_type":"R", "script_name":"download-covid19-datahub-BEL"}
+  "scope": {
+    "source": "covid19-datahub-BEL",
+    "source_description": "Unified dataset by collecting worldwide fine-grained case data, merged with exogenous variables helpful for a better understanding of COVID-19.",
+    "tags": [
+      "COVID-19 Datahub"
+    ],
+    "data_quality": "Official (third-party compilation)",
+    "frequency": "daily",
+    "frequency_start_hour": 2,
+    "frequency_end_hour": 2,
+    "reference_user": "COVID-19 Data Hub (Emanuele Guidotti)",
+    "reporting_email": "",
+    "globals": [
+      {
+        "variable": "source"
       },
-      "format": {
-        "name":"csv",
-        "decimal_sign":".",
-        "thousands_separator":"",
-        "date_format":"%Y-%m-%d",
-        "encoding":"UTF-8"
+      {
+        "variable": "pathogen_name",
+        "value": "COVID-19"
+      }
+    ],
+    "update_scope": [
+      {
+        "variable": "source"
+      },
+      {
+        "variable": "geo_code"
+      }
+    ]
+  },
+  "acquisition": {
+    "active": true,
+    "channel": {
+      "name": "git-local",
+      "changed_by": {
+        "script_type": "R",
+        "script_name": "download-covid19-datahub-BEL"
       }
     },
-    "columns":[
-      {"name":"date", "variable":"reporting_date"},
-      {"name":"confirmed", "variable":"cumulative_confirmed_cases"},
-      {"name":"recovered", "variable":"recovered_cases"},
-      {"name":"deaths", "variable":"cumulative_infected_deaths"},
-      {"name":"tests", "variable":"performed_tests"},
-      {"name":"vaccines", "variable":"doses_injected"},
-      {"name":"people_vaccinated", "variable":"at_least_one_dose_vaccinated"},
-      {"name":"people_fully_vaccinated", "variable":"people_fully_vaccinated"},
-      {"name":"hosp", "variable":"hospitalised_infected_patients"},
-      {"name":"icu", "variable":"hospitalised_infected_patients_in_icu"},
-      {"name":"vent", "variable":"number_of_patients_with_ventilator"},
-      {"name":"no_tracing", "variable":"implemented_policy", "scope":{"policy_code":"no_contact_tracing"}},
-      {"name":"limited_tracing", "variable":"implemented_policy", "scope":{"policy_code":"limited_contact_tracing"}},
-      {"name":"comprehensive_tracing", "variable":"implemented_policy", "scope":{"policy_code":"comprehensive_contact_tracing"}},
-      {"name":"no_testing", "variable":"implemented_policy", "scope":{"policy_code":"no_testing"}},
-      {"name":"symptoms_limited_testing", "variable":"implemented_policy", "scope":{"policy_code":"symptoms_restricted_testing"}},
-      {"name":"symptoms_testing", "variable":"implemented_policy", "scope":{"policy_code":"symptoms_testing"}},
-      {"name":"open_testing", "variable":"implemented_policy", "scope":{"policy_code":"open_testing"}},
-      {"name":"population", "variable":"population"},
-      {"name":"key_nuts", "variable":"geo_code"}
-    ]
+    "format": {
+      "name": "csv",
+      "decimal_sign": ".",
+      "thousands_separator": "",
+      "date_format": "%Y-%m-%d",
+      "encoding": "UTF-8"
+    }
+  },
+  "columns": [
+    {
+      "name": "date",
+      "variable": "reporting_date"
+    },
+    {
+      "name": "confirmed",
+      "variable": "cumulative_confirmed_cases"
+    },
+    {
+      "name": "recovered",
+      "variable": "recovered_cases"
+    },
+    {
+      "name": "deaths",
+      "variable": "cumulative_infected_deaths"
+    },
+    {
+      "name": "tests",
+      "variable": "performed_tests"
+    },
+    {
+      "name": "vaccines",
+      "variable": "doses_injected"
+    },
+    {
+      "name": "people_vaccinated",
+      "variable": "at_least_one_dose_vaccinated"
+    },
+    {
+      "name": "people_fully_vaccinated",
+      "variable": "people_fully_vaccinated"
+    },
+    {
+      "name": "hosp",
+      "variable": "hospitalised_infected_patients"
+    },
+    {
+      "name": "icu",
+      "variable": "hospitalised_infected_patients_in_icu"
+    },
+    {
+      "name": "vent",
+      "variable": "number_of_patients_with_ventilator"
+    },
+    {
+      "name": "no_tracing",
+      "variable": "implemented_policy",
+      "scope": {
+        "policy_code": "no_contact_tracing"
+      }
+    },
+    {
+      "name": "limited_tracing",
+      "variable": "implemented_policy",
+      "scope": {
+        "policy_code": "limited_contact_tracing"
+      }
+    },
+    {
+      "name": "comprehensive_tracing",
+      "variable": "implemented_policy",
+      "scope": {
+        "policy_code": "comprehensive_contact_tracing"
+      }
+    },
+    {
+      "name": "no_testing",
+      "variable": "implemented_policy",
+      "scope": {
+        "policy_code": "no_testing"
+      }
+    },
+    {
+      "name": "symptoms_limited_testing",
+      "variable": "implemented_policy",
+      "scope": {
+        "policy_code": "symptoms_restricted_testing"
+      }
+    },
+    {
+      "name": "symptoms_testing",
+      "variable": "implemented_policy",
+      "scope": {
+        "policy_code": "symptoms_testing"
+      }
+    },
+    {
+      "name": "open_testing",
+      "variable": "implemented_policy",
+      "scope": {
+        "policy_code": "open_testing"
+      }
+    },
+    {
+      "name": "population",
+      "variable": "population"
+    },
+    {
+      "name": "key_nuts",
+      "variable": "geo_code"
+    }
+  ]
 }

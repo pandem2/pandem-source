@@ -142,8 +142,8 @@ class Evaluator(worker.Worker):
             for ind, params in parameters.items():
                 synthetic_formula = var_dic[ind]['synthetic_formula']
                 dls = job['dls_json']
-                if synthetic_formula is not None:
-                  if 'synthetize' not in dls or 'active' in dls['synthetize'] and not dls['synthetize']['active']:
+                if synthetic_formula is not None and 'synthetize' in dls:
+                  if 'active' in dls['synthetize'] and not dls['synthetize']['active']:
                     continue
                   if synthetic_formula not in dls['synthetize']['tags']:
                     continue

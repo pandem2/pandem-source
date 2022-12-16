@@ -1,1 +1,1 @@
-100000*active_cases/population
+100000 * active_cases / population
