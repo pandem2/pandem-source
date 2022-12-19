@@ -58,7 +58,8 @@ def read_variables_definitions():
     if col == "no_report":
       df[col] = df[col].apply(lambda x : str(x).lower() == 'true' if pd.notna(x) else False)
     if col == "synthetic_formula":
-      df[col] = df[col].apply(lambda x : json.loads(x) if pd.notna(x) else [])
+      print(df[col])
+      df[col] = df[col].str.split(",").apply(lambda x: [e.strip() for e in x]).tolist() if df[col] is not None else []
   result = df.to_json(orient = "records")
   parsed = json.loads(result)
   return parsed
