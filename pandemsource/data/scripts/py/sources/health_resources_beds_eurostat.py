@@ -60,7 +60,7 @@ def separate_nr_hthab(df: pd.DataFrame) -> pd.DataFrame:
             number_of_hospital_beds_per_100k if number_of_hospital_beds_per_100k is not None else keys[key][4]
           ]
         
-    new_df = pd.DataFrame(keys.values(), columns=[GEO, "facility", "year", "number_of_hospital_beds", "number_of_hospital_beds_per_100k"])
+    new_df = pd.DataFrame([*keys.values()], columns=[GEO, "facility", "year", "number_of_hospital_beds", "number_of_hospital_beds_per_100k"])
     print(new_df)
     return new_df
 
