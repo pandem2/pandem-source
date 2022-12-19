@@ -143,9 +143,12 @@ class Evaluator(worker.Worker):
                 synthetic_formula = var_dic[ind]['synthetic_formula']
                 dls = job['dls_json']
                 if synthetic_formula is not None and 'synthetize' in dls:
+                if synthetic_formula and 'synthetize' in dls:
+                  # if DLS information is available, we look at the 'active' status
                   if 'active' in dls['synthetize'] and not dls['synthetize']['active']:
                     continue
-                  if synthetic_formula not in dls['synthetize']['tags']:
+                  # if tags are available in DLS, we check the tag of the synthetic formula is in the DLS tags
+                  if not set(synthetic_formula).intersection(set(dls['synthetize']['tags'])):
                     continue
                 # preparing variables to evaluate if the current indicator can be calculated
                 mod = modifiers[ind]

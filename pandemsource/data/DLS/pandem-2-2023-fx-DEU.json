@@ -1,0 +1,77 @@
+{
+    "scope": {
+        "source": "pandem-2-2023-fx-DEU",
+        "source_description": "Synthetic data generated for the PANDEM-2 2023 functional exercise",
+        "tags": [
+            "Pandem-2 2023 FX"
+        ],
+        "data_quality": "Synthetic",
+        "frequency": "every 30 seconds",
+        "reference_user": "Pandem2 Consortium",
+        "reporting_email": "",
+        "globals": [
+            {
+                "variable": "source"
+            },
+            {
+                "variable": "pathogen_code",
+                "value": "J09.X"
+            }
+        ],
+        "update_scope": [
+            {
+                "variable": "source"
+            }
+        ]
+    },
+    "acquisition": {
+        "channel": {
+            "name": "input-local",
+            "xls_file": "Germany.csv",
+            "sheet": "Germany"
+        },
+        "format": {
+            "name": "xls",
+            "decimal_sign": ".",
+            "thousands_separator": "",
+            "date_format": "%Y-%m-%d",
+            "encoding": "UTF-8"
+        }
+    },
+    "columns": [
+        {
+            "name": "date",
+            "variable": "reporting_date"
+        },
+        {
+            "name": "country",
+            "variable": "country_name"
+        },
+        {
+            "name": "age",
+            "variable": "age_group"
+        },
+        {
+            "name": "cases",
+            "variable": "confirmed_cases"
+        },
+        {
+            "name": "hospitalisations",
+            "variable": "hospitalised_infected_patients"
+        },
+        {
+            "name": "deaths",
+            "variable": "deaths_infected"
+        },
+        {
+            "name": "population",
+            "variable": "population"
+        }
+    ],
+    "synthetize": {
+        "active": true,
+        "tags": [
+            "fx2023"
+        ]
+    }
+}
