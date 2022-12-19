@@ -5,6 +5,8 @@ import re
 GEO = "geo\\time"
 
 def df_transform(df: pd.DataFrame) -> pd.DataFrame:
+    print("--------------------------------------------------------hola")
+    print(df)
     df = fix_csv_tsv_mix_format_issues(df)
     df = df[(df['unit'].str.contains("NR|P_HTHAB", regex="True"))]
     df = df.drop(columns=["line_number"])
@@ -17,6 +19,7 @@ def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
     df["year"] = pd.to_datetime(df["year"], format="%Y")
     df["line_number"] = range(1, len(df)+1)
+    print(df)
     return df
 
 
@@ -40,13 +43,25 @@ def remove_letters_in_numeric_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def separate_nr_hthab(df: pd.DataFrame) -> pd.DataFrame:
-    hundred_k_rows = df[df['unit'] == "P_HTHAB"]
     data = []
-    for index, row in hundred_k_rows.iterrows():
-        number_of_hospital_beds = df[(df[GEO] == row[GEO]) & (df["year"] == row["year"]) & (df["unit"] == "NR") & (df["facility"] == row["facility"])]["number_of_hospital_beds"].values[0]
-        data.append([row[GEO], row["facility"], row["year"], number_of_hospital_beds, row["number_of_hospital_beds"]])
-        df = df.drop(index=index)
-    new_df = pd.DataFrame(data, columns=[GEO, "facility", "year", "number_of_hospital_beds", "number_of_hospital_beds_per_100k"])
+    keys = dict() 
+    for index, row in df.iterrows():
+        key = (row[GEO],  row["facility"], row["year"])
+        number_of_hospital_beds = row["number_of_hospital_beds"] if row["unit"] == "NR" else None
+        number_of_hospital_beds_per_100k = row["number_of_hospital_beds"] if row["unit"] == "P_HTHAB" else None
+        if key not in keys:
+          keys[key] = [row[GEO],  row["facility"], row["year"], number_of_hospital_beds, number_of_hospital_beds_per_100k]
+        else:
+          keys[key] = [
+            row[GEO],  
+            row["facility"], 
+            row["year"], 
+            number_of_hospital_beds if number_of_hospital_beds is not None else keys[key][3], 
+            number_of_hospital_beds_per_100k if number_of_hospital_beds_per_100k is not None else keys[key][4]
+          ]
+        
+    new_df = pd.DataFrame(keys.values(), columns=[GEO, "facility", "year", "number_of_hospital_beds", "number_of_hospital_beds_per_100k"])
+    print(new_df)
     return new_df
 
 
