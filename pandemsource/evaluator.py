@@ -143,7 +143,7 @@ class Evaluator(worker.Worker):
                 synthetic_formula = var_dic[ind]['synthetic_formula']
                 dls = job['dls_json']
                 if synthetic_formula is not None and 'synthetize' in dls:
-                if synthetic_formula and 'synthetize' in dls:
+                #if synthetic_formula and 'synthetize' in dls:
                   # if DLS information is available, we look at the 'active' status
                   if 'active' in dls['synthetize'] and not dls['synthetize']['active']:
                     continue
