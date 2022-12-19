@@ -1,16 +1,13 @@
-import os
-import time
 from datetime import datetime
-import threading
 from . import worker
 from . import util
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABCMeta
 import pandas as pd
 import numpy as np
-import json
 import isoweek
 import logging
 import re
+
 l = logging.getLogger("pandem.dfreader")
 
 class DataframeReader(worker.Worker):
@@ -180,7 +177,6 @@ class DataframeReader(worker.Worker):
         variables = self.get_variables()
         # getting df from cache
         df = df.value()
-        dls_col_list=[]
         file_name = util.absolute_to_relative(path, "files/staging/")
 
         # Checking column names and compatible types
@@ -351,7 +347,7 @@ class DataframeReader(worker.Worker):
         if var_name in variables and "modifiers" in variables[var_name]:
             for mod in variables[var_name]["modifiers"]:
               mod_var = mod["variable"]
-              if not "attrs" in tup:
+              if "attrs" not in tup:
                 tup["attrs"] = {}
               if mod_var not in tup["attrs"] or tup["attrs"][mod_var] is None:
                 tup["attrs"][mod_var] = mod["value"]
@@ -381,10 +377,10 @@ class DataframeReader(worker.Worker):
 
     def format_for(self, var_name, dls, variables):
       col_def = list([col for col in dls["columns"] if "variable" in col and col["variable"]==var_name])
-      format = {}
+      var_format = {}
       for attr in ["decimal_sign", "thousands_separator", "date_format"]:
         if len(col_def) > 0 and attr in col_def[0]:
-          format[attr] = col_def[0][attr]
+          var_format[attr] = col_def[0][attr]
         elif "acquisition" in dls and "format" in dls["acquisition"] and attr in dls["acquisition"]["format"]: 
-          format[attr] =  dls["acquisition"]["format"][attr]
-      return format
+          var_format[attr] =  dls["acquisition"]["format"][attr]
+      return var_format

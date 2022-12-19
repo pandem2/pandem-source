@@ -1,4 +1,3 @@
-import os
 import subprocess
 from . import acquisition_git
 
@@ -23,13 +22,13 @@ class AcquisitionGITLocal(acquisition_git.AcquisitionGIT):
         #     os.makedirs(working_dir)
         res = subprocess.run(['git', 'status'], cwd = working_dir)
         if res.returncode != 0 :
-            res = subprocess.run(["git", "init"], cwd = working_dir)
-            res = subprocess.run(["git", "config", "user.name", "pandem2monitor"], cwd = working_dir)
-            res = subprocess.run(["git", "config", "user.email", "pandem2monitor@pandem2.eu"], cwd = working_dir)
-            res = subprocess.run(["git", "add", "."], cwd = working_dir)
-            res = subprocess.run(["git", "commit", "-m" "Automatically initialized repo"], cwd = working_dir, capture_output=True)
+            subprocess.run(["git", "init"], cwd = working_dir)
+            subprocess.run(["git", "config", "user.name", "pandem2monitor"], cwd = working_dir)
+            subprocess.run(["git", "config", "user.email", "pandem2monitor@pandem2.eu"], cwd = working_dir)
+            subprocess.run(["git", "add", "."], cwd = working_dir)
+            subprocess.run(["git", "commit", "-m", "Automatically initialized repo"], cwd = working_dir, capture_output=True)
         else :
-            res = subprocess.run(["git", "add", "."], cwd = working_dir)
-            res = subprocess.run(["git", "commit", "-m" "Committed new files"], cwd = working_dir, capture_output=True)
+            subprocess.run(["git", "add", "."], cwd = working_dir)
+            subprocess.run(["git", "commit", "-m", "Committed new files"], cwd = working_dir, capture_output=True)
         
         return super().new_files(dls, last_hash)

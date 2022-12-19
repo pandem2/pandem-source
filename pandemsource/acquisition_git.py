@@ -1,6 +1,5 @@
 import os
 import re
-import threading
 from . import acquisition
 import subprocess
 import re

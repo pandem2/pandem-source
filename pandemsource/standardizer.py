@@ -34,7 +34,6 @@ class Standardizer(worker.Worker):
         std_var={}
         variables=self._variables_proxy.get_variables().get()
         list_issues=[]
-        list_ref=[]
         global_tuple={}
         update_tuple={}
         refs_alias={}

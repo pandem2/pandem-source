@@ -50,7 +50,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
             in_maingroup = dls["acquisition"]["channel"]["topics"][topic]["group"] == self._maingroup
             self._included_regex[topic] = "|".join(map(lambda v: re.escape(v.lower()), phrases))  
             for kw in phrases:
-              if not kw in self._phrases and in_maingroup:
+              if kw not in self._phrases and in_maingroup:
                 if len(kw.encode("utf-8")) > 60:
                   raise ValueError(f"Twitter filter endpoint cannot contain phrases bigger than 60 bytes and {kw} has {len(kw.encode('utf-8'))}")
                 self._phrases.append(kw)
@@ -103,7 +103,6 @@ class AcquisitionTwitter(acquisition.Acquisition):
     
     def new_files(self, dls, last_hash):
         # testing if we need to replay files
-        replay = False
         if os.path.exists(self._replay_dir):
           files_to_replay = glob.glob(f"{self._replay_dir}/**/*.json.gz", recursive = True)
           if len(files_to_replay) > 0:
@@ -120,7 +119,6 @@ class AcquisitionTwitter(acquisition.Acquisition):
               os.makedirs(arc, exist_ok = True)
               dest = os.path.join(arc, to_arc)
               os.rename(to_archive, dest)
-              current_hash = to_arc
               return {"hash":to_archive, "files":[dest]}  
 
 

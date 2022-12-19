@@ -22,9 +22,7 @@ from . import variables
 from . import evaluator
 from . import api
 import datetime
-import os
 import pandas as pd
-from itertools import chain
 
 class Orchestration(pykka.ThreadingActor):
 
@@ -100,7 +98,7 @@ class Orchestration(pykka.ThreadingActor):
         self.current_actors['evaluator'] = {'ref': evaluator_ref}
 
          # launch api actor
-        api_ref = api.apiREST.start('api', self.actor_ref, self.settings)
+        api_ref = api.ApiREST.start('api', self.actor_ref, self.settings)
         self.current_actors['api'] = {'ref': api_ref}
 
         # Launching acquisition actors (active actors)

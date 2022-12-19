@@ -1,7 +1,6 @@
 
 from . import formatreader
 import pandas as pd
-import re
 import json
 import itertools
 import gzip

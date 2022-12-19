@@ -28,7 +28,6 @@ class Storage(worker.Worker):
         # self.job_cache = {}
         # create empty dataframes in self.db_tables if pickle files doesn't exist
         self.db_tables = dict()
-        test_bool = os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle'))
         if os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle')):
             self.db_tables['job'] = pd.read_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle'))
         else:
@@ -157,7 +156,7 @@ class Storage(worker.Worker):
         
     def write_db(self, record, db_class):
         df = self.db_tables[db_class]
-        if not 'id' in  record:
+        if 'id' not in  record:
             if df.shape[0] > 0:
                 record['id'] = df.index.max()+1
             else:
@@ -204,7 +203,6 @@ class Storage(worker.Worker):
           os.makedirs(util.pandem_path("files", "staging", str(job_id)))
       #  self.job_cache[job_id] =  
       return shelve.open(shelve_path,  writeback=False)
-      #return self.job_cache[job_id]
 
     def to_job_cache(self, job_id, key, data):
       job_id = int(job_id)

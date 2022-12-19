@@ -14,7 +14,6 @@ class AcquisitionZenodo(acquisition.Acquisition):
     
     def new_files(self, dls, last_hash):
         source = dls['acquisition']['channel']['search']
-        match = dls['acquisition']['channel']['match']
         url = f'https://zenodo.org/api/records/?q=conceptrecid:{source}&access_token='
         r = requests.get(url)
         response_status(r.status_code, url=url)

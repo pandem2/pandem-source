@@ -10,7 +10,7 @@ import logging
 l = logging.getLogger("pandem.perf")
 
 
-def printMem(msg = ""):
+def print_mem(msg = ""):
   l.debug(f"{msg} Used Mem: {psutil.virtual_memory().used / (1024*1024*1024)}")
 
 def check_pandem_home():

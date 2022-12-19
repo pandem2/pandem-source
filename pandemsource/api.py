@@ -18,6 +18,7 @@ import ast
 from tornado_swagger.components import components
 from tornado_swagger.setup import setup_swagger
 import json
+import math
 
 l = logging.getLogger("pandem-api")
 
@@ -26,7 +27,7 @@ class ConstantsNamespace:
   JSON_EXT = ".json"
 
 
-class apiREST(worker.Worker):
+class ApiREST(worker.Worker):
     __metaclass__ = ABCMeta 
 
     def __init__ (self, name, orchestrator_ref, settings):
@@ -470,8 +471,16 @@ class TimeSerieHandler(tornado.web.RequestHandler):
                     #resp[(date, datevar)].update({k:v for k,v in keys})
                   if var not in resp[(date, datevar)]:
                     resp[(date, datevar)]["indicator"] = indicator
-                    resp[(date, datevar)]["value"] = value if value not in [np.inf, -np.inf] else None
-                  else :
+                    # We need to filter timeseries infinite values for pandem-source-app.R script to display timeseries without errors
+                    try:
+                      # Infinity Guard
+                      if math.isinf(float(value)):
+                        resp[(date, datevar)]["value"] = None
+                      else:
+                        raise ValueError("Value is not infinite")
+                    except ValueError:
+                      resp[(date, datevar)]["value"] = value
+                  else:
                     # TODO: change the aggregation function depending on the unit
                     resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + value
                     

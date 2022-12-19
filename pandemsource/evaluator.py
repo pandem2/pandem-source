@@ -1,26 +1,15 @@
 import os
 
-from numpy import int64
 from . import worker
-from abc import ABC, abstractmethod, ABCMeta
-from datetime import datetime, timedelta
-import time
+from abc import ABCMeta
+from datetime import datetime
 import re
-from collections import defaultdict
-import itertools as it
-import tempfile
 import json
 import subprocess
-from copy import deepcopy
-from itertools import chain
 import logging
 import traceback
 
 l = logging.getLogger("pandem.evaluator")
-
-
-
-
 
 
 class Evaluator(worker.Worker):
@@ -90,7 +79,6 @@ class Evaluator(worker.Worker):
         # obs_keys will contain all of the variables found on the tuples with its date period and combinations
         obs_keys = {}
         
-        obs_aliases = {}
         next_keys = {}
         
         # iterating over all tuples in the pipeline to pu 
@@ -131,7 +119,6 @@ class Evaluator(worker.Worker):
                     obs_keys[var_name]["dates"].add(tuple((vn, t["attrs"][vn]) for vn in date_attrs))
 
 
-        var_obs = {}
         indicators_to_cal = []
         step = 0
         stop = False
@@ -151,7 +138,6 @@ class Evaluator(worker.Worker):
                   if not set(synthetic_formula).intersection(set(dls['synthetize']['tags'])):
                     continue
                 # preparing variables to evaluate if the current indicator can be calculated
-                mod = modifiers[ind]
                 date_par = next(p for p in params if var_dic[p]['type'] == 'date')
                 base_date = var_dic[date_par]['variable']
                 no_date_pars = [p for p in params if p != date_par]
@@ -179,7 +165,6 @@ class Evaluator(worker.Worker):
                 # comb = comb if ind not in obs_keys else comb - obs_keys[ind]["comb"]
                 # in order to test this indicator we need to find at least the first observation on the current values
                 if len(comb) > 0:
-                    scomb = comb
                     comb = list(comb) 
                     # testing the tuples than satisfy the provided parameters
                     #l.debug(f"ind {ind} -> obs_pars {obs_pars} base_pars {base_pars}")
@@ -211,7 +196,7 @@ class Evaluator(worker.Worker):
                                 applied = dict(cc)
                                 applied.update(modifiers[obs_to_test])
                                 applied = (tuple(sorted(((k, v) for k,v in applied.items() if v is not None), key = lambda p: p[0])))
-                                if not applied in pcomb:  
+                                if applied not in pcomb:  
                                   missing_combs.add(applied)
                               if len(missing_combs) > 0 :
                                 # if the current obs has null modifiers we have to delete those from lookup key
@@ -304,7 +289,6 @@ class Evaluator(worker.Worker):
     def prepare_scripts(self, ind, job):
         scripts = self._scripts
         params = self._parameters
-        vars_dic =  self._dict_of_variables
         
         # read the functin code from indcators directory
         function_path = self.pandem_path(f'files', 'indicators', scripts[ind], 'function.R')
@@ -437,7 +421,7 @@ class Evaluator(worker.Worker):
               if v["attrs"][base_date] == date:
                 return v["value"]
           # if not an observation then the result is expected to be on attrs or in combination
-          elif not param in obs:
+          elif param not in obs:
             for v in row[obs[main_par]]:
               if v["attrs"][base_date] == date:
                 if attrs[param] in v["attrs"]:

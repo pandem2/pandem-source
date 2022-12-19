@@ -1,14 +1,12 @@
 import os
 from . import worker
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABCMeta
 import logging
-import functools
 import requests
 import json
 import re
 import copy
 import itertools
-from pprint import pprint
 
 l = logging.getLogger("pandem-nlp")
 
@@ -122,7 +120,7 @@ class NLPAnnotator(worker.Worker):
         for geo_var, regex in alias_regex.items():
           texts = [t["attrs"][text_field] for t in to_annotate]
           for t in to_annotate + annotated:
-            if not geo_var in t["attrs"]:
+            if geo_var not in t["attrs"]:
               text = t["attrs"][text_field].lower()
               if text not in geo_annotation:
                 match = re.search(alias_regex[geo_var], text)

@@ -3,13 +3,10 @@ import os
 from . import util 
 from .storage import CacheValue
 from . import admin
-import itertools
 import json
 import datetime
-import numpy
 from collections import defaultdict
 from .util import JsonEncoder
-from .util import printMem
 import logging
 import pickle
 import copy
@@ -136,7 +133,6 @@ class Variables(worker.Worker):
         if partition is None:
           return 'default.json'
         else:
-          #return '.'.join([key + '=' + str(val) for key, val in tuple['attrs'].items() if key in partition]) + '.json'
           return '.'.join([key + '=' + str(tuple['attrs'][key] if key in tuple['attrs'] and tuple['attrs'][key] is not None else '@None@') for key in partition]) + '.json'
 
     def remove_attrs(self, t, private_attrs):
@@ -149,7 +145,6 @@ class Variables(worker.Worker):
             return tt
 
     def apply_aliases(self, t, aliases):
-        applied = False
         if "obs" not in t or t["obs"].keys().isdisjoint(aliases.keys()):
           return t
         else:
@@ -353,7 +348,7 @@ class Variables(worker.Worker):
                       and dico_vars[attr]["linked_attributes"] is None
                   ) # or (var in modifiers and attr in modifiers[var])
                 # free_keys are the keys in the file which are not modified
-                free_keys = list(attr for attr in file_keys if not var in modifiers or attr not in modifiers[var])
+                free_keys = list(attr for attr in file_keys if var not in modifiers or attr not in modifiers[var])
                 if tuple((k, t["attrs"][k]) for k in free_keys) in key_map:
                   key = key_map[tuple((k, t["attrs"][k]) for k in free_keys)]
                   filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
@@ -363,7 +358,7 @@ class Variables(worker.Worker):
                       res[key] = {}
                     if "obs" in t:
                       obs_name =  next(iter(t["obs"].keys()))
-                      if not obs_name in res[key]:
+                      if obs_name not in res[key]:
                         res[key][obs_name] = []
                       res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
             tries = tries - 1

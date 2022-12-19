@@ -1,16 +1,9 @@
-import pykka
 import os
-import time
-import threading
 import datetime
-import json
 import hashlib
 from collections import defaultdict
 from . import worker
-from . import util
-from abc import ABC, abstractmethod, ABCMeta
-from .util import printMem
-import pickle
+from abc import ABCMeta
 import logging
 
 l = logging.getLogger("pandem.pipeline")
@@ -442,7 +435,7 @@ class Pipeline(worker.Worker):
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step, progress):
         l.debug(f"Changing to step {step} for job {int(job['id'])} source {job['dls_json']['scope']['source']} {round(progress*100, 1)}%")
-        #printMem()
+        #print_mem()
         # removing job from current step dict
         if job["step"] in self.job_steps and job["id"]:
           if job["id"] in self.job_steps[job["step"]]:

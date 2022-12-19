@@ -1,8 +1,7 @@
 import os
 from . import worker
-from abc import ABC, abstractmethod, ABCMeta
-from datetime import datetime, timedelta
-import time
+from abc import abstractmethod, ABCMeta
+from datetime import timedelta
 import logging as l
 
 class Acquisition(worker.Worker):

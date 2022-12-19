@@ -1,7 +1,6 @@
-import time
 from . import worker
 from . import util
-from abc import ABC, abstractmethod, ABCMeta
+from abc import abstractmethod, ABCMeta
 import logging
 from datetime import datetime
 import traceback

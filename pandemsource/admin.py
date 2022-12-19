@@ -1,7 +1,6 @@
 import pandas as pd
 import pkg_resources
 import json
-import codecs
 import threading
 import os
 import shutil
@@ -182,7 +181,7 @@ def nlp_models_up():
     try:
       if requests.get(ep).status_code != 200:
         return False
-    except Exception as err:
+    except Exception:
       return False
   return True
 
@@ -208,19 +207,9 @@ def nlp_docker_launch_command():
   return cmd
 
 def nlp_run_model_server():
-  #sudo_password = getpass.getpass(prompt='enter your sudo password: ')
-  #print("pwd received!")
   cmd = nlp_docker_launch_command()
   l.debug(f"Launching docker comman for nlp model server: {cmd}")
-  #p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,  stdin=subprocess.PIPE)
-  #with open(os.devnull, 'w') as devnull:
-  p = subprocess.run(cmd)
-  
-  #try:
-  #  out, err = p.communicate(input=(sudo_password+'\n').encode(),timeout=20)
-  #except subprocess.TimeoutExpired:
-  #  print("\n\n\n\n\n\n BUAAAAAAAAAAAAAAAAAAAAAA")
-  #  p.kill()
+  subprocess.run(cmd)
 
 
 def are_twitter_credentials_missing():
@@ -283,7 +272,7 @@ def list_sources(local = True, default = False, missing_local = False, missing_d
   if default:
     ret.extend(local_map.items())
   elif missing_default:
-    ret.extend((k, v) for k, v in local_map.items() if k not in defaul_map)
+    ret.extend((k, v) for k, v in local_map.items() if k not in default_map)
   return ret
 
 
