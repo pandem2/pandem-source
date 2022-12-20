@@ -1,1 +1,1 @@
-100*people_fully_vaccinated/population
+100 * people_fully_vaccinated / population

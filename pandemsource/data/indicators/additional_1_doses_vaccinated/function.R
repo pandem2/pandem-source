@@ -1,0 +1,1 @@
+cumsum(new_additional_1_doses)
