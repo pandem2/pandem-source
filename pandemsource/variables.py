@@ -44,7 +44,8 @@ class Variables(worker.Worker):
                               "modifiers": v['modifiers'],
                               "description": v['description'],
                               "no_report":v['no_report'],
-                              "synthetic_formula":v['synthetic_formula'],
+                              "synthetic_tag":v['synthetic_tag'],
+                              "synthetic_blocker":v['synthetic_blocker'],
                               "type": v['type']
                               }
                               for v in var_list if v['base_variable']==var['variable']]
@@ -57,7 +58,8 @@ class Variables(worker.Worker):
                           alias_dict['formula'] = alias['formula'] if alias['formula'] is not None else None #base_dict['formula']
                           alias_dict['modifiers'] = alias['modifiers']
                           alias_dict['no_report'] = alias['no_report']
-                          alias_dict['synthetic_formula'] = alias['synthetic_formula']
+                          alias_dict['synthetic_tag'] = alias['synthetic_tag']
+                          alias_dict['synthetic_blocker'] = alias['synthetic_blocker']
                           alias_dict['description'] = alias['description'] if alias['description'] is not None else alias_dict['description']
                           alias_dict['type'] = alias['type'] if alias['type'] is not None else alias_dict['type']
                           dic_variables[alias['alias']] = alias_dict
@@ -412,14 +414,15 @@ class Variables(worker.Worker):
             if "obs" in t and len(t["obs"]) > 0 and "attrs" in t:
               var_name = next(iter(t["obs"]))
               if var_name in var_dic and "aliases" in var_dic[var_name]:
-                modifiers = []
                 obs_name = var_name
                 
                 # Fitting an alias if possible
+                biggest_alias = 0
                 for alias in var_dic[var_name]["aliases"]:
-                  if len(alias['modifiers']) > len(modifiers) and not alias['no_report']:
+                  if len(alias['modifiers']) > biggest_alias and not alias['no_report']:
                     if all(m['value'] is None or (m['variable'] in t['attrs'] and t['attrs'][m['variable']] == m['value']) for m in alias['modifiers']):
                       obs_name = alias['alias']
+                      biggest_alias = len(alias['modifiers'])
                 # getting tuple key
                 key = []
                 key.append(("indicator", obs_name))

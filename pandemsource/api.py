@@ -18,6 +18,7 @@ import ast
 from tornado_swagger.components import components
 from tornado_swagger.setup import setup_swagger
 import json
+import math
 
 l = logging.getLogger("pandem-api")
 
@@ -470,11 +471,10 @@ class TimeSerieHandler(tornado.web.RequestHandler):
                     #resp[(date, datevar)].update({k:v for k,v in keys})
                   if var not in resp[(date, datevar)]:
                     resp[(date, datevar)]["indicator"] = indicator
-                    resp[(date, datevar)]["value"] = value if value not in [np.inf, -np.inf] else None
+                    resp[(date, datevar)]["value"] = value if value is None or not math.isinf(float(value)) else None
                   else :
                     # TODO: change the aggregation function depending on the unit
                     resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + value
-                    
         response = {"timeserie":list(resp.values())}
         self.write(response)
 

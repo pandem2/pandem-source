@@ -814,7 +814,7 @@ plot_timeseries <- function(df, title, scale = "std", period = "12") {
   } else 
     numeric(0)
   # Calculating breaks of y axis
-  y_breaks <- unique(floor(pretty(seq(0, (max(df$value, na.rm=T) + 1) * 1.1))))
+  #y_breaks <- unique(floor(pretty(seq(0, (max(df$value, na.rm=T) + 1) * 1.1))))
   # plotting
   labels <- unique(df$legend)
   fig_line <- ggplot2::ggplot(df, ggplot2::aes(x = .data$date, y = .data$y, color = .data$legend, label = .data$Details)) +

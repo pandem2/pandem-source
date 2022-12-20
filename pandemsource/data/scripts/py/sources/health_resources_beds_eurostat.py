@@ -5,8 +5,6 @@ import re
 GEO = "geo\\time"
 
 def df_transform(df: pd.DataFrame) -> pd.DataFrame:
-    print("--------------------------------------------------------hola")
-    print(df)
     df = fix_csv_tsv_mix_format_issues(df)
     df = df[(df['unit'].str.contains("NR|P_HTHAB", regex="True"))]
     df = df.drop(columns=["line_number"])
@@ -17,9 +15,9 @@ def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     df = build_columns_of_interest(df)
     df = df.astype({"year": str})
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df["week"] = df["year"] + "-01"
     df["year"] = pd.to_datetime(df["year"], format="%Y")
     df["line_number"] = range(1, len(df)+1)
-    print(df)
     return df
 
 
@@ -61,7 +59,6 @@ def separate_nr_hthab(df: pd.DataFrame) -> pd.DataFrame:
           ]
         
     new_df = pd.DataFrame([*keys.values()], columns=[GEO, "facility", "year", "number_of_hospital_beds", "number_of_hospital_beds_per_100k"])
-    print(new_df)
     return new_df
 
 

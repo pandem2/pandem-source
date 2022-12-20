@@ -97,7 +97,6 @@ class Evaluator(worker.Worker):
         for var, ttuples in dic_of_tuples.items():
           # getting tuples from cache
           list_of_tuples = ttuples.value()['tuples']
-          
           for t in list_of_tuples:
             if "obs" in t and "attrs" in t: 
               # getting the base variale of the tuple
@@ -140,15 +139,19 @@ class Evaluator(worker.Worker):
         while not stop:
             stop = True
             for ind, params in parameters.items():
-                synthetic_formula = var_dic[ind]['synthetic_formula']
+                synthetic_tag = var_dic[ind]['synthetic_tag'] 
+                synthetic_blocker = set(var_dic[ind]['synthetic_blocker']) if var_dic[ind]['synthetic_blocker'] is not None else {}
                 dls = job['dls_json']
-                if synthetic_formula is not None and 'synthetize' in dls:
-                #if synthetic_formula and 'synthetize' in dls:
+                is_synthetic = synthetic_tag is not None
+                # test to skip syhthetic formula when not applicable
+                if is_synthetic:
+                  if 'synthetize' not in dls:
+                    continue
                   # if DLS information is available, we look at the 'active' status
-                  if 'active' in dls['synthetize'] and not dls['synthetize']['active']:
+                  elif 'active' in dls['synthetize'] and not dls['synthetize']['active']:
                     continue
                   # if tags are available in DLS, we check the tag of the synthetic formula is in the DLS tags
-                  if not set(synthetic_formula).intersection(set(dls['synthetize']['tags'])):
+                  if len(set(synthetic_tag).intersection(set(dls['synthetize']['tags']))) == 0:
                     continue
                 # preparing variables to evaluate if the current indicator can be calculated
                 mod = modifiers[ind]
@@ -160,6 +163,7 @@ class Evaluator(worker.Worker):
                 base_pars =  list([var_dic[p]["variable"] for p in obs_pars])
                 main_obs = obs_pars[0] if len(obs_pars)>0 else None
                 main_base = base_pars[0] if len(base_pars)>0 else None
+
                 # identifying the combinations available for the first parameter so we can identify if new combinations can be calculated for this indicator
                 comb = set()
                 # getting all exixsting combinations for the main obs 
@@ -167,16 +171,14 @@ class Evaluator(worker.Worker):
                   if main_base == var_dic[ptest]['variable']:
                     for c in obs_keys[ptest]["comb"]:
                       sc = dict(c)
-                      if all(k in sc and sc[k] == v for k, v in modifiers[main_obs].items() if v is not None):
+                      # The combination will be included if all not None modifiers of the main observation parameter are found on the combination
+                      # and if none of the blocker attributes are present 
+                      if (all(k in sc and sc[k] == v for k, v in modifiers[main_obs].items() if v is not None) and 
+                            sc.keys().isdisjoint(synthetic_blocker)):
                         comb.add(c)
-                #if main_obs in obs_keys:
-                #  comb = obs_keys[main_obs]["comb"]
-                #elif main_base in obs_keys:
-                #  comb = obs_keys[main_base]["comb"]
-                #else:
-                #  comb = set()
-                # removing already existing combitaions
-                # comb = comb if ind not in obs_keys else comb - obs_keys[ind]["comb"]
+                #if ind == "beds_occupancy_ratio":
+                #  breakpoint()
+                
                 # in order to test this indicator we need to find at least the first observation on the current values
                 if len(comb) > 0:
                     scomb = comb
@@ -239,7 +241,7 @@ class Evaluator(worker.Worker):
                                   # checking that tuple contains the modifiers of the current observation unless is null
                                   attrs_obs_ok = True
                                   for obs_mod_var, obs_mod_value in modifiers[obs_to_test].items():
-                                    if obs_mod_value is not None:
+                                    if obs_mod_value is not None and obs_mod_var not in modifiers[ind]:
                                       if not any(k == obs_mod_var and v == obs_mod_value for k, v in key):
                                         attrs_obs_ok = False
                                         break
@@ -248,10 +250,7 @@ class Evaluator(worker.Worker):
                                     # exluding modifiers
                                     indep_key = tuple([(k, v) for k, v in key if k not in modifiers[obs_to_test] or modifiers[obs_to_test][k] is not None])
                                     if( i == 0 or 
-                                      (obs_to_test in obs_keys and key in obs_keys[obs_to_test]["comb"]) or 
-                                      (base_to_test in obs_keys and key in obs_keys[base_to_test]["comb"]) or
-                                      (obs_to_test in obs_keys and indep_key in obs_keys[obs_to_test]["comb"]) or 
-                                      (base_to_test in obs_keys and indep_key in obs_keys[base_to_test]["comb"])):
+                                      any(not {key, indep_key}.isdisjoint(obs_keys[o]["comb"]) for o in obs_keys if base_to_test == var_dic[o]['variable'])): 
                                       j = j + 1
                                     else:
                                       comb.pop(j)

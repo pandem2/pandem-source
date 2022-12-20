@@ -12,6 +12,7 @@ def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     normalize_dates(df)
     df = split_interest_columns(df)
     generate_population_column(df)
+    df = pd.concat([df.groupby(["date", "country"]).sum().reset_index(), df], ignore_index = True)
     df['line_number'] = range(1, len(df)+1)
     return df
 
