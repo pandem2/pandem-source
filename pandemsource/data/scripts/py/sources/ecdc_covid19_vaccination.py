@@ -34,10 +34,10 @@ AGG_FUNC = {
 def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     df = df.groupby(["YearWeekISO", "Region", "TargetGroup"]).agg(AGG_FUNC).reset_index()
     df = split_target_group_col(df)
-
     column_names = ['FirstDose', 'SecondDose', 'DoseAdditional1', 'DoseAdditional2', 'DoseAdditional3', 'UnknownDose']
     df['TotalDosesInjected'] = df[column_names].sum(axis=1)
     df['AgeGroup'] = df['AgeGroup'].apply(normalize_age_groups)
+    df['TargetPopulation'] = df['TargetPopulation'].str.lower()
     df["line_number"] = range(1, len(df)+1)
     return df
 
@@ -47,15 +47,12 @@ def split_target_group_col(df: pd.DataFrame) -> pd.DataFrame:
     df_population = df[df["TargetGroup"].str.lower().isin(["hcw","ltcf"])].reset_index()
     df_recommended_population = df_population.copy(deep=True)
     df_age_group = df[df["TargetGroup"].str.lower().isin(INIT_AGES)].reset_index()
-
     df_all.rename(columns={"TargetGroup": "AgeGroup"}, inplace=True)
     df_all.loc[:, "TargetPopulation"] = np.nan
     df_all.loc[:, "AgeGroup"] = np.nan
-    
     df_recommended_population.rename(columns={"TargetGroup": "TargetPopulation"}, inplace=True)
     df_recommended_population.loc[:, "TargetPopulation"] = "recommend_population"
     df_recommended_population = df_recommended_population.groupby(["YearWeekISO", "Region", "TargetPopulation"]).agg(AGG_FUNC).reset_index()
-    
     df_population.rename(columns={"TargetGroup": "TargetPopulation"}, inplace=True)
     df_age_group.rename(columns={"TargetGroup": "AgeGroup"}, inplace=True)
     return pd.concat([df_all, df_population, df_age_group, df_recommended_population])
