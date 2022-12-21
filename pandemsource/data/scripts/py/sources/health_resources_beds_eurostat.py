@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import re
+import datetime
+import functools
 
 GEO = "geo\\time"
 
@@ -11,12 +13,37 @@ def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     df = df.melt(id_vars=["unit", GEO, "facility", "file"], var_name="year", value_name="number_of_hospital_beds")
     df = remove_letters_in_numeric_columns(df)
     df = separate_nr_hthab(df)
-    df = df[~df['geo\\time'].isin(['NO','RS','LI','IS','TR','ME','MK','CH','AL','FX'])]
+    df = df[~df[GEO].isin(['NO','RS','LI','IS','TR','ME','MK','CH','AL','FX'])]
     df = build_columns_of_interest(df)
     df = df.astype({"year": str})
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    df["week"] = df["year"] + "-01"
-    df["year"] = pd.to_datetime(df["year"], format="%Y")
+    #df["week"] = df["year"] + "-01"
+    #df["year"] = pd.to_datetime(df["year"], format="%Y")
+    # simplifying df
+    df = df.groupby(["geo\\time", "year"]).sum()
+    df = df[functools.reduce(lambda c1, c2: c1 | c2, [df[c] != 0 for c in df.columns])]
+    df = df.reset_index(inplace = False)
+    # creating dataframe on a weekly bases until Y + 1
+    dfs = []
+    metrics = [c for c in df.columns if c not in [GEO, "year"]]
+    last = {c:dict() for c in metrics}
+    for year in range(df["year"].astype(int).min(), datetime.datetime.now().date().year + 2):
+      current = {c:dict() for c in metrics}
+      ydf = df[df["year"].astype(int) == year]
+      for i in ydf.index:
+        geo = ydf[GEO][i]
+        for m in metrics:
+          if ydf[m][i] > 0:
+            current[m][geo] = i
+            last[m][geo] = i
+      geos = list({k for vv in last.values() for k in vv})
+      permutation = {m:[current[m][geo] if geo in current[m] else (last[m][geo] if geo in last[m] else pd.NA) for geo in geos] for m in metrics}
+      for w in range(0, 53):
+        data = {**{GEO:geos, "week":[f"{year}-{str(w).zfill(2)}" for geo in geos]}, **{m:[*df[m].reindex(permutation[m], copy = True)] for m  in metrics}}
+        wdf = pd.DataFrame(data)
+        dfs.append(wdf)
+    df = pd.concat(dfs, ignore_index = True)
+    df = df[df["week"] > "2019-01"]
     df["line_number"] = range(1, len(df)+1)
     return df
 
@@ -38,6 +65,7 @@ def remove_letters_in_numeric_columns(df: pd.DataFrame) -> pd.DataFrame:
     )
     df["number_of_hospital_beds"] = pd.to_numeric(df["number_of_hospital_beds"])
     return df
+
 
 
 def separate_nr_hthab(df: pd.DataFrame) -> pd.DataFrame:

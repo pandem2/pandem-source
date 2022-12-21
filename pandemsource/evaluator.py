@@ -176,8 +176,6 @@ class Evaluator(worker.Worker):
                       if (all(k in sc and sc[k] == v for k, v in modifiers[main_obs].items() if v is not None) and 
                             sc.keys().isdisjoint(synthetic_blocker)):
                         comb.add(c)
-                #if ind == "beds_occupancy_ratio":
-                #  breakpoint()
                 
                 # in order to test this indicator we need to find at least the first observation on the current values
                 if len(comb) > 0:
@@ -207,7 +205,7 @@ class Evaluator(worker.Worker):
                                     sc = dict(c)
                                     if all(k in sc and sc[k] == v for k, v in modifiers[obs_to_test].items() if v is not None):
                                       pcomb.add(c)
-                                # if the current obs is missing combination we will see if there is published data for it
+                              # if the current obs is missing combination we will see if there is published data for it
                               missing_combs = set()
                               for cc in comb:
                                 applied = dict(cc)
@@ -247,10 +245,10 @@ class Evaluator(worker.Worker):
                                         break
                                   if attrs_obs_ok:
                                     # checking if the current combination exists for the expected base variable
-                                    # exluding modifiers
-                                    indep_key = tuple([(k, v) for k, v in key if k not in modifiers[obs_to_test] or modifiers[obs_to_test][k] is not None])
+                                    # applying modifiers
+                                    applied_key = tuple(sorted([(k,v) for k,v in ({**dict(key), **modifiers[obs_to_test]}.items()) if v is not None], key = lambda p: p[0]))
                                     if( i == 0 or 
-                                      any(not {key, indep_key}.isdisjoint(obs_keys[o]["comb"]) for o in obs_keys if base_to_test == var_dic[o]['variable'])): 
+                                      any(not {key, applied_key}.isdisjoint(obs_keys[o]["comb"]) for o in obs_keys if base_to_test == var_dic[o]['variable'])): 
                                       j = j + 1
                                     else:
                                       comb.pop(j)
@@ -357,6 +355,8 @@ class Evaluator(worker.Worker):
                     # iterating though each combination and launching the scripts to calculate the results
                     if len(combis) > 0: 
                       data = self._variables_proxy.lookup(list(obs.keys()), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
+                      #if ind == "incidence":
+                      #  breakpoint()
                       # getting sorted dates
                       dates = sorted({v["attrs"][base_date] for row in data.values() for v in row[main_base] })
                       # writing parameters matrices 
