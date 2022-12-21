@@ -324,27 +324,35 @@ class Variables(worker.Worker):
       res = {}
 
       for var in variables:
+        vfilt = filt.copy()
         tuples = []
         base_var = dico_vars[var]["variable"]
         # making this query work with aliases variables
         if base_var in dico_vars:
           if var in modifiers:
-            filt.update(modifiers[var])
+            vfilt.update(modifiers[var])
         
 
         tries = 2
         found = False
         while tries > 0 and not found:
             if tries == 2 and include_source:
-              f = {k:v for k, v in filt.items() if v is not None}
+              f = {k:v for k, v in vfilt.items() if v is not None}
               f.update({"source":source})
               tuples = self.read_variable(base_var, filter = f)
             if tries == 1 and include_tag:
-              f = {k:v for k, v in filt.items() if v is not None}
+              f = {k:v for k, v in vfilt.items() if v is not None}
               f.update({"source":others})
               tuples = self.read_variable(base_var, filter = f)
             # key_map will contain the non modified attributes for each combination as keys and the original combination as value
-            key_map = {tuple((k, v) for k, v in comb if var not in modifiers or k not in modifiers[var]):comb for comb in indexed_comb}
+            key_map = {}
+            for comb in indexed_comb:
+              freekey = tuple((k, v) for k, v in comb if var not in modifiers or k not in modifiers[var])
+              if freekey not in key_map:
+                key_map[freekey] = set([comb])
+              else:
+                key_map[freekey].add(comb)
+
             if tuples is not None:
               for t in tuples:
                 # file_keys are the non null attrs from in the tuples to be considered as time series keys
@@ -357,18 +365,20 @@ class Variables(worker.Worker):
                   ) # or (var in modifiers and attr in modifiers[var])
                 # free_keys are the keys in the file which are not modified
                 free_keys = list(attr for attr in file_keys if not var in modifiers or attr not in modifiers[var])
-                if tuple((k, t["attrs"][k]) for k in free_keys) in key_map:
-                  key = key_map[tuple((k, t["attrs"][k]) for k in free_keys)]
-                  filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
-                  if key in indexed_comb:
-                    found = True
-                    if key not in res:
-                      res[key] = {}
-                    if "obs" in t:
-                      obs_name =  next(iter(t["obs"].keys()))
-                      if not obs_name in res[key]:
-                        res[key][obs_name] = []
-                      res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
+                free_key = tuple((k, t["attrs"][k]) for k in free_keys)
+                        
+                if free_key in key_map:
+                  for key in key_map[free_key]: 
+                    filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
+                    if key in indexed_comb:
+                      found = True
+                      if key not in res:
+                        res[key] = {}
+                      if "obs" in t:
+                        obs_name =  next(iter(t["obs"].keys()))
+                        if not obs_name in res[key]:
+                          res[key][obs_name] = []
+                        res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
             tries = tries - 1
             tuples = None
       return res
