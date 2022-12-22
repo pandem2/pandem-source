@@ -235,11 +235,22 @@
             "attrs": {
                 "line_number": 22,
                 "source": "pandem2",
-                "population_type": "uhc",
+                "population_type": "Urgence Care workers",
                 "file": ""
             },
             "attr": {
                 "population_group":"Urgence Care workers"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 23,
+                "source": "pandem2",
+                "population_type": "uhc",
+                "file": ""
+            },
+            "attr": {
+                "population_group":"Patients with comorbidities"
             }
         }
     ]

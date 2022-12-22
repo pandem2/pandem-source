@@ -34,6 +34,12 @@ def reset_default_folders(*folders, delete_existing = True):
         shutil.rmtree(var_to)
       shutil.copytree(var_from, var_to, copy_function = shutil.copy, dirs_exist_ok = True)
 
+def parseJsonShowError(j):
+  try:
+    return json.loads(j)
+  except Exception as e:
+    raise ValueError(f"Cannot interpret {j[0:300]} as JSON\n{e}")
+
 def read_variables_definitions():
   path = util.pandem_path("files", "variables", "variables.csv")
   df = pd.read_csv(path, encoding = "ISO-8859-1")
@@ -55,7 +61,7 @@ def read_variables_definitions():
     if col in ["linked_attributes", "partition", "synthetic_tag", "synthetic_blocker"]:
       df[col] = df[col].apply(lambda x : [v.strip() for v in str(x).split(",")] if pd.notna(x) else None)
     if col == "modifiers":
-      df[col] = df[col].apply(lambda x : json.loads(x) if pd.notna(x) else [])
+      df[col] = df[col].apply(lambda x : parseJsonShowError(x) if pd.notna(x) else [])
     if col == "no_report":
       df[col] = df[col].apply(lambda x : str(x).lower() == 'true' if pd.notna(x) else False)
   result = df.to_json(orient = "records")
