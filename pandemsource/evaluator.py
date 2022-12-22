@@ -221,8 +221,8 @@ class Evaluator(worker.Worker):
                                     "comb":set(pub_comb.keys()).union(pcomb),
                                     "dates":dates
                                   }
-                                #if ind == "hospitalised_patients_per_100k":
-                                #  breakpoint()
+                                if ind == "icu_admissions":
+                                  breakpoint()
                             # iterating over current possible combinations
                             j = 0
                             while j < len(comb):
