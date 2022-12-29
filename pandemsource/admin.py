@@ -34,6 +34,12 @@ def reset_default_folders(*folders, delete_existing = True):
         shutil.rmtree(var_to)
       shutil.copytree(var_from, var_to, copy_function = shutil.copy, dirs_exist_ok = True)
 
+def parseJsonShowError(j):
+  try:
+    return json.loads(j)
+  except Exception as e:
+    raise ValueError(f"Cannot interpret {j[0:300]} as JSON\n{e}")
+
 def read_variables_definitions():
   path = util.pandem_path("files", "variables", "variables.csv")
   df = pd.read_csv(path, encoding = "ISO-8859-1")
@@ -55,14 +61,14 @@ def read_variables_definitions():
     if col in ["linked_attributes", "partition", "synthetic_tag", "synthetic_blocker"]:
       df[col] = df[col].apply(lambda x : [v.strip() for v in str(x).split(",")] if pd.notna(x) else None)
     if col == "modifiers":
-      df[col] = df[col].apply(lambda x : json.loads(x) if pd.notna(x) else [])
+      df[col] = df[col].apply(lambda x : parseJsonShowError(x) if pd.notna(x) else [])
     if col == "no_report":
       df[col] = df[col].apply(lambda x : str(x).lower() == 'true' if pd.notna(x) else False)
   result = df.to_json(orient = "records")
   parsed = json.loads(result)
   return parsed
 
-def reset_source(source_name):
+def reset_source(source_name, delete_data = True):
   dls_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "DLS", f"{source_name}.json"))
   if os.path.exists(dls_from):
     dls_to = util.pandem_path("files", "source-definitions", f"{source_name}.json")
@@ -70,6 +76,8 @@ def reset_source(source_name):
     if not os.path.exists(dls_to_dir):
       os.makedirs(dls_to_dir)
     shutil.copyfile(dls_from, dls_to)
+    if delete_data:
+      delete_source_data(source_name)
   else:
     raise ValueError(f"Cannot find source definition {source_name} within pandem default sources")
   
@@ -94,6 +102,42 @@ def reset_source(source_name):
   pyscript_to = util.pandem_path("files", "scripts", "py", "sources", dls_pyscript)
   if dls_pyscript in os.listdir(pyscript_fol):
     shutil.copyfile(os.path.join(pyscript_fol, dls_pyscript), pyscript_to)
+
+def delete_source_data(source_name):
+  ts_path = util.pandem_path("files/variables/time_series.pi" ) 
+  var_path = util.pandem_path("files/variables" ) 
+  ind_to_delete = []
+  i = 0
+  source_to_delete = [source_name]
+  if os.path.exists(ts_path):
+    with open(ts_path, "rb") as f:
+      ts = pickle.load(f)
+
+    for k in [t for t in ts.keys() if (
+            (len(ind_to_delete) == 0 or len([k for k, v in t if k == "indicator" and v in ind_to_delete]) > 0 ) and
+            (len(source_to_delete) == 0 or len([k for k, v in t if k == "source" and v in source_to_delete]) > 0 )
+          )
+        ]:
+      ts.pop(k)
+      i = i + 1
+    with open(ts_path, "wb") as f:
+      pickle.dump(ts, f)
+
+  l.info(f"{i} timeseries deleted for {source_name}")
+
+  j = 0
+  if os.path.exists(var_path):
+    if len(source_to_delete) > 0:
+      for root, dirs, files in  os.walk(var_path):
+         for name in files:
+           for s in source_to_delete:
+             if s in name:
+               p = os.path.join(root, name)
+               if os.path.exists(p):
+                 os.remove(p)
+                 j = j + 1
+    
+  l.info(f"{j} files deleted for {source_name}")
 
 
 def delete_all():

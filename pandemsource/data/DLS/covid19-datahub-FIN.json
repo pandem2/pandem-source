@@ -53,5 +53,11 @@
       {"name":"open_testing", "variable":"implemented_policy", "scope":{"policy_code":"open_testing"}},
       {"name":"population", "variable":"population"},
       {"name":"key_nuts", "variable":"geo_code"}
-    ]
+    ],
+    "synthetize": {
+      "active": true,
+      "tags": [
+        "missing_real_data_2022_c19datahub"
+      ]
+    }
 }

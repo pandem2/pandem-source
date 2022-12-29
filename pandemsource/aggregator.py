@@ -28,34 +28,104 @@ class Aggregator(worker.Worker):
     geo_parents = {var["linked_attributes"][0]:var["variable"] for var in variables.values() if var["type"] == "referential_parent" and var["linked_attributes"] is not None and var["linked_attributes"][0] in geos}
 
     tuples = self._variables_proxy.get_referential("geo_code").get()
-    if tuples is not None:
-      parents = {tupl['attrs']['geo_parent'] for tupl in tuples if 'geo_parent' in tupl['attrs']}
 
     var_asc = {code:self.rel_ascendants(self.descendants(code, parent)) for code, parent in geo_parents.items()}
     nvars = len(list_of_tuples)
     ndone = 0
+
+    # Iterating over groups of tupeles stored in cache
     for var, var_tuples in list_of_tuples.items():
       # getting vartuples value from cache
       var_tuples = var_tuples.value()
+
+      # Analyzing existing tuples of codes and dates and creating necessary data structures 
+      existing_codes = {attr:set() for attr in var_asc.keys()}
+      existing_dates = set()
+      ts_partition = {}
+      
+      for t in var_tuples['tuples']:
+        if "attrs" in t:
+          date = None
+          # getting existing aggregating codes and dates
+          for attr, val in t['attrs'].items():
+            if attr in var_asc:
+              existing_codes[attr].add(val)
+            if attr in variables and variables[attr]["type"]=="date":
+              date = val
+              existing_dates.add(date)
+          # getting time serie keys (for adding missing values)
+          if date is not None:
+            key = self.tup_key(t, with_obs = True, with_date = False, variables = variables)
+            if key not in ts_partition:
+              ts_partition[key] = dict()
+            ts_partition[key][date]=t
+      existing_dates = sorted(existing_dates)
+      
+      missing_tuples = []
+      # Adding missing dates for each time serie and adding closest possible value
+      for ts in ts_partition.values():
+        for i, date in enumerate(existing_dates):
+          if date not in ts:
+            # we have here a missing value on a time serie
+            # let's find the closest value
+            replacement = None
+            for j in range(1, max(i, len(existing_dates)-i)):
+              if replacement is None:
+                k = i - j
+                if k >= 0:
+                  if existing_dates[k] in ts:
+                    replacement = ts[existing_dates[k]]
+                k = i + j
+                if k < len(existing_dates):
+                  if existing_dates[k] in ts:
+                    replacement = ts[existing_dates[k]]
+            # if replacement is not None we have found a replacement, we need to create a copy
+            if replacement is not None:
+              c = copy.deepcopy(replacement)
+              date_attr = [attr for attr in c["attrs"].keys() if attr in variables and variables[attr]["type"] == "date"][0]
+              c["attrs"][date_attr] = date
+              missing_tuples.append(c)
+      # adding missing tuples 
+      var_tuples['tuples'].extend(missing_tuples)
+      
+      # new codes to be added to the update scope if necessary
+      new_codes = {attr:set() for attr in var_asc.keys()}
+      
+      # Aggregating loop
+      # variables for aggregating
       cumm = {}
       untouched = []
+      # Iterating over each tuple tuples and adding parent keys
       for t in [t for t in var_tuples['tuples'] if "attr" in t or "obs" in t]:
         aggr_func =  self.tuple_aggregate_function(t, variables)
         if aggr_func is None:
           untouched.append(t)
         else:
-          for aggr_key, tt in self.pairs_to_aggregate(t, var_asc, variables, parents):
+          # iterating over keys parents and itself and applying aggregation functio 
+          for aggr_key, tt, parent_attr, parent_value in self.pairs_to_aggregate(t, var_asc, variables, existing_codes):
             if not aggr_key in cumm:
               cumm[aggr_key] = tt
             else:
               var_name = list(t["obs"].keys())[0]
               cumm[aggr_key]["obs"][var_name] = aggr_func([cumm[aggr_key]["obs"][var_name], tt["obs"][var_name]])
+            # registering new codes that so we can update the update scope
+            if parent_attr is not None:
+              new_codes[parent_attr].add(parent_value)
 
       result = var_tuples.copy()
       result['tuples'] = untouched + [*cumm.values()]
-      
+      # increasing the update scope if aggregating vaiable is in update scope and new codes were added by aggregation
+      for u in result['scope']['update_scope']:
+        if u["variable"] in new_codes:
+          codes = {*u["value"]}
+          codes.update(new_codes[u["variable"]])
+          u["value"] = [*codes]
+          
+      # storing in cache
       ret = self._storage_proxy.to_job_cache(job["id"], f"agg_{var}", result).get()
       ndone = ndone + 1
+
+      # sending the current variables back to the pipeline
       self._pipeline_proxy.aggregate_end(tuples = ret, var = var, progress = ndone/nvars, job = job)
 
   def descendants(self, code, parent):
@@ -112,28 +182,36 @@ class Aggregator(worker.Worker):
     else:
         return None
 
-  def pairs_to_aggregate(self, t, var_asc, variables, parents):
+  def tup_key(self, t, with_obs, with_date, variables):
+      return tuple(
+      ([("variable", i) for i in [*t["obs"].keys()][0:1]] if with_obs and "obs" in t and len(t["obs"].keys())>0 else []) +
+      [(k, t["attrs"][k]) for k in ( 
+      sorted([
+        attr for attr in t["attrs"].keys() 
+        if variables[attr]["type"] in ["characteristic", "referential", "geo_referential", "referential_parent"] or
+           (with_date and  variables[attr]["type"] == "date")
+      ]))])
+
+  def pairs_to_aggregate(self, t, var_asc, variables, existing_codes):
     if not "attrs" in t or len(t["attrs"].keys()) == 0:
-      yield ('', t)
+      yield ('', t, None, None)
     else:
-      keys = [attr for attr in t["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential", "geo_referential", "date", "referential_parent"]]
-      keys.sort()
+      key = self.tup_key(t, with_obs = True, with_date = True, variables = variables)
       # adding identity aggregation 
-      yield (json.dumps({list(t["obs"].keys())[0]:[(key,t["attrs"][key]) for key in keys]}, cls=JsonEncoder), t)
+      yield (key, t, None, None)
 
       # adding ascendants aggregation
       for code_var, ascendants in var_asc.items():
         if code_var in t["attrs"] and t["attrs"][code_var] in ascendants:
           code =  t["attrs"][code_var]
-          if code in parents:
-            continue
           for asc in ascendants[code]:
+            if asc in existing_codes[code_var]:
+              continue
             c = copy.deepcopy(t)
             c["attrs"][code_var] = asc
-            keys = [attr for attr in c["attrs"].keys() if variables[attr]["type"] in ["characteristic", "referential", "geo_referential", "date", "referential_parent"]]
-            keys.sort()
+            key = self.tup_key(c, with_obs = True, with_date = True, variables = variables)
             if(code != asc): # we have to remove the idenntity since it was already added
-              yield (json.dumps({list(t["obs"].keys())[0]:[(key,c["attrs"][key]) for key in keys]}, cls=JsonEncoder), c)
+              yield (key, c, code_var, asc)
 
   def distribute_tuples_by_var(self, tuples, job_id):
     tts = {}
@@ -155,7 +233,7 @@ class Aggregator(worker.Worker):
             }
           # If current variable is the first variable in path add all tuples of this variable
           if var not in vars_in_path and group in t:
-            tts[var]['tuples'].extend(ttt for ttt in tt['tuples'] if group in ttt and var in t[group])
+            tts[var]['tuples'].extend(ttt for ttt in tt['tuples'] if group in ttt and var in ttt[group])
             vars_in_path.add(var)
             # updating the update scope 
             for u in tt['scope']['update_scope']:
@@ -164,7 +242,6 @@ class Aggregator(worker.Worker):
                  tts[var]['scope']['update_scope'][u['variable']].update(v)
               else:
                  tts[var]['scope']['update_scope'][u['variable']] = set(v)
-
     for var in tts.keys(): 
       tts[var]['scope']['update_scope'] = [{"variable":k, "value":list(v)} for k, v in tts[var]['scope']['update_scope'].items()]
       #storing results distributed by variables on cache

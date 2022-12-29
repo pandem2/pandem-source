@@ -84,7 +84,7 @@ class Variables(worker.Worker):
 
 
     def read_variable(self,variable_name, filter = {}):
-        #l.debug(f"requesting {variable_name} with filter = {filter}" )       
+        #l.debug(f"requesting {variable_name} with filters in = {filter.keys()}" )       
         dir_path = util.pandem_path('files/variables/', variable_name)
         variables = self.get_variables()
         if os.path.isdir(dir_path):
@@ -118,6 +118,7 @@ class Variables(worker.Worker):
             for file in target_files:
                 try:
                   var_tuples = self._storage_proxy.read_file(file['path']).get()['tuples']
+                  #l.debug(f"Opening {file['path']}")
                 except Exception as e:
                   l.error(f"Error found while reading file {file['path']}")
                   raise e
@@ -248,7 +249,7 @@ class Variables(worker.Worker):
                               for filt in update_filter: 
                                 if filt['variable'] in tup['attrs'].keys() and tup['attrs'][filt['variable']] in filt['value']:
                                     cond_count = cond_count - 1
-                              # addding the tuple of one of the conditions failed
+                              # addding the tuple if one of the conditions failed
                               if cond_count > 0:
                                 tuples_list.append(tup)
                             else:

@@ -625,7 +625,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
                 if (var, attr) not in refs_read:
                   refs_read.add((var, attr))
                   if attr not in code_attrs:
-                     link = await variables_proxy.get_referential(var)
+                    link = await variables_proxy.get_referential(var)
                   if link is not None:
                     code_attrs[attr] = {t['attr'][var]:t['attrs'][attr] for t in link if 'attrs' in t and 'attr' in t and attr in t['attrs'] and var in t['attr']}
                 # Taking label from referential

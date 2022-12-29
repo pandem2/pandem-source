@@ -381,56 +381,57 @@ server <- function(input, output, session, ...) {
       progress_set(value = 0.9, message = "Joining results", rep)
       ts_df <- jsonlite::rbind_pages(results)
       progress_set(value = 0.9, message = "Plotting time series", rep)
-
       title <- ""#paste(sapply(strsplit(unique(ts_df$indicator), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), tolower(substr(w, 2, nchar(w))), sep = "")), collapse = " ")), collase = ", ")
       singles = list()
       details = list()
-      ts_df$legend <- sapply(ts_df$key, function(v) "")
-      # creating labels and title
-      for(col in c(keys)) {
-        label_col <- paste(col, "label", sep = "_")
-        values <- df[[col]]
-        if(label_col %in% colnames(df)) {
-          labels <- df[[label_col]]
-        }
-        else
-          labels <- values
-        values <- setNames(values, labels)
-        values <- values[sort(unique(names(values)), na.last = TRUE)]
-        labels <- setNames(
-          sapply(strsplit(names(values), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), tolower(substr(w, 2, nchar(w))), sep = "")), collapse = " ")),
-          values
-        )
-        df_labels <- sapply(1:nrow(ts_df), function(i) {
-          json <- ts_df$key[[i]]
-          if (length(json) != 0) {
-            keys <-  jsonlite::fromJSON(json)
-            if(col == "indicator")
-              label = ts_df$indicator[[i]]
-            else if(col %in% names(keys)) {
-              label = labels[[as.character(keys[[col]])]]
-            }
-            else 
-              label = NA
-            label
+      if(nrow(ts_df)>0) {
+        ts_df$legend <- sapply(ts_df$key, function(v) "")
+        # creating labels and title
+        for(col in c(keys)) {
+          label_col <- paste(col, "label", sep = "_")
+          values <- df[[col]]
+          if(label_col %in% colnames(df)) {
+            labels <- df[[label_col]]
           }
-        })
-        if(col == "indicator")
-          title <- paste(unique(labels), collapse = ", ")
-        if(length(values)>0 && !all(is.na(values)))
-          details[[col]] = sort(unique(labels))
-        if(length(unique(labels))==1 && !is.na(values)) {
-          #if(unique(labels) != "All" && col != "period_type")
-          #  title = paste(title, ", ", unique(labels), sep = "") 
-          singles[[col]] = unique(labels) 
-        } else if(length(unique(labels))>1) {
-          ts_df$legend = sapply(1:nrow(ts_df), function(i) {
-            leg = ts_df[["legend"]][[i]]
-            if(nchar(leg)>0)
-              leg = paste(leg, ", ")
-            leg = paste(leg, df_labels[[i]])
-            leg
+          else
+            labels <- values
+          values <- setNames(values, labels)
+          values <- values[sort(unique(names(values)), na.last = TRUE)]
+          labels <- setNames(
+            sapply(strsplit(names(values), "_|-| "), function(t) paste(sapply(t, function(w) paste(toupper(substr(w, 1, 1)), tolower(substr(w, 2, nchar(w))), sep = "")), collapse = " ")),
+            values
+          )
+          df_labels <- sapply(1:nrow(ts_df), function(i) {
+            json <- ts_df$key[[i]]
+            if (length(json) != 0) {
+              keys <-  jsonlite::fromJSON(json)
+              if(col == "indicator")
+                label = ts_df$indicator[[i]]
+              else if(col %in% names(keys)) {
+                label = labels[[as.character(keys[[col]])]]
+              }
+              else 
+                label = NA
+              label
+            }
           })
+          if(col == "indicator")
+            title <- paste(unique(labels), collapse = ", ")
+          if(length(values)>0 && !all(is.na(values)))
+            details[[col]] = sort(unique(labels))
+          if(length(unique(labels))==1 && !is.na(values)) {
+            #if(unique(labels) != "All" && col != "period_type")
+            #  title = paste(title, ", ", unique(labels), sep = "") 
+            singles[[col]] = unique(labels) 
+          } else if(length(unique(labels))>1) {
+            ts_df$legend = sapply(1:nrow(ts_df), function(i) {
+              leg = ts_df[["legend"]][[i]]
+              if(nchar(leg)>0)
+                leg = paste(leg, ", ")
+              leg = paste(leg, df_labels[[i]])
+              leg
+            })
+          }
         }
       }
       output$timeseries_title <- shiny::renderText({
