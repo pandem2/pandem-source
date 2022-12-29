@@ -159,20 +159,20 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,number_of_visits_per_100_low_ci,,indicator,people/people,,"source, geo_code",,,,,,
 03_patient,number_of_visits_per_100_high_ci,,indicator,people/people,,"source, geo_code",,,,,,
 03_patient,number_of_hospital_staff,Health personnel by country and NUTS2,resource,people,,,,,,,,
-04_tests,performed_tests,,observation,qty,,"Source, test_result, geo_code",,,,,,
-04_tests,new_performed_tests,,observation,qty,,"Source, test_result, geo_code","cum_perf_tests_to_daily(reporting_period, performed_tests)",,,,,
-04_tests,new_performed_tests_per_100k,Number of performed tests each 100.000 people by day and country,indicator,qty,,"Source, test_result, geo_code","new_performed_tests_per_100k(reporting_period, new_performed_tests, population)",performed_tests,,,,
-04_tests,new_performed_tests_unknown,Number of performed tests by day and country (Test Type = unknown),indicator,qty,,"Source, test_result, geo_code","new_performed_tests_unknown(reporting_period, new_performed_tests)",,,missing_real_data_2022,"age_group, gender_code, comorbidity_code","[{""variable"": ""test_type"", ""value"": ""unknown""}]"
-04_tests,new_performed_tests_naats,Number of performed tests by day and country (Test Type = NAATs),indicator,qty,,"Source, test_result, geo_code","new_performed_tests_naats(reporting_period, new_performed_tests)",,,missing_real_data_2022,"age_group, gender_code, comorbidity_code","[{""variable"": ""test_type"", ""value"": ""naats""}]"
-04_tests,new_performed_tests_antigen,Number of performed tests by day and country (Test Type = antigen),indicator,qty,,"Source, test_result, geo_code","new_performed_tests_antigen(reporting_period, new_performed_tests)",,,missing_real_data_2022,"age_group, gender_code, comorbidity_code","[{""variable"": ""test_type"", ""value"": ""antigen""}]"
-04_tests,positive_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,,,,"[{""variable"": ""test_result"", ""value"": ""positive""}]"
-04_tests,negative_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,,,,"[{""variable"": ""test_result"", ""value"": ""negative""}]"
-04_tests,inconclusive_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,,,,"[{""variable"": ""test_result"", ""value"": ""inconclusive""}]"
-04_tests,unknown_results,,observation,qty,,"Source, test_result, geo_code",,performed_tests,,,,"[{""variable"": ""test_result"", ""value"": ""unknown""}]"
-04_tests,available_tests,,observation,qty,,"source, geo_code",,,,,,
+04_tests,performed_tests,,observation,qty,,"Source, test_result, test_type, geo_code",,,,,,"[{""variable"": ""case_status"", ""value"": null}]"
+04_tests,new_performed_tests,,observation,qty,,"Source, test_result, test_type, geo_code","cum_perf_tests_to_daily(reporting_period, performed_tests)",,,,,"[{""variable"": ""case_status"", ""value"": null}]"
+04_tests,new_performed_tests_per_100k,Number of performed tests each 100.000 people by day and country,indicator,qty,,"Source, test_result, test_type, geo_code","new_performed_tests_per_100k(reporting_period, new_performed_tests, population)",,,,,
+04_tests,new_performed_tests_unknown,Number of performed tests by day and country (Test Type = unknown),indicator,qty,,"Source, test_result, test_type, geo_code","new_performed_tests_unknown(reporting_period, new_performed_tests)",new_performed_tests,TRUE,missing_real_data_2022_c19datahub,"age_group, gender_code, comorbidity_code","[{""variable"": ""test_type"", ""value"": ""unknown""}]"
+04_tests,new_performed_tests_naats,Number of performed tests by day and country (Test Type = NAATs),indicator,qty,,"Source, test_result, test_type, geo_code","new_performed_tests_naats(reporting_period, new_performed_tests)",new_performed_tests,TRUE,missing_real_data_2022_c19datahub,"age_group, gender_code, comorbidity_code","[{""variable"": ""test_type"", ""value"": ""naats""}]"
+04_tests,new_performed_tests_antigen,Number of performed tests by day and country (Test Type = antigen),indicator,qty,,"Source, test_result, test_type, geo_code","new_performed_tests_antigen(reporting_period, new_performed_tests)",new_performed_tests,TRUE,missing_real_data_2022_c19datahub,"age_group, gender_code, comorbidity_code","[{""variable"": ""test_type"", ""value"": ""antigen""}]"
+04_tests,positive_results,,observation,qty,,"Source, test_result, test_type, geo_code",,new_performed_tests,,,,"[{""variable"": ""test_result"", ""value"": ""positive""}]"
+04_tests,negative_results,,observation,qty,,"Source, test_result, test_type, geo_code",,new_performed_tests,,,,"[{""variable"": ""test_result"", ""value"": ""negative""}]"
+04_tests,inconclusive_results,,observation,qty,,"Source, test_result, test_type, geo_code",,new_performed_tests,,,,"[{""variable"": ""test_result"", ""value"": ""inconclusive""}]"
+04_tests,unknown_results,,observation,qty,,"Source, test_result, test_type, geo_code",,new_performed_tests,,,,"[{""variable"": ""test_result"", ""value"": ""unknown""}]"
+04_tests,available_tests,,observation,qty,,"Source, test_result, test_type, geo_code",,,,,,
 04_tests,test_result,,characteristic,,,,,,,,,
 04_tests,epidemiological_surveys_answer,,observation,qty,,"source, geo_code",,,,,,
-04_tests,positivity_rate,Number of positive tests cases divided by the size of the target population,indicator,people/people,,"Source, test_result, geo_code","positivity_rate(reporting_period, confirmed_cases, performed_tests, pathogen_code)",,,,,
+04_tests,positivity_rate,Number of positive tests cases divided by the size of the target population,indicator,people/people,,"Source, test_result, geo_code","positivity_rate(reporting_period, confirmed_cases, new_performed_tests, pathogen_code)",,,,,
 04_tests,number_of_test_staff,,resource,people,,,,,,,,
 04_tests,qty_of_test_resources,,resource,qty,,,,,,,,
 04_tests,number_of_test_resources_dependencies,,resource,qty,,,,,,,,
@@ -272,8 +272,9 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 11_measures,government_measure,,referential_label,,measure_code,,,,,,,
 11_measures,measure_code,,referential,,,,,,,,,
 11_measures,implemented_policy,If a particular gobernment policy is active,observation,qty,,"source, geo_code",,,,,,
-11_measures,government_policy,COVID-19 Datahub Name for Contact Tracing Policy,referential_label,,policy_code,,,,,,,
-11_measures,policy_code,COVID-19 Datahub Code for Testing Policy,referential,,,,,,,,,
+11_measures,government_policy,COVID-19 Datahub Name for Contact Tracing Policy or testing,referential_label,,policy_code,,,,,,,
+11_measures,policy_code,COVID-19 Datahub Code for Contact Tracing Policy or testing,referential,,,,,,,,,
+11_measures,policy_type,COVID-19 Datahub Type for Contact Tracing Policy or testing,characteristic,,policy_code,,,,,,,
 12_population_study,adherence_to_prevention_and_control_measures,,observation,,,"source, geo_code",,,,,,
 12_population_study,is_people_understanding_public_health_communication,,observation,,,"source, geo_code",,,,,,
 12_population_study,alerts_&_early_warning_signals,,indicator,,,"source, geo_code",,,,,,

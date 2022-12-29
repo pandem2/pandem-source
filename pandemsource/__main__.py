@@ -101,6 +101,11 @@ def main(a):
     help="Restore the default input-local folder in pandem-home"
   )
   reset_parser.add_argument(
+    "--notations", 
+    action="store_true", 
+    help="Reset interational standard notation datasources to system defaults", 
+  )
+  reset_parser.add_argument(
     "--covid19-datahub", 
     action="store_true", 
     help="Reset covid19-datahub datasource to system defaults", 
@@ -311,6 +316,15 @@ def do_start(args, *other):
   return orch
   
 def do_reset(args, *other):
+
+  root = logging.getLogger()
+  root.setLevel(logging.INFO)
+  handler = logging.StreamHandler(sys.stdout)
+  handler.setLevel(logging.INFO)
+  formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+  handler.setFormatter(formatter)
+  root.addHandler(handler)
+
   if args.restore_factory_defaults:
     admin.delete_all()
     admin.reset_default_folders("input-local", "input-local-defaults", "dfcustom", "scripts", "variables", "indicators", "img")
@@ -320,9 +334,10 @@ def do_reset(args, *other):
     admin.reset_default_folders("input-local")
   if args.variables or args.restore_factory_defaults:
     admin.reset_variables()
-  if args.covid19_datahub or args.ecdc_covid19 or args.restore_factory_defaults:
+  if args.notations or args.restore_factory_defaults:
     admin.reset_source("nuts-eurostat")
-    admin.reset_source("ICD-10-diseases-list")
+    admin.reset_source("ICD-10-diseases")
+    admin.reset_source("isco-08-ilo")
   if args.pandem_partners_template or args.restore_factory_defaults:
     admin.reset_source("covid19-template-cases")
     admin.reset_source("covid19-template-cases-RIVM")
@@ -417,7 +432,6 @@ def do_reset(args, *other):
   if args.health_resources_eurostat or args.restore_factory_defaults:
     admin.reset_source("health-resources-national-eurostat")
     admin.reset_source("health-resources-nuts2-eurostat")
-    admin.reset_source("isco-08-ilo")
     admin.reset_source("health-resources-beds-eurostat")
   if args.pandem_2_2023_fx or args.restore_factory_defaults:
     admin.reset_default_folders("input-local")
