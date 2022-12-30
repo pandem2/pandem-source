@@ -37,18 +37,6 @@
       {"name":"Population", "variable":"population"},
       {"name":"Vaccinated individuals with 1 dose", "variable":"one_dose_vaccinated"},
       {"name":"Vaccinated individuals with 2 dose", "variable":"two_doses_vaccinated"},
-      {"name":"Vaccinated individuals with 3 dose", "variable":"three_doses_vaccinated"},
-      {"name":"Infected Vaccinated individuals with 1 dose", "variable":"one_dose_vaccinated_infected"},
-      {"name":"Infected Vaccinated individuals with 2 dose", "variable":"two_doses_vaccinated_infected"},
-      {"name":"Infected Vaccinated individuals with 3 dose", "variable":"three_doses_vaccinated_infected"},
-      {"name":"Vaccinated HCW with 1 dose", "variable":"one_dose_vaccinated_hcw"},
-      {"name":"Vaccinated HCW with 2 dose", "variable":"two_doses_vaccinated_hcw"},
-      {"name":"Vaccinated HCW with 3 dose", "variable":"three_doses_vaccinated_hcw"},
-      {"name":"Vaccinated people with underlying health conditions with 1 dose", "variable":"one_dose_vaccinated_uhc"},
-      {"name":"Vaccinated people with underlying health conditions with 2 dose", "variable":"two_doses_vaccinated_uhc"},
-      {"name":"Vaccinated people with underlying health conditions with 3 dose", "variable":"three_doses_vaccinated_uhc"},
-      {"name":"Vaccinated people living in long-term care facilities with 1 dose", "variable":"one_dose_vaccinated_ltcf"},
-      {"name":"Vaccinated people living in long-term care facilities with 2 dose", "variable":"two_doses_vaccinated_ltcf"},
-      {"name":"Vaccinated people living in long-term care facilities with 3 dose", "variable":"three_doses_vaccinated_ltcf"}
+      {"name":"Vaccinated individuals with 3 dose", "variable":"additional_1_doses_vaccinated"}
     ]
 }

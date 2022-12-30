@@ -1,1 +1,0 @@
-cumsum(new_additional_3_doses)

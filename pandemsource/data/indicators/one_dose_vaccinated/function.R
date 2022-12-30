@@ -1,1 +1,0 @@
-cumsum(new_first_doses)

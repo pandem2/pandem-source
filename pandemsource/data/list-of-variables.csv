@@ -75,9 +75,9 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,incidence_1000_high_ci,High Confidence Index of Number of confirmed cases each 1000 people,indicator,people/people,,"source, case_status, geo_code",,,,,,
 01_cases,incidence,Number of confirmed cases each 100.000 people,indicator,people/people,,"source, case_status, geo_code","incidence(reporting_period, confirmed_cases, population, pathogen_code)",,,,,
 01_cases,rt_number,"R_t is the expected number of secondary cases produced by infected individuals, who turns infectious on day t. If a source does not provide this number it will be estimated as the ratio of confirmed cases between last 7 days against the previous seven days.",indicator,qty,,"source, case_status, geo_code","rt_number(reporting_period, confirmed_cases, pathogen_code)",,,,,
-01_cases,number_of_ppe_protective_equipment,,resource,units/time,,,,,,,,
-01_cases,needs_of_ppe_protective_equipment,,resource,units/time,,,,,,,,
-01_cases,outbreak_id_(if_associated_to_known_outbreak),,observation,id,,,,,,,,
+01_cases,number_of_ppe_protective_equipment,,resource,units/time,,"source, geo_code",,,,,,
+01_cases,needs_of_ppe_protective_equipment,,resource,units/time,,"source, geo_code",,,,,,
+01_cases,outbreak_id_(if_associated_to_known_outbreak),,observation,id,,"source, geo_code",,,,,,
 02_deaths,number_of_deaths,,observation,people,,"Source, care_type, geo_code",,,,,,
 02_deaths,cumulative_deaths,,observation,people,,"Source, care_type, geo_code",,,,,,
 02_deaths,cumulative_infected_deaths,,observation,people,,"Source, care_type, geo_code",,cumulative_deaths,,,,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
@@ -88,7 +88,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,patient_status,,characteristic,,,,,,,,,
 02_deaths,mortality_rate,,indicator,people/people,,"source, case_status, geo_code","mortality_rate(reporting_period, deaths_infected, population)",,,,,
 03_patient,severity,,characteristic,,,,,,,,,
-03_patient,number_of_non-infected_patients,,observation,people,,,,,,,,
+03_patient,number_of_non-infected_patients,,observation,people,,"source, geo_code",,,,,,
 03_patient,number_of_patients,,observation,people,,"Source, care_type, geo_code",,,,,,
 03_patient,hospitalised_infected_patients,,observation,people,,"Source, care_type, geo_code",,number_of_patients,,,,"[{""variable"": ""case_status"", ""value"": ""confirmed""}, {""variable"": ""care_type"", ""value"": ""hospitalised""}]"
 03_patient,hospitalised_patients_by_age_group_0_14,Number of Hospitalised Patients by Age Group (0-14),indicator,qty,,"source, geo_code","hospitalised_patients_by_age_group_0_14(reporting_date, hospitalised_infected_patients)",number_of_patients,TRUE,missing_real_data_2022,"age_group, gender_code, comorbidity_code","[{""variable"": ""age_group"", ""value"": ""0-14""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
@@ -118,8 +118,8 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,standarise_mortality_by_age_infected_people,,observation,,,"source, geo_code",,standarise_mortality_by_age,,,,"[{""variable"": ""case_status"", ""value"": ""confirmed""}]"
 03_patient,excess_mortality_ltcf,,indicator,,,"source, geo_code","excess_mortality_ltcf(reporting_date, excess_mortality_pscore)",excess_mortality_pscore,TRUE,missing_real_data_2022,"age_group, gender_code, comorbidity_code","[{""variable"": ""care_type"", ""value"": ""ltcf""}]"
 03_patient,excess_mortality_pscore,,indicator,ratio,,"source, geo_code",,,,,,
-03_patient,average_stay_length,,observation,days,,,,,,,,
-03_patient,average_stay_length_at_icu,,observation,days,,,,average_stay_length,,,,"[{""variable"": ""bed_type"", ""value"": ""icu""}]"
+03_patient,average_stay_length,,observation,days,,"source, geo_code",,,,,,
+03_patient,average_stay_length_at_icu,,observation,days,,"source, geo_code",,average_stay_length,,,,"[{""variable"": ""bed_type"", ""value"": ""icu""}]"
 03_patient,length_of_stay,,observation,days,,"source, geo_code","length_of_stay(reporting_period, hospitalised_infected_patients)",,,missing_real_data_2022,"age_group, gender_code, comorbidity_code",
 03_patient,number_of_hospital_staff,,resource,people,,"Source, resource_type, geo_code",,,,,,
 03_patient,number_of_resources,,resource,qty,,"Source, resource_type, geo_code",,,,,,
@@ -145,8 +145,8 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,staff_type,,characteristic,,,,,,,,,
 03_patient,response_type,,characteristic,,,,,,,,,
 03_patient,resource_type,,characteristic,,,,,,,,,
-03_patient,qty_of_hospital_resources,,resource,qty,,,,,,,,
-03_patient,number_of_hospital_resources_dependencies,,resource,qty,,,,,,,,
+03_patient,qty_of_hospital_resources,,resource,qty,,"source, geo_code",,,,,,
+03_patient,number_of_hospital_resources_dependencies,,resource,qty,,"source, geo_code",,,,,,
 03_patient,hospital_admissions_per_100k,Hospital admission rate for COVID-19 each 100.000 people by week and country ,observation,qty,,"source, geo_code",,admissions_per_100k,,,,"[{""variable"": ""care_type"", ""value"": ""hospitalised""}]"
 03_patient,hospital_admissions,Hospital admission rate for COVID-19 by week and country ,indicator,qty,,"source, geo_code","hospital_admissions(reporting_week, hospital_admissions_per_100k, population)",admissions,,,,"[{""variable"": ""care_type"", ""value"": ""hospitalised""}]"
 03_patient,hospital_admissions_comorbidities,Number of Hospital admission with comorbidities  (underlying health condition) for COVID-19 by week and country ,indicator,qty,,"source, geo_code","hospital_admissions_comorbidities(reporting_period, hospital_admissions)",admissions,,missing_real_data_2022,"age_group, gender_code, comorbidity_code","[{""variable"": ""care_type"", ""value"": ""hospitalised""}, {""variable"":""population_type"", ""value"":""uhc""}]"
@@ -158,7 +158,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,number_of_visits_per_100,,indicator,people/people,,"source, geo_code",,,,,,
 03_patient,number_of_visits_per_100_low_ci,,indicator,people/people,,"source, geo_code",,,,,,
 03_patient,number_of_visits_per_100_high_ci,,indicator,people/people,,"source, geo_code",,,,,,
-03_patient,number_of_hospital_staff,Health personnel by country and NUTS2,resource,people,,,,,,,,
+03_patient,number_of_hospital_staff,Health personnel by country and NUTS2,resource,people,,"source, geo_code",,,,,,
 04_tests,performed_tests,,observation,qty,,"Source, test_result, test_type, geo_code",,,,,,"[{""variable"": ""case_status"", ""value"": null}]"
 04_tests,new_performed_tests,,observation,qty,,"Source, test_result, test_type, geo_code","cum_perf_tests_to_daily(reporting_period, performed_tests)",,,,,"[{""variable"": ""case_status"", ""value"": null}]"
 04_tests,new_performed_tests_per_100k,Number of performed tests each 100.000 people by day and country,indicator,qty,,"Source, test_result, test_type, geo_code","new_performed_tests_per_100k(reporting_period, new_performed_tests, population)",,,,,
@@ -173,59 +173,37 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 04_tests,test_result,,characteristic,,,,,,,,,
 04_tests,epidemiological_surveys_answer,,observation,qty,,"source, geo_code",,,,,,
 04_tests,positivity_rate,Number of positive tests cases divided by the size of the target population,indicator,people/people,,"Source, test_result, geo_code","positivity_rate(reporting_period, confirmed_cases, new_performed_tests, pathogen_code)",,,,,
-04_tests,number_of_test_staff,,resource,people,,,,,,,,
-04_tests,qty_of_test_resources,,resource,qty,,,,,,,,
-04_tests,number_of_test_resources_dependencies,,resource,qty,,,,,,,,
-05_vaccination,doses_injected,Number of vaccine doses injected all types of vaccines combined by week and country,observation,qty,,"Source, vaccination_status, geo_code",,,,,,
+04_tests,number_of_test_staff,,resource,people,,"source, geo_code",,,,,,
+04_tests,qty_of_test_resources,,resource,qty,,"source, geo_code",,,,,,
+04_tests,number_of_test_resources_dependencies,,resource,qty,,"source, geo_code",,,,,,
+05_vaccination,doses_injected,Number of vaccine doses injected all types of vaccines combined by week and country,observation,qty,,"Source, vaccination_status, geo_code","new_to_dosed_injected(reporting_period, new_doses_injected)",,,,,
 05_vaccination,new_doses_injected,Number of vaccine doses injected all types of vaccines combined by week and country,observation,qty,,"Source, vaccination_status, geo_code","cum_doses_to_daily(reporting_period, doses_injected)",,,,,
-05_vaccination,people_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,,,,,
-06_vaccination,people_vaccinated_for_female,Number of people vaccinated by Gender (Female),indicator,people,,"source, geo_code","people_vaccinated_for_female(reporting_date, people_vaccinated)",people_vaccinated,TRUE,missing_real_data_2022,"age_group, gender_code, comorbidity_code","[{""variable"": ""gender_code"", ""value"": ""F""}]"
-07_vaccination,people_vaccinated_for_male,Number of people vaccinated by Gender (Male),indicator,people,,"source, geo_code","people_vaccinated_for_male(reporting_date, people_vaccinated)",people_vaccinated,TRUE,missing_real_data_2022,"age_group, gender_code, comorbidity_code","[{""variable"": ""gender_code"", ""value"": ""M""}]"
-05_vaccination,new_people_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,,,,,
-05_vaccination,vaccination_coverage,Number of vaccinated individuals divided by the size of the target population,observation,people,,"Source, vaccination_status, geo_code","vaccination_coverage(reporting_period, people_fully_vaccinated, population, pathogen_code)",,,,,
-05_vaccination,vaccination_coverage_1_dose,Number of vaccinated individuals with 1 dose divided by the size of the target population,observation,people,,"Source, vaccination_status, geo_code","vaccination_coverage_1_dose(reporting_period, one_dose_vaccinated, population, pathogen_code)",,,,,
-05_vaccination,vaccination_coverage_2_doses,Number of vaccinated individuals with 2 doses divided by the size of the target population,observation,people,,"Source, vaccination_status, geo_code","vaccination_coverage_2_doses(reporting_period, two_doses_vaccinated, population, pathogen_code)",,,,,
-05_vaccination,vaccination_coverage_3_more_doses,Number of vaccinated individuals with 3+ doses divided by the size of the target population,observation,people,,"Source, vaccination_status, geo_code","vaccination_coverage_3_more_doses(reporting_period, three_doses_vaccinated, population, pathogen_code)",,,,,
-05_vaccination,one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","one_dose_vaccinated(reporting_period, new_first_doses)",people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}]"
-05_vaccination,two_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","two_doses_vaccinated(reporting_period, new_second_doses)",people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}]"
-05_vaccination,three_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}]"
-05_vaccination,additional_1_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","additional_1_doses_vaccinated(reporting_period, new_additional_1_doses)",people_vaccinated,,,,
-05_vaccination,additional_2_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","additional_2_doses_vaccinated(reporting_period, new_additional_2_doses)",people_vaccinated,,,,
-05_vaccination,additional_3_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","additional_3_doses_vaccinated(reporting_period, new_additional_3_doses)",people_vaccinated,,,,
-05_vaccination,new_first_doses,,observation,qty,,"Source, vaccination_status, geo_code",,new_people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""new_first_doses""}]"
-05_vaccination,new_second_doses,,observation,qty,,"Source, vaccination_status, geo_code",,new_people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""new_second_doses""}]"
-05_vaccination,new_additional_1_doses,,observation,qty,,"Source, vaccination_status, geo_code",,new_people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""new_additional_1_doses""}]"
-05_vaccination,new_additional_2_doses,,observation,qty,,"Source, vaccination_status, geo_code",,new_people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""new_additional_2_doses""}]"
-05_vaccination,new_additional_3_doses,,observation,qty,,"Source, vaccination_status, geo_code",,new_people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""new_additional_3_doses""}]"
-05_vaccination,people_fully_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","people_fully_vaccinated(reporting_period, one_dose_vaccinated, two_doses_vaccinated, additional_1_doses_vaccinated, additional_2_doses_vaccinated, additional_3_doses_vaccinated)",people_vaccinated,,,,"[{""variable"":""vaccination_status"", ""value"":""fully_vaccinated""}]"
-05_vaccination,new_people_fully_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","cum_fully_vacc_to_daily(reporting_period, people_fully_vaccinated)",new_people_vaccinated,,,,"[{""variable"":""vaccination_status"", ""value"":""fully_vaccinated""}]"
-05_vaccination,at_least_one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"":""vaccination_status"", ""value"":""one_dose_at_least""}]"
-05_vaccination,new_at_least_one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","cum_to_daily(reporting_period, new_at_least_one_dose_vaccinated)",new_people_vaccinated,,,,"[{""variable"":""vaccination_status"", ""value"":""one_dose_at_least""}]"
-05_vaccination,one_dose_vaccinated_infected,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
-05_vaccination,two_doses_vaccinated_infected,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
-05_vaccination,three_doses_vaccinated_infected,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
-05_vaccination,one_dose_vaccinated_hcw,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}, {""variable"": ""population_type"", ""value"": ""hcw""}]"
-05_vaccination,two_doses_vaccinated_hcw,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}, {""variable"": ""resource_status"", ""value"": ""hcw""}]"
-05_vaccination,three_doses_vaccinated_hcw,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}, {""variable"": ""patient_status"", ""value"": ""hcw""}]"
-05_vaccination,one_dose_vaccinated_uhc,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}, {""variable"": ""patient_status"", ""value"": ""uhc""}]"
-05_vaccination,two_doses_vaccinated_uhc,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}, {""variable"": ""population_type"", ""value"": ""uhc""}]"
-05_vaccination,three_doses_vaccinated_uhc,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}, {""variable"": ""population_type"", ""value"": ""uhc""}]"
-05_vaccination,one_dose_vaccinated_ltcf,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}, {""variable"": ""population_type"", ""value"": ""ltcf""}]"
-05_vaccination,two_doses_vaccinated_ltcf,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}, {""variable"": ""population_type"", ""value"": ""ltcf""}]"
-05_vaccination,three_doses_vaccinated_ltcf,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""three_doses""}, {""variable"": ""population_type"", ""value"": ""ltcf""}]"
+05_vaccination,people_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","new_to_people_vaccinated(reporting_period, new_people_vaccinated)",,,,,
+05_vaccination,one_dose_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}]"
+05_vaccination,two_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}]"
+05_vaccination,additional_1_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""1_additional_doses""}]"
+05_vaccination,additional_2_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""2_additional_doses""}]"
+05_vaccination,additional_3_doses_vaccinated,,observation,people,,"Source, vaccination_status, geo_code",,people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""3_additional_doses""}]"
+05_vaccination,people_vaccinated_for_female,Number of people vaccinated by Gender (Female),indicator,people,,"Source, vaccination_status, geo_code","people_vaccinated_for_female(reporting_date, people_vaccinated)",people_vaccinated,TRUE,missing_real_data_2022,"age_group, gender_code, comorbidity_code","[{""variable"": ""gender_code"", ""value"": ""F""}]"
+05_vaccination,people_vaccinated_for_male,Number of people vaccinated by Gender (Male),indicator,people,,"Source, vaccination_status, geo_code","people_vaccinated_for_male(reporting_date, people_vaccinated)",people_vaccinated,TRUE,missing_real_data_2022,"age_group, gender_code, comorbidity_code","[{""variable"": ""gender_code"", ""value"": ""M""}]"
+05_vaccination,vaccination_coverage,Number of vaccinated individuals divided by the size of the target population,indicator,people,,"Source, vaccination_status, geo_code","vaccination_coverage(reporting_period, people_vaccinated, population, pathogen_code)",,,,,
+05_vaccination,vaccination_coverage_one_dose,Number of vaccinated individuals with 1 dose divided by the size of the target population,indicator,people,,"Source, vaccination_status, geo_code",,vaccination_coverage,,,,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}]"
+05_vaccination,vaccination_coverage_two_doses,Number of vaccinated individuals with 2 doses divided by the size of the target population,indicator,people,,"Source, vaccination_status, geo_code",,vaccination_coverage,,,,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}]"
+05_vaccination,vaccination_coverage_additional_1_dose,Number of vaccinated individuals with 3+ doses divided by the size of the target population,indicator,people,,"Source, vaccination_status, geo_code",,vaccination_coverage,,,,"[{""variable"": ""vaccination_status"", ""value"": ""1_additional_doses""}]"
+05_vaccination,vaccination_coverage_additional_2_doses,Number of vaccinated individuals with 3+ doses divided by the size of the target population,indicator,people,,"Source, vaccination_status, geo_code",,vaccination_coverage,,,,"[{""variable"": ""vaccination_status"", ""value"": ""2_additional_doses""}]"
+05_vaccination,vaccination_coverage_additional_3_doses,Number of vaccinated individuals with 3+ doses divided by the size of the target population,indicator,people,,"Source, vaccination_status, geo_code",,vaccination_coverage,,,,"[{""variable"": ""vaccination_status"", ""value"": ""3_additional_doses""}]"
+05_vaccination,new_people_vaccinated,,observation,people,,"Source, vaccination_status, geo_code","people_vaccinated_to_daily(reporting_period, people_vaccinated)",,,,,
+05_vaccination,new_one_dose,,observation,qty,,"Source, vaccination_status, geo_code",,new_people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""one_dose""}]"
+05_vaccination,new_two_doses,,observation,qty,,"Source, vaccination_status, geo_code",,new_people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""two_doses""}]"
+05_vaccination,new_additional_1_dose,,observation,qty,,"Source, vaccination_status, geo_code",,new_people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""1_additional_doses""}]"
+05_vaccination,new_additional_2_doses,,observation,qty,,"Source, vaccination_status, geo_code",,new_people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""2_additional_doses""}]"
+05_vaccination,new_additional_3_doses,,observation,qty,,"Source, vaccination_status, geo_code",,new_people_vaccinated,,,,"[{""variable"": ""vaccination_status"", ""value"": ""3_additional_doses""}]"
 05_vaccination,vaccination_status,,characteristic,,,,,,,,,
 13_referentials,population_type,,referential,,,,,,,,,
 13_referentials,population_group,,referential_label,,population_type,,,,,,,
 05_vaccination,resource_status,,characteristic,,,,,,,,,
-05_vaccination,doses_scheduled_and_target_population,,observation,,,"source, geo_code",,,,,,
 05_vaccination,vaccin_code,,referential,,,,,,,,,
 05_vaccination,vaccin,,referential_label,,vaccin_code,,,,,,,
-05_vaccination,"doses_by_vendor,batch",,characteristic,,,,,,,,,
-05_vaccination,doses_injected_by_occupation_(hcw_an_other_essential_professionals),,characteristic,,,,,,,,,
-05_vaccination,"doses_injected_in_high_risk_individuals_-_potential_risk_factors_(immunosuppressed,comorbidities,pregnant_women,elderly)",,characteristic,,,,,,,,,
-05_vaccination,vaccination_side_effects_aefi_observed_and_severity,,characteristic,,,,,,,,,
-05_vaccination,"vaccination_progress_(proportion_of_vaccinated,overall,by_age_and_risk_group)",,indicator,,,"source, geo_code",,,,,,
-05_vaccination,"vaccination_resources_(staff,centres,supplies)",,resource,,,,,,,,,
 06_contact_tracing,number_of_index_cases_studied_,,observation,,,"source, geo_code",,,,,,
 06_contact_tracing,people_followed_by_contact_tracing,,observation,,,"source, geo_code",,,,,,
 06_contact_tracing,total_cases_identified_for_contact_tracing,,observation,,,"source, geo_code",,people_followed_by_contact_tracing,,,,"[{""variable"": ""contact_status"", ""value"": ""case""}]"
@@ -248,7 +226,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 06_contact_tracing,"contact_tracing_details_at_individual_level:_travel,contacts,date_of_isolation,date_of_quarantine,transmission_chains",,observation,,,"source, geo_code",,,,,,
 06_contact_tracing,cluster_identification_and_characterisation,,characteristic,,,,,,,,,
 06_contact_tracing,notification_delay_(onset_of_symptoms_-_notification_date),,indicator,,,"source, geo_code",,,,,,
-06_contact_tracing,contact_tracers_(staff_working_in_contact_tracing),,resource,,,,,,,,,
+06_contact_tracing,contact_tracers_(staff_working_in_contact_tracing),,resource,,,"source, geo_code",,,,,,
 04_tests,number_of_test_performed_(overall_and_by_individual),,observation,,,"source, geo_code",,,,,,
 07_lab,speed_of_spread_of_variants_(proportion_among_overall_cases),,observation,,,"source, geo_code",,,,,,
 04_tests,sero_prevalence,,indicator,people/people,,"source, geo_code",,,,,,
@@ -267,15 +245,15 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 09_first_response,ongoing_emergencies_(types),,observation,,,"source, geo_code",,,,,,
 09_first_response,visits_to_gp_with_compatible_symptoms_(disease_x),,observation,,,"source, geo_code",,,,,,
 09_first_response,details/type_of_protocol_applied,,characteristic,,,,,,,,,
-09_first_response,"public_health_staff_(surveillance,prevention_and_control_activities)",,resource,,,,,,,,,
-09_first_response,emergency_staff_,,resource,,,,,,,,,
+09_first_response,"public_health_staff_(surveillance,prevention_and_control_activities)",,resource,,,"source, geo_code",,,,,,
+09_first_response,emergency_staff_,,resource,,,"source, geo_code",,,,,,
 10_transport,patient_transportation_type_(for_suspicious_or_confirmed_cases),,observation,,,"source, geo_code",,,,,,
 10_transport,current_ambulance_activity,,observation,,,"source, geo_code",,,,,,
 10_transport,patient_transfers,,observation,,,"source, geo_code",,,,,,
 10_transport,"transport_statistics_(duration,times)",,characteristic,,,,,,,,,
-10_transport,transport_resources_(ambulances),,resource,,,,,,,,,
-10_transport,ambulances_/_type,,resource,,,,,,,,,
-10_transport,mass_patient_transport_threshold,,resource,,,,,,,,,
+10_transport,transport_resources_(ambulances),,resource,,,"source, geo_code",,,,,,
+10_transport,ambulances_/_type,,resource,,,"source, geo_code",,,,,,
+10_transport,mass_patient_transport_threshold,,resource,,,"source, geo_code",,,,,,
 10_transport,mass_patient_transport_protocols,,document,,,,,,,,,
 11_measures,number_of_people_entering_to_the_country_(by_origin),,observation,,,"source, geo_code",,,,,,
 11_measures,mitigation_measures_and_policies,,observation,,,"source, geo_code",,,,,,
@@ -334,7 +312,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 12_population_study,study_estimate_grade,Geographical scope of a study (free text),not characteristic,,,,,,,,,
 12_population_study,study_url,Url of the otiginal study,not characteristic,,,,,,,,,
 12_population_study,study_type,Type of a study (methodology),not characteristic,,,,,,,,,
-12_population_study,study_data_quality,data quality evaluation of the study,not_characteristic,,,,,,,,,
+12_population_study,study_data_quality,data quality evaluation of the study,not characteristic,,,,,,,,,
 07_lab,number_detections_variant,,observation,people,,"source, geo_code",,,,,,
 07_lab,number_detections_mutation,,observation,people,,"source, geo_code",,,,,,
 13_referentials,gender_code,,referential,,,,,,,,,
@@ -348,17 +326,17 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,alert_topic,,characteristic,,,,,,,,,
 01_cases,number_of_participants,,observation,people,,"source, geo_code",,population,,,,"[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
 01_cases,participants_declaring_symptoms,,observation,people,,"source, geo_code",,number_of_cases,,,,"[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
-01_cases,ari_ili_patients,,observation,people,,,,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""ari-ili""}]"
-01_cases,hospitalised_sari_patients,,observation,people,,,,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""sari""}, {""variable"": ""response_status"", ""value"": ""hospitalised""}]"
-01_cases,hospitalised_sari_infected_patients,,observation,people,,,,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""sari""}, {""variable"": ""response_status"", ""value"": ""hospitalised""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
-01_cases,positivity_for_influenza_ari_ili,,indicator,,,,,,,,,
-01_cases,posititivity_for_covid_ari_ili,,indicator,,,,,,,,,
+01_cases,ari_ili_patients,,observation,people,,"source, geo_code",,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""ari-ili""}]"
+01_cases,hospitalised_sari_patients,,observation,people,,"source, geo_code",,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""sari""}, {""variable"": ""response_status"", ""value"": ""hospitalised""}]"
+01_cases,hospitalised_sari_infected_patients,,observation,people,,"source, geo_code",,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""sari""}, {""variable"": ""response_status"", ""value"": ""hospitalised""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
+01_cases,positivity_for_influenza_ari_ili,,indicator,,,"source, geo_code",,,,,,
+01_cases,posititivity_for_covid_ari_ili,,indicator,,,"source, geo_code",,,,,,
 01_cases,outbreak_setting,,referential,,,,,,,,,
 01_cases,detection_mode,,referential,,,,,,,,,
 01_cases,outbreak_cases,Number of imported cases for the respective pathogen and reporting period,observation,people,,"source, case_status, geo_code",,number_of_cases,,,,"[{""variable"": ""case_status"", ""value"": ""outbreak""}]"
 03_patient,comorbidity_code,,referential,,,,,,,,,
 03_patient,comorbidity_name,,referential,,,,,,,,,
-12_population_study,article_id,,observation,comma list,,,,,,,,
+12_population_study,article_id,,observation,comma list,,"source, geo_code",,,,,,
 12_population_study,studied_population,,observation,people,,"source, geo_code",,,,,,
 12_population_study,article_created_at,,private,,,,,,,,,
 12_population_study,topic,,characteristic,,,,,,,,,

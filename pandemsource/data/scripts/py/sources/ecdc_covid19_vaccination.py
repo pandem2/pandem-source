@@ -19,6 +19,11 @@ INIT_AGES = [
     "age80+"
 ]
 
+AGES_MAP = {
+    "1_age<60":"0-60",
+    "1_age60+":"60+",
+}
+
 AGG_FUNC = {
     'FirstDose': 'sum',
     'SecondDose': 'sum',
@@ -61,14 +66,7 @@ def split_target_group_col(df: pd.DataFrame) -> pd.DataFrame:
 def normalize_age_groups(age_group: str) -> Optional[str]:
     if age_group is np.nan:
         return np.nan
-    nb = sorted(re.findall('\d+', age_group))
-    nb_size = len(nb)
-    if nb_size == 1:
-        if '<' in age_group:
-            return f'< {nb} yr'
-        elif '+' in age_group:
-            return f'{nb} +yr'
-    elif nb_size == 2:
-        return f'{nb[0]} - {nb[1]} yr'
+    elif age_group.lower() in AGES_MAP:
+        return AGES_MAP[age_group.lower()]
     else:
-        return np.nan
+        return age_group

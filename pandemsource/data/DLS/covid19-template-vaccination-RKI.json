@@ -36,6 +36,6 @@
       {"name":"Population", "variable":"population"},
       {"name":"Vaccinated individuals with 1 dose", "variable":"one_dose_vaccinated"},
       {"name":"Vaccinated individuals with 2 dose", "variable":"two_doses_vaccinated"},
-      {"name":"Vaccinated individuals with 3 dose", "variable":"three_doses_vaccinated"}
+      {"name":"Vaccinated individuals with 3 dose", "variable":"additional_1_doses_vaccinated"}
     ]
 }

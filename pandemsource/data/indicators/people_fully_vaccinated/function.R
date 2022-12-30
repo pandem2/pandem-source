@@ -1,5 +1,0 @@
-one_dose_vaccinated +
-two_doses_vaccinated +
-additional_1_doses_vaccinated +
-additional_2_doses_vaccinated +
-additional_3_doses_vaccinated

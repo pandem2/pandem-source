@@ -43,49 +43,22 @@
     }
   },
   "columns": [
-    {
-      "name": "YearWeekISO",
-      "variable": "reporting_week"
-    },
-    {
-      "name": "Region",
-      "variable": "geo_code"
-    },
-    {
-      "name": "Denominator",
-      "variable": "population"
-    },
-    {
-      "name": "TotalDosesInjected",
-      "variable": "doses_injected"
-    },
-    {
-      "name": "FirstDose",
-      "variable": "new_first_doses"
-    },
-    {
-      "name": "SecondDose",
-      "variable": "new_second_doses"
-    },
-    {
-      "name": "DoseAdditional1",
-      "variable": "new_additional_1_doses"
-    },
-    {
-      "name": "DoseAdditional2",
-      "variable": "new_additional_2_doses"
-    },
-    {
-      "name": "DoseAdditional3",
-      "variable": "new_additional_3_doses"
-    },
-    {
-      "name": "AgeGroup",
-      "variable": "age_group"
-    },
-    {
-      "name": "TargetPopulation",
-      "variable": "population_type"
-    }
-  ]
+    {"name": "YearWeekISO", "variable": "reporting_week"},
+    {"name": "Region","variable": "geo_code"},
+    {"name": "Denominator","variable": "population"},
+    {"name": "TotalDosesInjected","variable": "doses_injected"},
+    {"name": "FirstDose","variable": "new_first_doses"},
+    {"name": "SecondDose","variable": "new_second_doses"},
+    {"name": "DoseAdditional1","variable": "new_additional_1_doses"},
+    {"name": "DoseAdditional2","variable": "new_additional_2_doses"},
+    {"name": "DoseAdditional3","variable": "new_additional_3_doses" },
+    {"name": "AgeGroup","variable": "age_group"},
+    {"name": "TargetPopulation","variable": "population_type"}
+  ],
+  "synthetize": {
+    "active": true,
+    "tags": [
+      "missing_real_data_2022"
+    ]
+  }
 }
