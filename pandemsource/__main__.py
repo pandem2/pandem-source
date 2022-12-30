@@ -411,7 +411,7 @@ def do_reset(args, *other):
     admin.reset_source("ecdc-covid19-daily", delete_data = args.delete_data)
     admin.reset_source("ecdc-covid19-weekly-hospital-occupancy", delete_data = args.delete_data)
   if args.serotracker or args.restore_factory_defaults:
-    admin.reset_source("geonames-countries", delete_data = args.delete_data)    
+    admin.reset_source("geonames-countries", delete_data = False)    
     admin.reset_source("serotracker", delete_data = args.delete_data)    
   if args.ecdc_atlas or args.restore_factory_defaults:
     admin.reset_source("ecdc-atlas-influenza", delete_data = args.delete_data)    

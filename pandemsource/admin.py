@@ -81,7 +81,18 @@ def reset_source(source_name, delete_data = True):
   else:
     raise ValueError(f"Cannot find source definition {source_name} within pandem default sources")
   
-  # copytin script if any
+  # resetting source hash
+  path = util.pandem_path("database/sources.pickle")
+  if os.path.exists(path):
+    with open(path, "rb") as f:
+      s = pickle.load(f)
+    for i in s[s["name"] == source_name].index:
+      s.at[i, "last_hash"] = ""
+
+    with open(path, "wb") as f:
+      pickle.dump(s, f)
+  
+  # copyting script if any
   with open(util.pandem_path("files", "source-definitions", f"{source_name}.json"), "r") as f:
     dls = json.load(f)
     
