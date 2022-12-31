@@ -64,7 +64,7 @@ def split_target_group_col(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def normalize_age_groups(age_group: str) -> Optional[str]:
-    if np.isnan(age_group):
+    if pd.isnull(age_group):
         return np.nan
     elif age_group.lower() in AGES_MAP:
         return AGES_MAP[age_group.lower()]
