@@ -56,7 +56,7 @@ def split_target_group_col(df: pd.DataFrame) -> pd.DataFrame:
     df_all.loc[:, "TargetPopulation"] = np.nan
     df_all.loc[:, "AgeGroup"] = np.nan
     df_recommended_population.rename(columns={"TargetGroup": "TargetPopulation"}, inplace=True)
-    df_recommended_population.loc[:, "TargetPopulation"] = "recommend_population"
+    df_recommended_population.loc[:, "TargetPopulation"] = "recommended_population"
     df_recommended_population = df_recommended_population.groupby(["YearWeekISO", "Region", "TargetPopulation"]).agg(AGG_FUNC).reset_index()
     df_population.rename(columns={"TargetGroup": "TargetPopulation"}, inplace=True)
     df_age_group.rename(columns={"TargetGroup": "AgeGroup"}, inplace=True)
