@@ -68,7 +68,7 @@ def read_variables_definitions():
   parsed = json.loads(result)
   return parsed
 
-def reset_source(source_name, delete_data = True):
+def reset_source(source_name, delete_data = False, reset_acquisition = False ):
   dls_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "DLS", f"{source_name}.json"))
   if os.path.exists(dls_from):
     dls_to = util.pandem_path("files", "source-definitions", f"{source_name}.json")
@@ -83,7 +83,7 @@ def reset_source(source_name, delete_data = True):
   
   # resetting source hash
   path = util.pandem_path("database/sources.pickle")
-  if os.path.exists(path):
+  if reset_acquisition and os.path.exists(path):
     with open(path, "rb") as f:
       s = pickle.load(f)
     for i in s[s["name"] == source_name].index:
