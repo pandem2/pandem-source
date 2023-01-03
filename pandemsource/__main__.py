@@ -259,8 +259,11 @@ def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart
 # handlers
 def do_start(args, *other):
   if args.debug:
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+
+    for logger in [l for l in loggers if len([ni for ni in ["urllib", "tweepy"] if ni in l.name]) == 0]:
+      logger.setLevel(logging.DEBUG)
     root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

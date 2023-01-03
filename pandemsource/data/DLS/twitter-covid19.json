@@ -13,7 +13,8 @@
         "reference_user": " Banda, Juan M, Tekumalla, Ramya",
         "reporting_email": "",
         "globals": [
-          {"variable": "source"}
+          {"variable": "source"},
+          {"variable":"pathogen_name", "value":"COVID-19"}
         ],
         "update_scope": [
           {"variable": "source"}
@@ -34,30 +35,21 @@
             "after_submit":"chunk_done"
         },
         "format": {
-            "name": "csv",
-            "decimal_sign": ".",
-            "thousands_separator": "",
-            "date_format": "%Y-%m-%d %H:%M:%S%z",
-            "encoding": "UTF-8"
+          "name":"json",
+          "new_line_ended":false,
+          "encoding":"UTF-8",
+          "row":"*",
+          "date_format":"%Y-%m-%d %H:%M:%S"
         }
     },
-    "columns": [
-        {
-            "name": "destination",
-            "variable": "geo_airport_code"
-        },
-        {
-            "name": "origin",
-            "variable": "geo_airport_origin_code"
-        },
-        {
-            "name": "day",
-            "variable": "reporting_date"
-        },
-        {
-            "name": "flights",
-            "variable": "incoming_flights",
-            "action": "insert"
-        }
+    "columns":[
+      {"name":"id", "variable":"article_id", "path":"@id"},
+      {"name":"created_at", "variable":"article_created_at", "path":"@created_at"},
+      {"name":"text", "variable":"article_text", "path":"@text"},
+      {"name":"lang", "variable":"article_language", "path":"@lang"},
+      {"name":"date", "path":"@date"},
+      {"name":"chunk", "path":"@chunk"},
+      {"name":"reporting_time", "variable":"reporting_time"},
+      {"name":"article_count", "variable":"article_count"}
     ]
 }

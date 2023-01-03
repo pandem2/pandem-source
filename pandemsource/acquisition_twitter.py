@@ -11,6 +11,7 @@ import glob
 from math import inf
 import re
 import logging
+import time
 
 l = logging.getLogger("pandem.twitter")
 
@@ -108,14 +109,34 @@ class AcquisitionTwitter(acquisition.Acquisition):
       j = 0
       ret = {}
       while i < len(ids):
-        res = self._api.lookup_statuses(ids[i:i+100], include_entities = False, trim_user = True)
+        # setting a minumum of 0.5 secs between requests
+        start = time.time()
+        success = False
+        tries = 0
+        while not success:
+          try:
+            res = self._api.lookup_statuses(ids[i:i+100], include_entities = False, trim_user = True)
+            success = True
+          except Exception as e:
+            tries = tries + 1
+            if tries <= 10 :
+              l.debug(f"Tweet request failed with error {e} \nretryng on {tries*tries} seconds")
+              time.sleep(tries * tries)
+            else:
+              l.error("Too many retries failed")
+              raise(e)
+            
         ret.update({t.id_str:{"id":t.id_str, "text":t.text, "created_at":t.created_at.isoformat(), "lang":t.lang} for t in res})
-        if j % 50 == 0:
+        if j % 5 == 0 and j > 0:
           l.debug(f"{i} tweets rehydrated from {len(ids)}")
-
         i = i + 100
         j = j + 1
+        # spleepling if less than 0.5 secs has happened
+        pending = time.time() - start
+        if pending < 0.5:
+          time.sleep(pending)
 
+      l.debug(f"{i} tweets rehydrated from {len(ids)}")
       return ret
 
     def create_new_gz(self):

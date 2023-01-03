@@ -4,10 +4,16 @@ import os
 import gzip
 import json
 import re
-
+from datetime import datetime
+from datetime import timedelta
 
 chunk_size = 5000
 
+def df_transform(df):
+  df["article_count"] = 1
+  df["reporting_time"] = df.apply(lambda row: datetime.strftime(datetime.strptime(row["date"], "%Y-%m-%d") + timedelta(seconds = int(row["chunk"])), "%Y-%m-%d %H:%M:%S"), axis = 1)
+  return df
+  
 def join_files(files_hash, last_hash, dls, orchestrator, logger, **kwargs):
   files = files_hash["files"]
   current_hash = files_hash["hash"]
@@ -157,44 +163,41 @@ def hydrate(files_hash, last_hash, dls, orchestrator, logger, **kwargs):
   new_files = []
   if current_hash != last_hash:
     logger.debug(f"going to hydrate {ntweets} tweets on chunk {chunk_to_hydrate}")
-    ids_to_hydrate = []
-    ids_by_date = {}
     i = 0
-    for date, info in stats.items():
-      if chunk_to_hydrate in info["to_hydrate"]:
-        i = i +1
-        file_path = os.path.join(os.getcwd(), "tweets", "tweets_ids", f"{date}.json")
-        tweet_index = load_date_index(date)
-        tweets_ids = tweet_index[chunk_to_hydrate]
-        ids_to_hydrate.extend(tweets_ids)
-        ids_by_date[date] = tweets_ids
-
+    
+    # grouping by dates in monthly pachages
+    months = sorted({date[0:7] for date in stats.keys()})
     twitter_proxy = orchestrator.get_actor('acquisition_twitter').get().proxy()
-    hydrated_tweets = twitter_proxy.hydrate_tweet_ids(ids_to_hydrate).get()
-    # storing texts
-    for date, info in stats.items():
-      if chunk_to_hydrate in info["to_hydrate"] and date in ids_by_date:
-        dest_dir = os.path.join(os.getcwd(), "tweets", "tweets_texts", f"{date}")
-        if not os.path.exists(dest_dir):
-          os.mkdir(dest_dir)
-        dest_file = os.path.join(dest_dir, f"{chunk_to_hydrate}.json") 
-        res = {}
-        if os.path.exists(dest_file):
-          with open(dest_file, "rt") as f:
-            res = {t["id"]:t for t in json.load(f)}
-            
-        chunk_texts = {tweet_id:hydrated_tweets[tweet_id] for tweet_id in ids_by_date[date] if tweet_id in hydrated_tweets}
-        res.update(chunk_texts)
-
-        #writing changes
-        with open(dest_file, "wt") as f:
-          json.dump([*res.values()], f)
+    for month in months:
+      ids_to_hydrate = []
+      ids_by_date = {}
+      ntweets = sum([info["to_hydrate"][chunk_to_hydrate] for date, info in stats.items() if date[0:7]== month and chunk_to_hydrate in info["to_hydrate"]])
+      logger.debug(f"processing {ntweets} twets for {month} in chunk {chunk_to_hydrate}")
+      for date, info in stats.items():
+        if chunk_to_hydrate in info["to_hydrate"] and date[0:7] == month:
+          i = i + 1
+          existing_tweets = load_tweet_date_chunk(date, chunk_to_hydrate)
+          file_path = os.path.join(os.getcwd(), "tweets", "tweets_ids", f"{date}.json")
+          tweet_index = load_date_index(date)
+          tweets_ids = tweet_index[chunk_to_hydrate] - existing_tweets.keys()
+          ids_to_hydrate.extend(tweets_ids)
+          ids_by_date[date] = tweets_ids
+      if len(ids_to_hydrate) > 0:
+        # requesting tweet hydrate to twitter (using twitter actor)
+        hydrated_tweets = twitter_proxy.hydrate_tweet_ids(ids_to_hydrate).get()
+        # storing texts
+        for date, info in stats.items():
+          if chunk_to_hydrate in info["to_hydrate"] and date in ids_by_date and date[0:7] == month:
+            res = load_tweet_date_chunk(date, chunk_to_hydrate)
+            chunk_texts = {tweet_id:{**(hydrated_tweets.get(tweet_id) or {}), **{"date":date, "chunk":chunk_to_hydrate}} for tweet_id in ids_by_date[date]}
+            chunk_texts.update(res)
+            #writing changes
+            save_tweet_date_chunk(chunk_texts, date, chunk_to_hydrate)
 
   else:
     logger.debug(f"Ignoring hydrate since no change was detected")
      
   # adding files to be processed
-
   for date, info in stats.items():
     if chunk_to_hydrate in info["to_hydrate"]:
       dest_dir = os.path.join(os.getcwd(), "tweets", "tweets_texts", f"{date}")
@@ -203,7 +206,24 @@ def hydrate(files_hash, last_hash, dls, orchestrator, logger, **kwargs):
         new_files.append(dest_file)
     
   return {"files":new_files, "hash":current_hash}
-      
+
+def load_tweet_date_chunk(date, chunk):
+  dest_dir = os.path.join(os.getcwd(), "tweets", "tweets_texts", f"{date}")
+  if not os.path.exists(dest_dir):
+    os.mkdir(dest_dir)
+  dest_file = os.path.join(dest_dir, f"{chunk}.json") 
+  res = {}
+  if os.path.exists(dest_file):
+    with open(dest_file, "rt") as f:
+      res = {t["id"]:t for t in json.load(f)}
+  return res
+
+def save_tweet_date_chunk(data, date, chunk):
+  dest_dir = os.path.join(os.getcwd(), "tweets", "tweets_texts", f"{date}")
+  dest_file = os.path.join(dest_dir, f"{chunk}.json") 
+  with open(dest_file, "wt") as f:
+    json.dump([*data.values()], f)
+
 def chunk_done(files_hash, dls, logger, **kwargs):
   stats = load_index_stats()
   files = files_hash["files"]
@@ -214,7 +234,6 @@ def chunk_done(files_hash, dls, logger, **kwargs):
     if last_chunk in info["to_hydrate"]:
       info["to_hydrate"].pop(last_chunk)
   stats_path = os.path.join(os.getcwd(), "tweets", "tweet_stats.json")
-  breakpoint()
   with open(stats_path, "w") as f:
     json.dump(stats, f)
 
