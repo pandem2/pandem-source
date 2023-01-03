@@ -70,8 +70,9 @@ def read_variables_definitions():
 
 def reset_source(source_name, delete_data = False, reset_acquisition = False ):
   dls_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "DLS", f"{source_name}.json"))
+  dls_to = util.pandem_path("files", "source-definitions", f"{source_name}.json")
+  # copyint DLS files and deleting data if delete_data = True
   if os.path.exists(dls_from):
-    dls_to = util.pandem_path("files", "source-definitions", f"{source_name}.json")
     dls_to_dir = util.pandem_path("files", "source-definitions")
     if not os.path.exists(dls_to_dir):
       os.makedirs(dls_to_dir)
@@ -81,7 +82,7 @@ def reset_source(source_name, delete_data = False, reset_acquisition = False ):
   else:
     raise ValueError(f"Cannot find source definition {source_name} within pandem default sources")
   
-  # resetting source hash
+  # resetting source hash if reset_acquisition = True
   path = util.pandem_path("database/sources.pickle")
   if reset_acquisition and os.path.exists(path):
     with open(path, "rb") as f:
@@ -92,27 +93,30 @@ def reset_source(source_name, delete_data = False, reset_acquisition = False ):
     with open(path, "wb") as f:
       pickle.dump(s, f)
   
-  # copyting script if any
-  with open(util.pandem_path("files", "source-definitions", f"{source_name}.json"), "r") as f:
-    dls = json.load(f)
     
-  if "changed_by" in dls["acquisition"]["channel"] and  "script_type" in dls["acquisition"]["channel"]["changed_by"]:
-    script_type = dls["acquisition"]["channel"]["changed_by"]["script_type"]
-    script_name = dls["acquisition"]["channel"]["changed_by"]["script_name"]
-    script_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", script_type, f"{script_name}.{script_type}"))
-    if os.path.exists(script_from):
-      script_to = util.pandem_path("files", "scripts", script_type, f"{script_name}.{script_type}" )
-      script_to_dir = util.pandem_path("files", "scripts", script_type)
-      if not os.path.exists(script_to_dir):
-        os.makedirs(script_to_dir)
-      shutil.copyfile(script_from, script_to)
+  if os.path.exists(dls_to):
+    # reading DLS file
+    with open(util.pandem_path("files", "source-definitions", f"{source_name}.json"), "r") as f:
+      dls = json.load(f)
+    
+    # copying the changing script if any is defined
+    if "changed_by" in dls["acquisition"]["channel"] and  "script_type" in dls["acquisition"]["channel"]["changed_by"]:
+      script_type = dls["acquisition"]["channel"]["changed_by"]["script_type"]
+      script_name = dls["acquisition"]["channel"]["changed_by"]["script_name"]
+      script_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", script_type, f"{script_name}.{script_type}"))
+      if os.path.exists(script_from):
+        script_to = util.pandem_path("files", "scripts", script_type, f"{script_name}.{script_type}" )
+        script_to_dir = util.pandem_path("files", "scripts", script_type)
+        if not os.path.exists(script_to_dir):
+          os.makedirs(script_to_dir)
+        shutil.copyfile(script_from, script_to)
 
-  # Copy the corresponding Python script from package to pandem-home
-  pyscript_fol = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", "py", "sources"))
-  dls_pyscript = dls["scope"]["source"].replace("-", "_").replace(" ", "_") + ".py"
-  pyscript_to = util.pandem_path("files", "scripts", "py", "sources", dls_pyscript)
-  if dls_pyscript in os.listdir(pyscript_fol):
-    shutil.copyfile(os.path.join(pyscript_fol, dls_pyscript), pyscript_to)
+    # Copying sustom Python scripts from package to pandem-home
+    pyscript_fol = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", "py", "sources"))
+    dls_pyscript = dls["scope"]["source"].replace("-", "_").replace(" ", "_") + ".py"
+    pyscript_to = util.pandem_path("files", "scripts", "py", "sources", dls_pyscript)
+    if dls_pyscript in os.listdir(pyscript_fol):
+      shutil.copyfile(os.path.join(pyscript_fol, dls_pyscript), pyscript_to)
 
 def delete_source_data(source_name):
   ts_path = util.pandem_path("files/variables/time_series.pi" ) 

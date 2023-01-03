@@ -141,6 +141,12 @@ def main(a):
     help="Reset pandem partner templates to system defaults", 
   )
   reset_parser.add_argument(
+    "--twitter-covid19", 
+    action="store_true", 
+    help="Reset pandem twitter covid19 to system defaults", 
+  )
+
+  reset_parser.add_argument(
     "--twitter", 
     action="store_true", 
     help="Reset pandem twitter system defaults", 
@@ -308,7 +314,7 @@ def do_start(args, *other):
       dlss = list(filter(lambda dls: dls['scope']['source'] == source_name or (source_name in dls['scope']['tags'] and (dls['acquisition'].get("active") != False)), dls_dicts))
       for dls in dlss:
         acquisition_proxy = orch.get_actor(f"acquisition_{dls['acquisition']['channel']['name']}").get().proxy()
-        acquisition_proxy.add_datasource(dls, args.force_acquire)
+        acquisition_proxy.add_datasource(dls, force_acquire = args.force_acquire, ignore_last_exec = True)
   else:
     orchestrator_ref = Orchestration.start(
       settings, 
@@ -316,7 +322,8 @@ def do_start(args, *other):
       retry_failed = args.retry_failed, 
       retry_active = not args.not_retry_active, 
       force_acquire = args.force_acquire, 
-      no_nlp = args.no_nlp
+      no_nlp = args.no_nlp,
+      ignore_las_exec = False
     )
     orch = orchestrator_ref.proxy()
 
@@ -424,6 +431,8 @@ def do_reset(args, *other):
   if args.influenzanet or args.restore_factory_defaults:
     admin.reset_source("influenza-net", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("influenza-net-visits", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
+  if args.twitter_covid19 or args.restore_factory_defaults:
+    admin.reset_source("twitter-covid19", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    
   if args.twitter or args.restore_factory_defaults:
     admin.reset_source("twitter", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    
   if args.medisys or args.restore_factory_defaults:

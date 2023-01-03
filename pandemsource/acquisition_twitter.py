@@ -33,10 +33,17 @@ class AcquisitionTwitter(acquisition.Acquisition):
           os.makedirs(name = self._filter_dir)
         if not os.path.exists(self._filter_arc_dir):
           os.makedirs(name = self._filter_arc_dir)
+        # storing the api to do hydrate tweet
+        auth = tweepy.OAuth2AppHandler(
+          consumer_key = self._api_key, 
+          consumer_secret = self._api_key_secret 
+        )
+
+        self._api = tweepy.API(auth, wait_on_rate_limit = True)
 
     def add_datasource(self, dls, force_acquire):
       if len(self.current_sources) > 0:
-        raise ValueError("Twitter aqquisition support only a singlr DLS, others will be ignored")
+        raise ValueError("Twitter aqquisition support only a single DLS, others will be ignored")
       if "acquisition" in dls and "channel" in dls["acquisition"] and "topics" in dls["acquisition"]["channel"]:
         self._topics  = dls["acquisition"]["channel"]["topics"].keys()
         self._maingroup  = dls["acquisition"]["channel"]["main_group"]
@@ -92,7 +99,24 @@ class AcquisitionTwitter(acquisition.Acquisition):
       )
       self.create_new_gz()
       threading.Thread(target=self.tweet_filter.run).start()
+
+
       super().add_datasource(dls, force_acquire)
+
+    def hydrate_tweet_ids(self, ids):
+      i = 0
+      j = 0
+      ret = {}
+      while i < len(ids):
+        res = self._api.lookup_statuses(ids[i:i+100], include_entities = False, trim_user = True)
+        ret.update({t.id_str:{"id":t.id_str, "text":t.text, "created_at":t.created_at.isoformat(), "lang":t.lang} for t in res})
+        if j % 50 == 0:
+          l.debug(f"{i} tweets rehydrated from {len(ids)}")
+
+        i = i + 100
+        j = j + 1
+
+      return ret
 
     def create_new_gz(self):
        lfile = f"{datetime.now().strftime('%Y.%m.%d.%H.%M.%S')}.json.gz"
@@ -239,4 +263,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
           lambda topic: re.search(self._included_regex[topic], text.lower()) is not None and re.search(self._excluded_regex, text.lower()) is None,
           self._included_regex.keys()
         ))
+
+
+    # methods for dataset post process
 

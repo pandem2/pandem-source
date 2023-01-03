@@ -7,6 +7,7 @@ import getpass
 import yaml
 import psutil
 import logging
+import hashlib
 l = logging.getLogger("pandem.perf")
 
 
@@ -72,8 +73,15 @@ def get_custom(path, function):
       return None
     else:
       return eval(f"{'.'.join(path)}.{function}")
+ 
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
-
+ 
 class JsonEncoder(json.JSONEncoder):
   def default(self, z):
     if isinstance(z, datetime.datetime) or isinstance(z, datetime.date):
