@@ -51,7 +51,7 @@ def index_tweets(files_hash, last_hash, dls, orchestrator, logger, **kwargs):
     os.mkdir(dest_dir)
   stats = load_index_stats()
 
-  change_detected = len(stats) > 0 and current_hash != last_hash
+  change_detected = len(stats) == 0 or current_hash != last_hash
   if change_detected:
     # iterating over all files to index
     i = 0
@@ -107,7 +107,6 @@ def index_tweets(files_hash, last_hash, dls, orchestrator, logger, **kwargs):
     logger.debug(f"Ignoring indexing since no change was detected")
 
   # we need to return all files with the smallest chunk number 
-
   chunk_to_hydrate = str(min([min([int(chunk) for chunk in info["to_hydrate"].keys()]) for date, info in stats.items()]))
   dates_to_update = [date for date, info in stats.items() if chunk_to_hydrate in info["to_hydrate"]] 
   return {"files":[os.path.join(os.getcwd(), "tweets", "tweets_ids", f"{date}.json") for date in dates_to_update], "hash":current_hash}
