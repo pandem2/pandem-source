@@ -36,8 +36,8 @@ class Acquisition(worker.Worker):
         #print(f'here acquisition monitor_source loop: {source_id} {freq}')
         #if post processing is present on the dls then each step will have its own hash
         s = self._storage_proxy.read_db('source', lambda x: x['id']==source_id).get()
-        last_hash = ['last_hash'].values[0]
-        sname = ['name'].values[0]
+        last_hash = s['last_hash'].values[0]
+        sname = s['name'].values[0]
 
         last_hashes = []
         nf = []
