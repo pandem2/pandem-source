@@ -21,7 +21,7 @@ class Aggregator(worker.Worker):
       self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
 
   def aggregate(self, list_of_tuples, job):
-    list_of_tuples = self.distribute_tuples_by_var(list_of_tuples, job["id"])
+    list_of_tuples = self.distribute_tuples_by_partition(list_of_tuples, job["id"])
 
     variables = self._variables_proxy.get_variables().get()
     geos = {var["variable"] for var in variables.values() if var["type"] == "geo_referential"}
@@ -30,7 +30,7 @@ class Aggregator(worker.Worker):
     tuples = self._variables_proxy.get_referential("geo_code").get()
 
     var_asc = {code:self.rel_ascendants(self.descendants(code, parent)) for code, parent in geo_parents.items()}
-    nvars = len(list_of_tuples)
+    nparts = len(list_of_tuples)
     ndone = 0
 
     # Iterating over groups of tupeles stored in cache
@@ -126,7 +126,7 @@ class Aggregator(worker.Worker):
       ndone = ndone + 1
 
       # sending the current variables back to the pipeline
-      self._pipeline_proxy.aggregate_end(tuples = ret, var = var, progress = ndone/nvars, job = job)
+      self._pipeline_proxy.aggregate_end(tuples = ret, var = var, progress = ndone/nparts, job = job)
 
   def descendants(self, code, parent):
     codes = self._variables_proxy.get_referential(code).get()
@@ -213,38 +213,58 @@ class Aggregator(worker.Worker):
             if(code != asc): # we have to remove the idenntity since it was already added
               yield (key, c, code_var, asc)
 
-  def distribute_tuples_by_var(self, tuples, job_id):
-    tts = {}
+  def get_dist_key(self, t, variables ):
+    var = None
+    for group in t.keys():
+      if group !="attrs":
+        var = next(iter(t[group].keys()))
+    if var is None:
+      return None
+    
+    split_attrs = [attr for attr in sorted(variables[var]["partition"]) if attr != "geo_code"]
+    return  tuple((("ind", var))) + tuple(((attr, (t["attrs"][attr] if "attrs" in t and attr in t["attrs"] else None)) for attr in split_attrs)) 
+
+  def distribute_tuples_by_partition(self, tuples, job_id):
+    variables = self._variables_proxy.get_variables().get()
+    ret = {}
+    i = 0
     for p, tt in tuples.items():
+      i = i + 1
+      l.debug(f"------------------ Loading cache for {i} {p}")
       if tt is not None:
         # getting tuples from cache
         tt = tt.value()
-        vars_in_path = set()
+        keys_in_path = set()
         for t in tt['tuples']:
-          var = None
-          for group in t.keys():
-            if group !="attrs":
-              var = next(iter(t[group].keys()))
-          # initialization of the variables container (once per variable)
-          if var not in tts and var is not None:
-            tts[var] = {
-              "tuples":[],
-              "scope":{"update_scope":{}}
-            }
-          # If current variable is the first variable in path add all tuples of this variable
-          if var not in vars_in_path and group in t:
-            tts[var]['tuples'].extend(ttt for ttt in tt['tuples'] if group in ttt and var in ttt[group])
-            vars_in_path.add(var)
+          # key identification
+          key = self.get_dist_key(t, variables)
+          if key is not None and key not in keys_in_path:
+            # adding key to avoind entering again for same key
+            keys_in_path.add(key)
+            # trying to get tuples from job cache
+            l.debug(f"Loading cache for {key}")
+            tts = self._storage_proxy.from_job_cache(job_id, f"agg_{key}").get().value()
+            # initialization of the variables container (once per partition key)
+            if tts is None:
+              tts = {
+                "tuples":[],
+                "scope":{"update_scope":[]}
+              }
+            # adding tuples for the vigen key
+            tts['tuples'].extend(ttt for ttt in tt['tuples'] if self.get_dist_key(ttt, variables)== key)
+            
             # updating the update scope 
             for u in tt['scope']['update_scope']:
               v = u["value"] if type(u["value"]) in [list, set] else [u["value"]]
-              if u['variable'] in tts[var]['scope']['update_scope'] :
-                 tts[var]['scope']['update_scope'][u['variable']].update(v)
-              else:
-                 tts[var]['scope']['update_scope'][u['variable']] = set(v)
-    for var in tts.keys(): 
-      tts[var]['scope']['update_scope'] = [{"variable":k, "value":list(v)} for k, v in tts[var]['scope']['update_scope'].items()]
-      #storing results distributed by variables on cache
-      tts[var] = self._storage_proxy.to_job_cache(job_id, f"agg_{var}", tts[var]).get()
+              found = False
+              for uu in tts['scope']['update_scope']:
+                if u['variable'] in uu["variable"] :
+                 {*uu["value"]}.update(v)
+                 found = True
+              if not found:
+                 tts['scope']['update_scope'].append({"variable":u["variable"], "value":v})
+            
+            #storing results distributed by variables on cachei
+            ret[key] = self._storage_proxy.to_job_cache(job_id, f"agg_{key}", tts).get()
     l.debug("Tuples redistributed by variables")
-    return tts
+    return ret

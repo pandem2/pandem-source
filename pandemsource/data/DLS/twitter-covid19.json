@@ -9,7 +9,6 @@
         "frequency": "daily",
         "frequency_start_hour": 1,
         "frequency_end_hour": 1,
-        "repeat_until_empty":true,
         "reference_user": " Banda, Juan M, Tekumalla, Ramya",
         "reporting_email": "",
         "globals": [
@@ -17,10 +16,14 @@
           {"variable":"pathogen_name", "value":"COVID-19"}
         ],
         "update_scope": [
-          {"variable": "source"}
+          {"variable": "source"},
+          {"variable":"reporting_time"}
         ]
     },
     "acquisition": {
+        "schedule":{
+          "repeat_until_empty":true
+        },
         "channel": {
             "name": "zenodo",
             "ignore_unchanged":false,

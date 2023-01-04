@@ -215,6 +215,9 @@ class Storage(worker.Worker):
       return CacheValue(job_id, key, self._self_proxy)
 
     def from_job_cache(self, job_id, key):
+      return CacheValue(job_id, key, self._self_proxy)
+      
+    def value_from_job_cache(self, job_id, key):
       job_id = int(job_id)
       key = str(key)
       with self.get_job_cache(job_id) as cache:
@@ -232,7 +235,7 @@ class Storage(worker.Worker):
       if os.path.exists(shelve_path):
         os.remove(shelve_path)
 
-   
+       
  
 class CacheValue:
   def __init__(self, job_id, key, storage_proxy):
@@ -241,6 +244,6 @@ class CacheValue:
     self._storage_proxy = storage_proxy
 
   def value(self):
-    return self._storage_proxy.from_job_cache(self.job_id, self.key).get()
+    return self._storage_proxy.value_from_job_cache(self.job_id, self.key).get()
 
 

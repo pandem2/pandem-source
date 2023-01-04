@@ -35,7 +35,10 @@ class Acquisition(worker.Worker):
     def monitor_source(self, source_id, dls, freq): 
         #print(f'here acquisition monitor_source loop: {source_id} {freq}')
         #if post processing is present on the dls then each step will have its own hash
-        last_hash = self._storage_proxy.read_db('source', lambda x: x['id']==source_id).get()['last_hash'].values[0]
+        s = self._storage_proxy.read_db('source', lambda x: x['id']==source_id).get()
+        last_hash = ['last_hash'].values[0]
+        sname = ['name'].values[0]
+
         last_hashes = []
         nf = []
         source_dir = self.source_path(dls)
@@ -45,7 +48,17 @@ class Acquisition(worker.Worker):
             last_hash = last_hashes[0]
           except:
             pass
-        #Getting new files if any
+        #Getting new files if the source is not currently saturated
+        source_steps = self._storage_proxy.read_db('job', lambda j:j.status == 'in progress' and j.source == sname).get()["step"]
+        saturated = len(source_steps) > len(source_steps.unique())
+        isat = 2
+        while saturated:
+          source_steps = self._storage_proxy.read_db('job', lambda j:j.status == 'in progress' and j.source == sname).get()["step"]
+          saturated = len(source_steps) > len(source_steps.unique())
+          l.debug(f"source {sname} is saturated. Waiting {isat*isat} seconds")
+          time.sleep(isat*isat)
+          isat = isat + 1
+        
         nf.append(self.new_files(dls, last_hash))
         if "post_processing" in dls["acquisition"]["channel"]:
           for i, function in enumerate(dls["acquisition"]["channel"]["post_processing"]):
@@ -98,6 +111,7 @@ class Acquisition(worker.Worker):
                 }, 
                 'source'
             ).get()
+        # updating next execution
         self._storage_proxy.write_db(
            {'id': source_id,
                'last_exec': freq.last_exec,
@@ -106,6 +120,9 @@ class Acquisition(worker.Worker):
            'source'
         ).get()  
 
+        # if something was returned and the source is marked as repeat_until_empty a new acquisition is launched
+        if len(files_to_pipeline) > 0 and "schedule" in dls["acquisition"] and dls["acquisition"]["schedule"].get("repeat_until_empty"):
+          self.self_proxy.monitor_source(source_id, dls, freq)
 
     def add_datasource(self, dls, force_acquire, ignore_last_exec):
         source_dir = self.source_path(dls)

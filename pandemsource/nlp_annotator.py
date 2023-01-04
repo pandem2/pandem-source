@@ -71,9 +71,9 @@ class NLPAnnotator(worker.Worker):
         lang_field = "article_language"
      
         
-        l.debug("Evaluatig NLP models")
         annotated = []
         count = 0
+        l.debug(f"{len(list_of_tuples['tuples'])} articles to annotate ")
         for lang in self._model_languages:
           for to_annotate in self.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), self._chunk_size):
             # Getting annotations for chunks using tensorflow server for all categories in language
@@ -111,9 +111,7 @@ class NLPAnnotator(worker.Worker):
                       at["attrs"][model_aliases[m]] = categories[m][ic]
                   annotated.append(at)
             count = count + len(to_annotate)
-            l.debug(f"{count} articles annotated")
-        l.debug("Evaluating geolocation")
-
+            l.debug(f"{count} articles after NLP")
         # Annotating geographically using extra simplistic approach
         count = 0
         geo_annotated = []
@@ -139,8 +137,7 @@ class NLPAnnotator(worker.Worker):
             count = count + 1
             if count % 10000 == 0:
               l.debug(f"{count} articles geo annotated")
-        l.debug(f"{count} articles geo annotated")
-        l.debug("Removing language from tuples")
+        l.debug(f"{count} articles after geo annotation")
         
         # Adding annotated tuples
         list_of_tuples['tuples'].extend(annotated)
@@ -150,6 +147,7 @@ class NLPAnnotator(worker.Worker):
         for t in list_of_tuples['tuples']:
           if 'attrs' in t and lang_field in t['attrs']:
             t['attrs'].pop(lang_field)
+            t['attrs'].pop(text_field)
         
         ret = self._storage_proxy.to_job_cache(job["id"], f"std_{path}", list_of_tuples).get()
         self._pipeline_proxy.annotate_end(ret, path = path, job = job)
