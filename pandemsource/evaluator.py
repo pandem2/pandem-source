@@ -16,12 +16,9 @@ from itertools import chain
 import logging
 import traceback
 from . import util
+from .storage import CacheValue
 
 l = logging.getLogger("pandem.evaluator")
-
-
-
-
 
 
 class Evaluator(worker.Worker):
@@ -94,10 +91,10 @@ class Evaluator(worker.Worker):
         obs_aliases = {}
         next_keys = {}
         
-        # iterating over all tuples in the pipeline to pu 
-        for var, ttuples in dic_of_tuples.items():
+        # iterating over all tuples in the pipeline to calculate 
+        for ttuples in dic_of_tuples.values():
           # getting tuples from cache
-          list_of_tuples = ttuples.value()['tuples']
+          list_of_tuples = (ttuples.value() if type(ttuples) == CacheValue else ttuples)['tuples']
           for t in list_of_tuples:
             if "obs" in t and "attrs" in t: 
               # getting the base variale of the tuple
@@ -129,8 +126,6 @@ class Evaluator(worker.Worker):
                   if len(sorted_attrs) > 0 and len(date_attrs)>0:
                     obs_keys[var_name]["comb"].add(tuple((vn, t["attrs"][vn]) for vn in sorted_attrs))
                     obs_keys[var_name]["dates"].add(tuple((vn, t["attrs"][vn]) for vn in date_attrs))
-
-
         var_obs = {}
         indicators_to_cal = []
         step = 0
@@ -334,7 +329,7 @@ class Evaluator(worker.Worker):
         execf.write(f'jsonlite::write_json(res, "{result_path}", matrix = "columnmajor")'+'\n')
         execf.close()
 
-    def calculate(self, indicators_to_cal, job):
+    def calculate(self, indicators_to_cal, job, ignore_pipeline = False):
         try:
             vars_dic =  self._dict_of_variables
             params = self._parameters
@@ -415,7 +410,10 @@ class Evaluator(worker.Worker):
             result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
 
             ret = self._storage_proxy.to_job_cache(job["id"], f"calc", result).get()
-            self._pipeline_proxy.calculate_end(ret, job = job).get()
+            if ignore_pipeline:
+              return ret
+            else: 
+              self._pipeline_proxy.calculate_end(ret, job = job).get()
         except Exception as e: 
             l.warning(f"Error during calculation, job {job['id']} will fail")
             for line in traceback.format_exc().split("\n"):
@@ -430,7 +428,8 @@ class Evaluator(worker.Worker):
                    "issue_type":"error",
                    'issue_severity':"error"
             }
-            self._pipeline_proxy.fail_job(job, issue = issue).get()
+            if not ignore_pipeline:
+              self._pipeline_proxy.fail_job(job, issue = issue).get()
 
     def _get_param_value(self, param, comb, date, data, obs, attrs, main_par, base_date):
         if comb in data:

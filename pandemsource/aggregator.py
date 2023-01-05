@@ -231,7 +231,7 @@ class Aggregator(worker.Worker):
   def distribute_tuples_by_partition(self, tuples, job_id):
     variables = self._variables_proxy.get_variables().get()
     ret = {}
-    cache_path = util.pandem_path("files", "staging", str(job_id), "cache", "files")
+    cache_path = util.pandem_path("files", "staging", str(int(job_id)), "cache-files")
     if not os.path.exists(cache_path):
       os.makedirs(cache_path)
     uscope = {}
@@ -240,7 +240,6 @@ class Aggregator(worker.Worker):
     
     i = 0
     for p, tt in tuples.items():
-      i = i + 1
       if tt is not None:
         # getting tuples from cache
         tt = tt.value()
@@ -254,12 +253,15 @@ class Aggregator(worker.Worker):
             # trying to get tuples from job cache
             if key not in cache_files:
               cache_file =  os.path.join(cache_path, str(i))
+              i = i + 1
               cache_paths[key] = cache_file
-              cache_files[key] = open(cache_file, "wb")
+              if os.path.exists(cache_file):
+                os.remove(cache_file)
+              cache_files[key] = open(cache_file, "at")
               uscope[key] = {
                   "scope":{"update_scope":[]}
               }
-            cache_files[key].writelines((base64.b64encode(pickle.dumps(ttt)) for ttt in tt['tuples'] if self.get_dist_key(ttt, variables)== key))
+            cache_files[key].writelines((base64.b64encode(pickle.dumps(ttt)).decode('utf-8')+"\n" for ttt in tt['tuples'] if self.get_dist_key(ttt, variables)== key))
             
             # updating the update scope 
             for u in tt['scope']['update_scope']:
@@ -278,7 +280,6 @@ class Aggregator(worker.Worker):
       rebuild = uscope[key]
       with open(cache_paths[key], "r") as rf:
         rebuild["tuples"] = [pickle.loads(base64.b64decode(l)) for l in rf.readlines()]
-
       ret[key] = self._storage_proxy.to_job_cache(job_id, f"agg_{key}", rebuild).get()
     l.debug("Tuples redistributed by variables")
     return ret

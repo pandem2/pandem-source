@@ -122,7 +122,7 @@ class Acquisition(worker.Worker):
 
         # if something was returned and the source is marked as repeat_until_empty a new acquisition is launched
         if len(files_to_pipeline) > 0 and "schedule" in dls["acquisition"] and dls["acquisition"]["schedule"].get("repeat_until_empty"):
-          self.self_proxy.monitor_source(source_id, dls, freq)
+          self._self_proxy.monitor_source(source_id, dls, freq)
 
     def add_datasource(self, dls, force_acquire, ignore_last_exec):
         source_dir = self.source_path(dls)
