@@ -104,7 +104,7 @@ class Pipeline(worker.Worker):
         while not done:
           done = True
           for job in jobs:
-            paths = job['source_files'][0:10]
+            paths = job['source_files']
             if ipath == 0:
               if "decompress" not in job['dls_json']['acquisition'].keys():
                 self.update_job_step(job, 'read_format_started', 0.1)
