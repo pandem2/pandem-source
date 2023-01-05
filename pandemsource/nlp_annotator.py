@@ -8,6 +8,7 @@ import json
 import re
 import copy
 import itertools
+from . import util
 from pprint import pprint
 
 l = logging.getLogger("pandem-nlp")
@@ -75,7 +76,7 @@ class NLPAnnotator(worker.Worker):
         count = 0
         l.debug(f"{len(list_of_tuples['tuples'])} articles to annotate ")
         for lang in self._model_languages:
-          for to_annotate in self.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), self._chunk_size):
+          for to_annotate in util.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), self._chunk_size):
             # Getting annotations for chunks using tensorflow server for all categories in language
             annotations = {}
             for m in categories.keys():
@@ -153,11 +154,6 @@ class NLPAnnotator(worker.Worker):
         self._pipeline_proxy.annotate_end(ret, path = path, job = job)
         return ret
 
-    def slices(self, iterable, size):
-       head = list(itertools.islice(iterable, size))
-       while len(head) > 0:
-         yield head
-         head = list(itertools.islice(iterable, size))
 
     def get_models(self):
       if os.path.exists(self._models_path):

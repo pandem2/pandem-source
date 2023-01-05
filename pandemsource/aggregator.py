@@ -5,7 +5,11 @@ import numpy as np
 import copy
 import json
 from .util import JsonEncoder
+from . import util 
 import logging
+import os
+import pickle
+import base64
 
 l = logging.getLogger("pandem.aggregator")
 
@@ -227,10 +231,16 @@ class Aggregator(worker.Worker):
   def distribute_tuples_by_partition(self, tuples, job_id):
     variables = self._variables_proxy.get_variables().get()
     ret = {}
+    cache_path = util.pandem_path("files", "staging", str(job_id), "cache", "files")
+    if not os.path.exists(cache_path):
+      os.makedirs(cache_path)
+    uscope = {}
+    cache_files = {}
+    cache_paths = {}
+    
     i = 0
     for p, tt in tuples.items():
       i = i + 1
-      l.debug(f"------------------ Loading cache for {i} {p}")
       if tt is not None:
         # getting tuples from cache
         tt = tt.value()
@@ -242,29 +252,33 @@ class Aggregator(worker.Worker):
             # adding key to avoind entering again for same key
             keys_in_path.add(key)
             # trying to get tuples from job cache
-            l.debug(f"Loading cache for {key}")
-            tts = self._storage_proxy.from_job_cache(job_id, f"agg_{key}").get().value()
-            # initialization of the variables container (once per partition key)
-            if tts is None:
-              tts = {
-                "tuples":[],
-                "scope":{"update_scope":[]}
+            if key not in cache_files:
+              cache_file =  os.path.join(cache_path, str(i))
+              cache_paths[key] = cache_file
+              cache_files[key] = open(cache_file, "wb")
+              uscope[key] = {
+                  "scope":{"update_scope":[]}
               }
-            # adding tuples for the vigen key
-            tts['tuples'].extend(ttt for ttt in tt['tuples'] if self.get_dist_key(ttt, variables)== key)
+            cache_files[key].writelines((base64.b64encode(pickle.dumps(ttt)) for ttt in tt['tuples'] if self.get_dist_key(ttt, variables)== key))
             
             # updating the update scope 
             for u in tt['scope']['update_scope']:
               v = u["value"] if type(u["value"]) in [list, set] else [u["value"]]
               found = False
-              for uu in tts['scope']['update_scope']:
+              for uu in uscope[key]['scope']['update_scope']:
                 if u['variable'] in uu["variable"] :
                  {*uu["value"]}.update(v)
                  found = True
               if not found:
-                 tts['scope']['update_scope'].append({"variable":u["variable"], "value":v})
-            
-            #storing results distributed by variables on cachei
-            ret[key] = self._storage_proxy.to_job_cache(job_id, f"agg_{key}", tts).get()
+                 uscope[key]['scope']['update_scope'].append({"variable":u["variable"], "value":v})
+        
+    #storing results distributed by variables on cache
+    for key, f in cache_files.items():
+      f.close()
+      rebuild = uscope[key]
+      with open(cache_paths[key], "r") as rf:
+        rebuild["tuples"] = [pickle.loads(base64.b64decode(l)) for l in rf.readlines()]
+
+      ret[key] = self._storage_proxy.to_job_cache(job_id, f"agg_{key}", rebuild).get()
     l.debug("Tuples redistributed by variables")
     return ret

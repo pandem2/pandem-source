@@ -8,6 +8,7 @@ import yaml
 import psutil
 import logging
 import hashlib
+import itertools
 l = logging.getLogger("pandem.perf")
 
 
@@ -90,6 +91,12 @@ class JsonEncoder(json.JSONEncoder):
       return int(z)
     else:
       return super().default(z)
+
+def slices(iterable, size):
+   head = list(itertools.islice(iterable, size))
+   while len(head) > 0:
+     yield head
+     head = list(itertools.islice(iterable, size))
 
 def compress(x, get_id = {}, get_val = {}, i = [0]):
   if type(x) == dict:

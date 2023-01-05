@@ -15,6 +15,7 @@ from copy import deepcopy
 from itertools import chain
 import logging
 import traceback
+from . import util
 
 l = logging.getLogger("pandem.evaluator")
 
@@ -354,59 +355,61 @@ class Evaluator(worker.Worker):
                     attrs = {p:vars_dic[p]["variable"] for p in params[ind] if p not in set(obs.keys())}
                     # iterating though each combination and launching the scripts to calculate the results
                     if len(combis) > 0: 
-                      data = self._variables_proxy.lookup(list(obs.keys()), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
-                      #if ind == "new_performed_tests":
-                      #  breakpoint()
-                      # getting sorted dates
-                      dates = sorted({v["attrs"][base_date] for row in data.values() for v in row[main_base] })
-                      # writing parameters matrices 
-                      staging_dir = self.staging_path(job['id'], f'ind/{ind}')
-                      can_run = True
-                      # on file per parameter 
-                      for p in params[ind]:
-                        param_file_path = os.path.join(staging_dir, p+'.json')
-                        with open(param_file_path, 'w') as jsonf:
-                          jsonf.write("[")
-                          sep = ""
-                          # one row per date
-                          all_none = True
-                          for date in dates:
-                            # one element per combination
-                            param_values = [self._get_param_value(p, comb, date, data, obs, attrs, main_par, base_date) for comb in combis]
-                            jsonf.write(sep)
-                            sep = ","
-                            for v in param_values:
-                              if v is not None:
-                                all_none = False
-                            # writing the values on the parameter file 
-                            jsonf.write(json.dumps([(v if v != float('inf') else None) for v in param_values]))
-                          jsonf.write("]")
-                          if all_none:
-                            can_run = False
+                      for cslice in util.slices((c for c in combis), 1000):
+                        l.debug(f"launching slice of {len(cslice)}")
+                        data = self._variables_proxy.lookup(list(obs.keys()), cslice, source, {base_date:None} , include_source = True, include_tag = True).get()
+                        #if ind == "new_performed_tests":
+                        #  breakpoint()
+                        # getting sorted dates
+                        dates = sorted({v["attrs"][base_date] for row in data.values() for v in row[main_base] })
+                        # writing parameters matrices 
+                        staging_dir = self.staging_path(job['id'], f'ind/{ind}')
+                        can_run = True
+                        # on file per parameter 
+                        for p in params[ind]:
+                          param_file_path = os.path.join(staging_dir, p+'.json')
+                          with open(param_file_path, 'w') as jsonf:
+                            jsonf.write("[")
+                            sep = ""
+                            # one row per date
+                            all_none = True
+                            for date in dates:
+                              # one element per combination
+                              param_values = [self._get_param_value(p, comb, date, data, obs, attrs, main_par, base_date) for comb in cslice]
+                              jsonf.write(sep)
+                              sep = ","
+                              for v in param_values:
+                                if v is not None:
+                                  all_none = False
+                              # writing the values on the parameter file 
+                              jsonf.write(json.dumps([(v if v != float('inf') else None) for v in param_values]))
+                            jsonf.write("]")
+                            if all_none:
+                              can_run = False
 
-                      # executing the script
-                      exec_file_path = os.path.join(staging_dir, 'exec.R')
-                      result_path = os.path.join(staging_dir, 'result.json')
-                      if can_run:
-                        subprocess.run (f'Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
-                        if os.path.exists(result_path):
-                            modifiers = {t["variable"]:t["value"] for t in vars_dic[ind]["modifiers"] } if "modifiers" in vars_dic[ind] else {}
-                            with open(self.pandem_path(result_path)) as f:
-                                r = json.load(f)
-                            assert(len(r) == len(combis))
-                            #if ind == "incidence":
-                            #  breakpoint()
-                            for combi_res, comb in zip(r, combis):
-                              for date, value in zip(dates, combi_res):
-                                ind_date_tuple = {'obs': {ind:value if value != "NA" else None},
-                                                'attrs':{**{base_date:date, "source":source},
-                                                         **{k:v for k,v in comb},
-                                                         ** modifiers
-                                                         }
-                                                }
-                                result['tuples'].append(ind_date_tuple)
-                        else:
-                            l.warning(f'result file {result_path} not found')
+                        # executing the script
+                        exec_file_path = os.path.join(staging_dir, 'exec.R')
+                        result_path = os.path.join(staging_dir, 'result.json')
+                        if can_run:
+                          subprocess.run (f'Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
+                          if os.path.exists(result_path):
+                              modifiers = {t["variable"]:t["value"] for t in vars_dic[ind]["modifiers"] } if "modifiers" in vars_dic[ind] else {}
+                              with open(self.pandem_path(result_path)) as f:
+                                  r = json.load(f)
+                              assert(len(r) == len(cslice))
+                              #if ind == "incidence":
+                              #  breakpoint()
+                              for combi_res, comb in zip(r, cslice):
+                                for date, value in zip(dates, combi_res):
+                                  ind_date_tuple = {'obs': {ind:value if value != "NA" else None},
+                                                  'attrs':{**{base_date:date, "source":source},
+                                                           **{k:v for k,v in comb},
+                                                           ** modifiers
+                                                           }
+                                                  }
+                                  result['tuples'].append(ind_date_tuple)
+                          else:
+                              l.warning(f'result file {result_path} not found')
              
             result['scope'] = {}            
             result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
