@@ -334,7 +334,9 @@ class Evaluator(worker.Worker):
             vars_dic =  self._dict_of_variables
             params = self._parameters
             source =  job['dls_json']['scope']['source']
-            result = {"tuples": []}
+            ret = {}
+
+            part = 0
             # mixing indicators to calculate on all paths
             if indicators_to_cal and len(indicators_to_cal) > 0:
                 # looping trough all indicators
@@ -349,9 +351,14 @@ class Evaluator(worker.Worker):
                     main_par, main_base = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"] ))
                     attrs = {p:vars_dic[p]["variable"] for p in params[ind] if p not in set(obs.keys())}
                     # iterating though each combination and launching the scripts to calculate the results
+                    ii = 0
                     if len(combis) > 0: 
-                      for cslice in util.slices((c for c in combis), 1000):
-                        l.debug(f"launching slice of {len(cslice)}")
+                      for cslice in util.slices((c for c in combis), 200):
+                        ii = ii + len(cslice)
+                        part = part + 1
+                        key = f"{ind}_{part}" 
+                        result = {"tuples": []}
+                        l.debug(f"Calculating combinations until {ii}")
                         data = self._variables_proxy.lookup(list(obs.keys()), cslice, source, {base_date:None} , include_source = True, include_tag = True).get()
                         #if ind == "new_performed_tests":
                         #  breakpoint()
@@ -403,13 +410,13 @@ class Evaluator(worker.Worker):
                                                            }
                                                   }
                                   result['tuples'].append(ind_date_tuple)
+                              result['scope'] = {}            
+                              result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
+                              ret[key] = self._storage_proxy.to_job_cache(job["id"], f"calc_{key}", result).get()
                           else:
                               l.warning(f'result file {result_path} not found')
              
-            result['scope'] = {}            
-            result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
 
-            ret = self._storage_proxy.to_job_cache(job["id"], f"calc", result).get()
             if ignore_pipeline:
               return ret
             else: 

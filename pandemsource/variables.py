@@ -206,11 +206,11 @@ class Variables(worker.Worker):
             # identifying the scope of data that will be replaced by current tuples
             update_filter = []
             for filter in input_tuples['scope']['update_scope']:
-                if not isinstance(filter['value'], list):
-                    update_filter.append({'variable':filter['variable'], 'value':[str(filter['value'])]})
+                if not isinstance(filter['value'], list) and not isinstance(filter['value'], set):
+                    update_filter.append({'variable':filter['variable'], 'value':[json.dumps(filter["value"], cls=JsonEncoder).replace("\"", "")]})
                 else:
-                    update_filter.append({'variable':filter["variable"], 'value':list([str(f) for f in filter["value"]])})
-            
+                    update_filter.append({'variable':filter["variable"], 'value':list([json.dumps(f, cls=JsonEncoder).replace("\"", "") for f in filter["value"]])})
+                        
             # Iterating on each variable to write
             for var, tuples_dict in partition_dict_final.items():
                 var_dir = util.pandem_path('files/variables', var)

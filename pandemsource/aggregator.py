@@ -234,7 +234,9 @@ class Aggregator(worker.Worker):
     cache_path = util.pandem_path("files", "staging", str(int(job_id)), "cache-files")
     if not os.path.exists(cache_path):
       os.makedirs(cache_path)
-    uscope = {}
+    uscope = {
+        "scope":{"update_scope":[]}
+    }
     cache_files = {}
     cache_paths = {}
     
@@ -258,26 +260,23 @@ class Aggregator(worker.Worker):
               if os.path.exists(cache_file):
                 os.remove(cache_file)
               cache_files[key] = open(cache_file, "at")
-              uscope[key] = {
-                  "scope":{"update_scope":[]}
-              }
             cache_files[key].writelines((base64.b64encode(pickle.dumps(ttt)).decode('utf-8')+"\n" for ttt in tt['tuples'] if self.get_dist_key(ttt, variables)== key))
             
             # updating the update scope 
             for u in tt['scope']['update_scope']:
               v = u["value"] if type(u["value"]) in [list, set] else [u["value"]]
               found = False
-              for uu in uscope[key]['scope']['update_scope']:
-                if u['variable'] in uu["variable"] :
-                 {*uu["value"]}.update(v)
+              for uu in uscope['scope']['update_scope']:
+                if u['variable'] == uu["variable"] :
+                 uu["value"] = {*uu["value"], *v}
                  found = True
               if not found:
-                 uscope[key]['scope']['update_scope'].append({"variable":u["variable"], "value":v})
-        
+                 uscope['scope']['update_scope'].append({"variable":u["variable"], "value":v})
+       
     #storing results distributed by variables on cache
     for key, f in cache_files.items():
       f.close()
-      rebuild = uscope[key]
+      rebuild = {"scope":{"update_scope":uscope['scope']['update_scope']}}
       with open(cache_paths[key], "r") as rf:
         rebuild["tuples"] = [pickle.loads(base64.b64decode(l)) for l in rf.readlines()]
       ret[key] = self._storage_proxy.to_job_cache(job_id, f"agg_{key}", rebuild).get()
