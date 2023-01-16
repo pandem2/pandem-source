@@ -457,7 +457,7 @@ def do_reset(args, *other):
     admin.reset_source("health-resources-nuts2-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("health-resources-beds-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
   if args.pandem_2_2023_fx or args.restore_factory_defaults:
-    admin.reset_default_folders("input-local", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
+    admin.reset_default_folders("input-local")
     admin.reset_source("pandem-2-2023-fx-DEU", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("pandem-2-2023-fx-NLD", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
 
