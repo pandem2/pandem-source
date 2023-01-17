@@ -49,15 +49,16 @@ class Acquisition(worker.Worker):
           except:
             pass
         #Getting new files if the source is not currently saturated
-        source_steps = self._storage_proxy.read_db('job', lambda j:j.status == 'in progress' and j.source == sname).get()["step"]
-        saturated = len(source_steps) > len(source_steps.unique())
-        isat = 2
-        while saturated:
-          source_steps = self._storage_proxy.read_db('job', lambda j:j.status == 'in progress' and j.source == sname).get()["step"]
-          saturated = len(source_steps) > len(source_steps.unique())
-          l.debug(f"source {sname} is saturated. Waiting {isat*isat} seconds")
-          time.sleep(isat*isat)
-          isat = isat + 1
+        source_steps = self._storage_proxy.read_db('job', lambda j:j.status == 'in progress' and j.source == sname).get()
+        if source_steps is not None:
+          saturated = len(source_steps["step"]) > len(source_steps["step"].unique())
+          isat = 2
+          while saturated:
+            source_steps = self._storage_proxy.read_db('job', lambda j:j.status == 'in progress' and j.source == sname).get()
+            saturated = len(source_steps["step"]) > len(source_steps["step"].unique())
+            l.debug(f"source {sname} is saturated. Waiting {isat*isat} seconds")
+            time.sleep(isat*isat)
+            isat = isat + 1
         
         nf.append(self.new_files(dls, last_hash))
         if "post_processing" in dls["acquisition"]["channel"]:

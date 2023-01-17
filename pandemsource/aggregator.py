@@ -225,7 +225,7 @@ class Aggregator(worker.Worker):
     if var is None:
       return None
     
-    split_attrs = [attr for attr in sorted(variables[var]["partition"]) if attr != "geo_code"]
+    split_attrs = [attr for attr in sorted(variables[var]["partition"] or []) if attr != "geo_code"]
     return  tuple((("ind", var))) + tuple(((attr, (t["attrs"][attr] if "attrs" in t and attr in t["attrs"] else None)) for attr in split_attrs)) 
 
   def distribute_tuples_by_partition(self, tuples, job_id):

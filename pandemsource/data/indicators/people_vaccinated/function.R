@@ -1,1 +1,1 @@
-cumsum(new_additional_1_doses)
+cumsum(new_people_vaccinated)
