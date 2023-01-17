@@ -24,7 +24,7 @@ class AcquisitionMedisys(acquisition.Acquisition):
     def on_start(self):
         super().on_start()
     
-    def add_datasource(self, dls, force_acquire):
+    def add_datasource(self, dls, force_acquire, ignore_last_exec = True ):
       if len(self.current_sources) > 0:
         raise ValueError("Medisys aqquisition support only a singlr DLS, others will be ignored")
       if "acquisition" in dls and "channel" in dls["acquisition"] and "topics" in dls["acquisition"]["channel"]:
@@ -72,7 +72,7 @@ class AcquisitionMedisys(acquisition.Acquisition):
       else:
         self._excluded_regex = None
 
-      super().add_datasource(dls, force_acquire)
+      super().add_datasource(dls, force_acquire, ignore_last_exec)
 
 
     def new_files(self, dls, last_hash):

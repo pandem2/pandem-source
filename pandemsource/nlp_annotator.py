@@ -98,7 +98,7 @@ class NLPAnnotator(worker.Worker):
                     #getting positive predictions on step models
                     for i in range(0, len(to_annotate)):
                       positivies = [categories[j] for j, score in enumerate(annotations[i]) if score >=0.5] 
-                      if len(positives > 0) > 0:
+                      if len(positives) > 0:
                         predictions[m][i] == positives
                   elif "bio" in info:
                     bio = info["bio"]
@@ -106,10 +106,45 @@ class NLPAnnotator(worker.Worker):
                       raise ValueError(f"Invalid model configuration: Model {m} is an bio model but it does not contains either 'token' or 'class' accessor")
                     attr_tok = info["bio"]["token"]
                     attr_cla = info["bio"]["class"]
+                    predictions[m] = ["None" for i in range(0, len(annotations))]
                     for i in range(0, len(to_annotate)):
-                      positivies = [categories[j] for j, score in enumerate(annotations[i]) if score >=0.5] 
-                      if len(positives > 0) > 0:
-                        predictions[m][i] == positives
+                      tagged = [j for j, t in enumerate(annotations[i][attr_cla]) if t != 'O' and annotations[i][attr_tok][j]!= "[PAD]"]
+                      if len(tagged) > 0:
+                        entities = []
+                        within = False
+                        eoent = False
+                        newent = False
+                        entity = []
+                        for j in tagged:
+                          cl = annotations[i][attr_cla][j]
+                          t = annotations[i][attr_tok][j]
+                          if cl.startswith("B"):
+                            if j == tagged[-1] or within: #last element we are on the end of the entity
+                              eoent = True
+                            else:
+                              eoent = False
+                            within = True
+                            newent = True
+                          elif cl.startswith("I"):
+                            entity.append(t)
+                            if j == tagged[-1]: #last element we are on the end of the entity
+                              eoent = True
+                            else:
+                              eoent = False
+                            newent = False
+                          else:
+                            raise ValueError(f"Entity annotation is expected to start with B, I, O or [PAD], which is not True in {cl}")
+                          if eoent & newent:
+                            within = False
+                            current_class = cl.split("-")[-1]
+                            entities.append({"class":current_class, "entity":t})
+                          elif eoent:
+                            within = False
+                            entities.append({"class":current_class, "entity":" ".join(entity)})
+                          elif newent:
+                            current_class = cl.split("-")[-1]
+                            entity = [t]
+                        predictions[m][i] = entities 
                   else:
                     raise ValueError(f"Invalid model configuration: Model {m} should have either bio or category properties")
 
@@ -117,16 +152,18 @@ class NLPAnnotator(worker.Worker):
                 raise NotImplementedError()
               else:
                 raise ValueError(f"Invalid model configuration: Model {m} has invalid source {info['source']}")
-            #generating a tuple for each combination of positive predictions
-            model_classes = [*itertools.product(*predictions.values()) ]
 
             # creating annotated tuples per step
             for step in steps:
               for i in range(0, len(to_annotate)):
+                #generating a tuple for each combination of positive predictions
+                model_classes = [*itertools.product(*[pred[i] for pred in predictions.values()]) ]
                 for allclasses in model_classes:
                   at = copy.deepcopy(to_annotate[i])
                   for m, ic in allclasses:
-                    if ic == -1:
+                    raise NotImplementedError("This featrue is temporarily disabled")
+                    # if dic and point then extract value 
+                    if ic == "None":
                       at["attrs"][model_aliases[m]] = "None"
                     elif ic is not None:
                       at["attrs"][model_aliases[m]] = categories[m][ic]

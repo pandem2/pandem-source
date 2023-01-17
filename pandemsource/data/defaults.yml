@@ -12,6 +12,7 @@ pandem:
       models_path:  ""
       evaluation_steps:
         - ["aspect_stitched_unmasked.class"]
+        - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.token"]
         - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.token", "suggestion"]
         - ["aspect_stitched_unmasked.class", "emotion_classification_multi"]
         - ["aspect_stitched_unmasked.class", "sentiment_classification"]

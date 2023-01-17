@@ -187,7 +187,8 @@ def install_issues(check_nlp = True):
         
       devtools::install_github("maous1/Pandem2simulator")
       """)
-  if settings["pandem"]["source"]["nlp"]["active"] and check_nlp:
+  need_nlp = is_nlp_needed() 
+  if settings["pandem"]["source"]["nlp"]["active"] and check_nlp and need_nlp:
      models_path = settings["pandem"]["source"]["nlp"]["models_path"]
      if os.path.exists(models_path):
        if not nlp_models_up():
@@ -215,10 +216,10 @@ def install_issues(check_nlp = True):
           """
          )
      else:
-       ret.append("""NLP Annotation is active as per settings but the models path has not been found which is necessary to detect the existing models (even when running the server outside PANDEM-2
+       ret.append(f"""NLP Annotation is active as per settings but the models path has not been found which is necessary to detect the existing models (even when running the server outside PANDEM-2
              You have either set the PANDEM_NLP environment variable to the folder holding the models or set the value pandem.source.nlp.models.path on  {util.pandem_path('settings.yml')}
        """)
-  if check_nlp and are_twitter_credentials_missing():
+  if check_nlp and are_twitter_credentials_missing() and need_nlp:
     ret.append(f"""Twitter credentials are necessary since one of your sources uses twitter, but we could not find the credentials
       please try running PANDEM-2 again to provide the right credentials or remove the twitter data source definition on {util.pandem_path("files", "source-definitions")}
       To get twitter credentials please check you have to decralre it. Please check this: https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api
@@ -277,6 +278,19 @@ def nlp_run_model_server():
   #  print("\n\n\n\n\n\n BUAAAAAAAAAAAAAAAAAAAAAA")
   #  p.kill()
 
+def is_nlp_needed():
+  dls_path = util.pandem_path("files", "source-definitions")
+  if not os.path.exists(dls_path):
+    return False
+  for f in os.listdir(dls_path):
+   if f.endswith(".json"):
+     with open(os.path.join(dls_path, f)) as fj:
+       js = json.load(fj)
+     if "columns" in js:
+       for c in js["columns"]:
+         if "variable" in c and c["variable"] == "article_text":
+           return True
+  return False
 
 def are_twitter_credentials_missing():
    dls_path = util.pandem_path("files", "source-definitions")

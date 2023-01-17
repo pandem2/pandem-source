@@ -1,11 +1,14 @@
 # PANDEM - Source
-Manage heterogeneous data sources for pandem 2 project. 
+Integrate heterogeneous publuc health surveillance data sources into a coherent data base for PANDEM-2 project. 
 
 ## Description
 Identify, map and integrate multiple pandemic related data into a coherent pandemic-management database. Developed within the H2020 project PANDEM-2, Pandem-Source allows users to systematically capture, standardize and analyze data coming from international and national surveillance databases, participatory surveillance projects, social networks and mass media. This tool is focused on flexibility so adding new sources or variables can be easily done as is required during a pandemic episode. 
 
+## Target users
+Public health data experts and data managers needing integrate several surveillance data.
+
 ## Approach
-Data integration follow a semantic approach. Data sources just need to be described using a Data Labelling Schema (DLS) file that specifies the acquisition chennel (URL, git, local file or script) the format and how to map the input data to Pandem-Source variables.
+Data integration follow a semantic approach. Data sources need to be described using a Data Labelling Schema (DLS) file that specifies the acquisition chennel (URL, git, local file or script) the format and how to map the input data to Pandem-Source variables. If further customistions are needed, the user can define them using simple python scripts.
 
 The DLS ensures each source and variable is properly documented knwing its origin, meaning and data quality.
 
@@ -41,28 +44,63 @@ Pandem-Source is designed to be flexible and extensible so new sources can be ea
 - R 3.6.3 or higher
 - Docker (optional for supporting machine learning article classification)
 
-## Installation
-
+## Installing from pip
+If you want to customize the installation folder (defaulted to ~/.pandemsource) you need to set the environment variable PANDEM\_HOME to a different folder
 ```
 pip install pandem-source
+
+python -m pandemsource setup --install
+
 ```
 
-## Running Pandem-Source
+# Installing for contributors
+If you want to customize the installation folder (defaulted to ~/.pandemsource) you need to set the environment variable PANDEM\_HOME to a different folder
 
-- Set the PANDEM\_HOME variable to a local foder
+```
+git clone https://github.com/pandem2/pandem-source
+
+cd pandem-source
+
+make init
+
+make install
+
+source env/bin/activate
+
+python -m pandemsource setup --install
+
+```
+
+# Defining sources o monitor
+PANDEM-Source comes with a list of predefined sources it can monitor, but they are not all enabled by default.
+In order to to it you have to manually activate them with the 'setup' command.
+## See all avaiable sources
+
+```
+python -m pandemsource setup -h
+```
+
+## Activating a particular source
+```
+# Activating ECDC covid19 dataset monitoring
+python -m pandemsource setup --ecdc-covid19
+
+# Activating preloaded 2023 functional excercise data
+python -m pandemsource setup --pandem-2-2023-fx
+```
+# Running Pandem-Source
+
+- Set the PANDEM\_HOME variable to a local foder (only if you have customized the default installation folder)
 ``` 
-export PANDEM_HOME=your data folder here 
-```
-- Load default sources
-```
-python -m pandemsource reset --restore-factory-defaults
+export PANDEM\_HOME=your data folder here 
 ```
 - Running monitoring and dashboard 
 ```
-#If you do not have docker or NLP models you have to run pandem WITHOUT NLP without Twitter and without MediSys
-python -m pandemsource start -d --no-nlp  
 #If you have docker and NLP models the you can run without limitations
 python -m pandemsource start -d 
+
+#If you do not have docker or NLP models you have to run pandem WITHOUT NLP without Twitter and without MediSys
+python -m pandemsource start -d --no-nlp  
 ```
 - Accessing the dashboard from http://localhost:8001 to see the progress and integrated time series
 
