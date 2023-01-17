@@ -280,5 +280,5 @@ class Aggregator(worker.Worker):
       with open(cache_paths[key], "r") as rf:
         rebuild["tuples"] = [pickle.loads(base64.b64decode(l)) for l in rf.readlines()]
       ret[key] = self._storage_proxy.to_job_cache(job_id, f"agg_{key}", rebuild).get()
-    l.debug("Tuples redistributed by variables")
+    l.debug("Tuples redistributed by variable partitioning model (excluding geo)")
     return ret

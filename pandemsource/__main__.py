@@ -359,7 +359,7 @@ def do_reset(args, *other):
     admin.reset_source("nuts-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ICD-10-diseases", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("isco-08-ilo", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.pandem_partners_template or args.restore_factory_defaults:
+  if args.pandem_partners_template:
     admin.reset_source("covid19-template-cases", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-template-cases-RIVM", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-template-cases-THL", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
@@ -383,7 +383,7 @@ def do_reset(args, *other):
     admin.reset_source("covid19-template-local-regions", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-template-local-regions-RIVM", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-template-local-regions-THL", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.covid19_datahub or args.restore_factory_defaults:
+  if args.covid19_datahub:
     admin.reset_source("covid19-datahub", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-datahub-AUT", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-datahub-BEL", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
@@ -414,11 +414,11 @@ def do_reset(args, *other):
     admin.reset_source("covid19-datahub-SWE", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-datahub-GBR", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
 
-  if args.ecdc_covid19_simulated or args.restore_factory_defaults:
+  if args.ecdc_covid19_simulated:
     admin.reset_source("ecdc-covid19-age-group-variants", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-weekly-hospital-occupancy-variants", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-genomic-data", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.ecdc_covid19 or args.restore_factory_defaults:
+  if args.ecdc_covid19:
     admin.reset_source("ecdc-covid19-vaccination", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-variants", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-age-group", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
@@ -426,37 +426,37 @@ def do_reset(args, *other):
     admin.reset_source("ecdc-covid19-weekly", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-daily", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-weekly-hospital-occupancy", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.serotracker or args.restore_factory_defaults:
+  if args.serotracker:
     admin.reset_source("geonames-countries", delete_data = False)    
     admin.reset_source("serotracker", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    
-  if args.ecdc_atlas or args.restore_factory_defaults:
+  if args.ecdc_atlas:
     admin.reset_source("ecdc-atlas-influenza", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    
-  if args.influenzanet or args.restore_factory_defaults:
+  if args.influenzanet:
     admin.reset_source("influenza-net", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("influenza-net-visits", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.twitter_covid19 or args.restore_factory_defaults:
+  if args.twitter_covid19:
     admin.reset_source("twitter-covid19", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    
-  if args.twitter or args.restore_factory_defaults:
+  if args.twitter:
     admin.reset_source("twitter", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    
-  if args.medisys or args.restore_factory_defaults:
+  if args.medisys:
     admin.reset_source("medisys", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.flights or args.restore_factory_defaults:
+  if args.flights:
     admin.reset_source("ourairports", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ourairports-of-origin", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("opensky-network-coviddataset", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.airports or args.restore_factory_defaults:
+  if args.airports:
     admin.reset_source("ourairports", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ourairports-of-origin", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.owid or args.restore_factory_defaults:
+  if args.owid:
     admin.reset_source("owid-covid19-excess-mortality", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.geonames or args.restore_factory_defaults:
+  if args.geonames:
     admin.reset_source("geonames-countries", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("geonames-countries-of-origin", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition) 
-  if args.health_resources_eurostat or args.restore_factory_defaults:
+  if args.health_resources_eurostat:
     admin.reset_source("health-resources-national-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("health-resources-nuts2-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("health-resources-beds-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.pandem_2_2023_fx or args.restore_factory_defaults:
+  if args.pandem_2_2023_fx:
     admin.reset_default_folders("input-local", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("pandem-2-2023-fx-DEU", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("pandem-2-2023-fx-NLD", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)

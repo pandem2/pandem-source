@@ -23,10 +23,8 @@ class NLPAnnotator(worker.Worker):
           self._tf_port = settings["pandem"]["source"]["nlp"]["tensorflow_server_port"]
           self._tf_url = f"{settings['pandem']['source']['nlp']['tensorflow_server_protocol']}://{settings['pandem']['source']['nlp']['tensorflow_server_host']}:{settings['pandem']['source']['nlp']['tensorflow_server_port']}"
           self._tf_version = settings["pandem"]["source"]['nlp']["tensorflow_server_version"]
-          self._model_categories = settings["pandem"]["source"]["nlp"]["categories"]
-          self._model_languages = settings["pandem"]["source"]["nlp"]["languages"]
+          self._models_info = settings["pandem"]["source"]["nlp"]["models"]
           self._chunk_size = settings["pandem"]["source"]["nlp"]["chunk_size"]
-          self._aliases = settings["pandem"]["source"]["nlp"]["aliases"]
           self._evaluation_steps = settings["pandem"]["source"]["nlp"]["evaluation_steps"]
     def on_start(self):
         super().on_start()
@@ -34,7 +32,6 @@ class NLPAnnotator(worker.Worker):
           self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
           self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
           self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
-          #self._models = self.get_models()
           self._models = None
 
     def annotate(self, list_of_tuples, path, job):
@@ -43,12 +40,12 @@ class NLPAnnotator(worker.Worker):
         list_of_tuples = list_of_tuples.value() 
         if self._models is None:
             self._models = self.get_models()
+        breakpoint()
+        self._model_languages = {l for info in self._models_info.values() for l in info["languages"]}
         # gathering information about nlp categories
         endpoints = self.model_endpoints()
-        categories = {m:self._model_categories[m] for m in endpoints.keys() if (m in self._model_categories) }
         steps = self._evaluation_steps
-        model_aliases = {m:(self._aliases[m] if m in self._aliases else m) for m in categories}
-        #gatherint information for geo annotation
+        #gathering information for geo annotation
         variables = self._variables_proxy.get_variables().get()
         geos = {var["variable"] for var in variables.values() if var["type"] == "geo_referential"}
         alias_vars = {
@@ -78,31 +75,54 @@ class NLPAnnotator(worker.Worker):
         for lang in self._model_languages:
           for to_annotate in util.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), self._chunk_size):
             # Getting annotations for chunks using tensorflow server for all categories in language
-            annotations = {}
-            for m in categories.keys():
-              if m in self._model_languages[lang]: 
+            predictions = {}
+            for m, info in self._models_info.items():
+              if m in info["languages"]: 
+                # setting default value for predictions
+                predictions[m] = ["None" for i in range(0, len(to_annotate))]
+                
                 texts = (t["attrs"][text_field] for t in to_annotate)
-                data = json.dumps({"instances": [[t] for t in texts]})
-                result = requests.post(f"{endpoints[m]}:predict", data = data, headers = {'content-type': "application/json"}).content
-                #print(f"++++++++++++++++++++++++++++++  {m}")
-                #pprint(json.loads(result))
-                res =  json.loads(result)
-                if "predictions" not in res:
-                  raise ValueError(f"Not prediction found on tensorflow response: {res}")
-                annotations[m] = res["predictions"]
+                if info["source"] == "tf_server":
+                  data = json.dumps({"instances": [[t] for t in texts]})
+                  result = requests.post(f"{endpoints[m]}:predict", data = data, headers = {'content-type': "application/json"}).content
+                  #print(f"++++++++++++++++++++++++++++++  {m}")
+                  #pprint(json.loads(result))
+                  res =  json.loads(result)
+                  if "predictions" not in res:
+                    raise ValueError(f"Not prediction found on tensorflow response: {res}")
+                  annotations = res["predictions"]
+                  
+                  # catogory classifier 
+                  if "categories" in info:
+                    categories = info["categories"]
+                    #getting positive predictions on step models
+                    for i in range(0, len(to_annotate)):
+                      positivies = [categories[j] for j, score in enumerate(annotations[i]) if score >=0.5] 
+                      if len(positives > 0) > 0:
+                        predictions[m][i] == positives
+                  elif "bio" in info:
+                    bio = info["bio"]
+                    if "token" not in info["bio"] or "class" not in info["bio"]:
+                      raise ValueError(f"Invalid model configuration: Model {m} is an bio model but it does not contains either 'token' or 'class' accessor")
+                    attr_tok = info["bio"]["token"]
+                    attr_cla = info["bio"]["class"]
+                    for i in range(0, len(to_annotate)):
+                      positivies = [categories[j] for j, score in enumerate(annotations[i]) if score >=0.5] 
+                      if len(positives > 0) > 0:
+                        predictions[m][i] == positives
+                  else:
+                    raise ValueError(f"Invalid model configuration: Model {m} should have either bio or category properties")
+
+              elif info["source"] == "script":
+                raise NotImplementedError()
+              else:
+                raise ValueError(f"Invalid model configuration: Model {m} has invalid source {info['source']}")
+            #generating a tuple for each combination of positive predictions
+            model_classes = [*itertools.product(*predictions.values()) ]
+
             # creating annotated tuples per step
             for step in steps:
               for i in range(0, len(to_annotate)):
-                #getting default predection per model
-                predictions = {m:[(m,None)] for m in categories.keys()}
-                #getting positive predictions on step models
-                for m in step:
-                  predictions[m] = [(m, a) for a, b in enumerate(annotations[m][i]) if b >=0.5]
-                  if len(predictions[m]) == 0:
-                    predictions[m] = [(m, -1)]
-                
-                #generating a tuple for each combination of positive predictions
-                model_classes = [*itertools.product(*predictions.values()) ]
                 for allclasses in model_classes:
                   at = copy.deepcopy(to_annotate[i])
                   for m, ic in allclasses:

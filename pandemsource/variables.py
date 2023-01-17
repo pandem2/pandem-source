@@ -8,6 +8,7 @@ import json
 import datetime
 import numpy
 from collections import defaultdict
+from . import util
 from .util import JsonEncoder
 from .util import printMem
 import logging
@@ -232,8 +233,7 @@ class Variables(worker.Worker):
                     # If file does not exists then we can just dump the tuples (no need to delete) 
                     tuples_to_dump = {'tuples': tuples_list}
                     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-                        with open(file_path, 'w+') as f:
-                            json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
+                        util.save_json(tuples_to_dump, file_path, indent = 4)
                     # If step = 0 and file exists already then we need to remove lines on the replacement scope
                     # We do that by appending to tuples_list any existing row not in the replacement scope and then overriding the file 
                     else:
@@ -255,8 +255,7 @@ class Variables(worker.Worker):
                             else:
                                 tuples_list.append(tup)
                         # replacing the file
-                        with open(file_path, 'w') as f:
-                            json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
+                        util.save_json(tuples_to_dump, file_path, indent = 4)
                    
                     # TODO: get deleted files and remove from time series before adding new ones
                     # Now that we have updated the file we can update the time series cache
@@ -469,8 +468,8 @@ class Variables(worker.Worker):
 
       # Saving changes to picke if any change found and save_changes is requested
       if self._timeseries_outdated and save_changes:
-        with open(cache_path, 'wb') as f:
-          pickle.dump(cache, f)
+        util.save_pickle(cache, cache_path)
+        
         self._timeseries_outdated = False
         self.timeseries_hash = str(datetime.datetime.now())
       return cache  

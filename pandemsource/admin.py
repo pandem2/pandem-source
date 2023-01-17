@@ -90,8 +90,7 @@ def reset_source(source_name, delete_data = False, reset_acquisition = False ):
     for i in s[s["name"] == source_name].index:
       s.at[i, "last_hash"] = ""
 
-    with open(path, "wb") as f:
-      pickle.dump(s, f)
+      util.save_pickle(s, path)
   
     
   if os.path.exists(dls_to):
@@ -135,8 +134,7 @@ def delete_source_data(source_name):
         ]:
       ts.pop(k)
       i = i + 1
-    with open(ts_path, "wb") as f:
-      pickle.dump(ts, f)
+    util.save_pickle(ts, ts_path)
 
   l.info(f"{i} timeseries deleted for {source_name}")
 
@@ -210,7 +208,7 @@ def install_issues(check_nlp = True):
            un {util.pandem_path('settings.yml')}
            To fix this ensure that:
              - Docker is installed https://docs.docker.com/engine/install/
-             - You have downloaded the PANDEM-2 sma components to a local folder https://drive.google.com/file/d/1mSl2X4DQQZKf1sHeJaKDZOM6ydi4nVEK/view?usp=sharing
+             - You have downloaded the PANDEM-2 SMA 2.1 components to a local folder https://drive.google.com/file/d/14C1BSmmq_ObB-OvSBpaS5EpsyZ5ueQME/view?usp=share_link
              - You have either set the PANDEM_NLP environment variable to the folder holding the models or set the value pandem.source.nlp.models.path on  {util.pandem_path('settings.yml')}
              - You can test the launching command as follow
                {nlp_docker_launch_command()}
@@ -342,5 +340,4 @@ def list_sources(local = True, default = False, missing_local = False, missing_d
   elif missing_default:
     ret.extend((k, v) for k, v in local_map.items() if k not in defaul_map)
   return ret
-
 

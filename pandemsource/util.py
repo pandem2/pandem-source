@@ -98,6 +98,27 @@ def slices(iterable, size):
      yield head
      head = list(itertools.islice(iterable, size))
 
+def save_pickle(o, path):
+  fd, fn = os.path.split(path)
+  tpath = os.path.join(fd, f'.{fn}.tmp')
+  with open(tpath, "wb") as f:
+    pickle.dump(o, f)
+  os.rename(tpath, path)
+
+def save_pickle_df(df, path):
+  fd, fn = os.path.split(path)
+  tpath = os.path.join(fd, f'.{fn}.tmp')
+  df.to_pickle(tpath)
+  os.rename(tpath, path)
+
+def save_json(o, path, indent = None):
+  fd, fn = os.path.split(path)
+  tpath = os.path.join(fd, f'.{fn}.tmp')
+  with open(tpath, 'w') as f:
+    json.dump(o, f, cls=JsonEncoder, indent = indent)
+  os.rename(tpath, path)
+
+
 def compress(x, get_id = {}, get_val = {}, i = [0]):
   if type(x) == dict:
     items = [*x.items()]
