@@ -73,7 +73,7 @@ python -m pandemsource setup --install
 
 # Defining sources o monitor
 PANDEM-Source comes with a list of predefined sources it can monitor, but they are not all enabled by default.
-In order to to it you have to manually activate them with the 'setup' command.
+In order to use them them you have to manually activate them with the 'setup' command.
 ## See all avaiable sources
 
 ```
@@ -96,11 +96,8 @@ export PANDEM\_HOME=your data folder here
 ```
 - Running monitoring and dashboard 
 ```
-#If you have docker and NLP models the you can run without limitations
 python -m pandemsource start -d 
 
-#If you do not have docker or NLP models you have to run pandem WITHOUT NLP without Twitter and without MediSys
-python -m pandemsource start -d --no-nlp  
 ```
 - Accessing the dashboard from http://localhost:8001 to see the progress and integrated time series
 
