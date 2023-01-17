@@ -5,7 +5,8 @@
                 "line_number": "1",
                 "source": "pandem2",
                 "file": "",
-                "government_policy": "No contact tracing"
+                "government_policy": "No contact tracing",
+                "policy_type": "Contact tracing"
             },
             "attr": {
                 "policy_code": "no_contact_tracing"
@@ -16,7 +17,8 @@
                 "line_number": "2",
                 "source": "pandem2",
                 "file": "",
-                "government_policy": "Limited contact tracing"
+                "government_policy": "Limited contact tracing",
+                "policy_type": "Contact tracing"
             },
             "attr": {
                 "policy_code": "limited_contact_tracing"
@@ -27,7 +29,8 @@
                 "line_number": "3",
                 "source": "pandem2",
                 "file": "",
-                "government_policy": "Comprehensive contact tracing"
+                "government_policy": "Comprehensive contact tracing",
+                "policy_type": "Contact tracing"
             },
             "attr": {
                 "policy_code": "comprehensive_contact_tracing"
@@ -38,7 +41,8 @@
                 "line_number": "4",
                 "source": "pandem2",
                 "file": "",
-                "government_policy": "No testing"
+                "government_policy": "No testing",
+                "policy_type": "Testing"
             },
             "attr": {
                 "policy_code": "no_testing"
@@ -49,7 +53,8 @@
                 "line_number": "5",
                 "source": "pandem2",
                 "file": "",
-                "government_policy": "Testing specific population with symptomps"
+                "government_policy": "Testing specific population with symptomps",
+                "policy_type": "Testing"
             },
             "attr": {
                 "policy_code": "symptoms_restricted_testing"
@@ -60,7 +65,8 @@
                 "line_number": "6",
                 "source": "pandem2",
                 "file": "",
-                "government_policy": "Testing population with symptomps"
+                "government_policy": "Testing population with symptomps",
+                "policy_type": "Testing"
             },
             "attr": {
                 "policy_code": "symptoms_testing"
@@ -71,7 +77,8 @@
                 "line_number": "7",
                 "source": "pandem2",
                 "file": "",
-                "government_policy": "Testing open to entire population"
+                "government_policy": "Testing open to entire population",
+                "policy_type": "Testing"
             },
             "attr": {
                 "policy_code": "open_testing"

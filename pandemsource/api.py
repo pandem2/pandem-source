@@ -27,7 +27,7 @@ class ConstantsNamespace:
   JSON_EXT = ".json"
 
 
-class ApiREST(worker.Worker):
+class apiREST(worker.Worker):
     __metaclass__ = ABCMeta 
 
     def __init__ (self, name, orchestrator_ref, settings):
@@ -471,19 +471,10 @@ class TimeSerieHandler(tornado.web.RequestHandler):
                     #resp[(date, datevar)].update({k:v for k,v in keys})
                   if var not in resp[(date, datevar)]:
                     resp[(date, datevar)]["indicator"] = indicator
-                    # We need to filter timeseries infinite values for pandem-source-app.R script to display timeseries without errors
-                    try:
-                      # Infinity Guard
-                      if math.isinf(float(value)):
-                        resp[(date, datevar)]["value"] = None
-                      else:
-                        raise ValueError("Value is not infinite")
-                    except ValueError:
-                      resp[(date, datevar)]["value"] = value
-                  else:
+                    resp[(date, datevar)]["value"] = value if value is None or not math.isinf(float(value)) else None
+                  else :
                     # TODO: change the aggregation function depending on the unit
                     resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + value
-                    
         response = {"timeserie":list(resp.values())}
         self.write(response)
 
@@ -634,7 +625,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
                 if (var, attr) not in refs_read:
                   refs_read.add((var, attr))
                   if attr not in code_attrs:
-                     link = await variables_proxy.get_referential(var)
+                    link = await variables_proxy.get_referential(var)
                   if link is not None:
                     code_attrs[attr] = {t['attr'][var]:t['attrs'][attr] for t in link if 'attrs' in t and 'attr' in t and attr in t['attrs'] and var in t['attr']}
                 # Taking label from referential

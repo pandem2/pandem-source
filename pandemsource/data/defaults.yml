@@ -11,62 +11,50 @@ pandem:
       active: True
       models_path:  ""
       evaluation_steps:
-        - ["aspect_classification_ohe"]
-        - ["aspect_classification_ohe", "emotion_classification_multi"]
-        - ["aspect_classification_ohe", "sentiment_classification"]
-        - ["aspect_classification_ohe", "suggestion_classification"]
-      aliases:
-        emotion_classification_multi: emotion
-        sentiment_classification: sentiment
-        suggestion_classification: is_suggestion
-        aspect_classification_ohe: aspect
-      languages:
-        en:
-          - emotion_classification_multi
-          - sentiment_classification
-          - suggestion_classification
-          - aspect_classification_ohe
-      categories:
+        - ["aspect_stitched_unmasked.class"]
+        - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.token"]
+        - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.token", "suggestion"]
+        - ["aspect_stitched_unmasked.class", "emotion_classification_multi"]
+        - ["aspect_stitched_unmasked.class", "sentiment_classification"]
+      models:
         emotion_classification_multi:
-          - anger
-          - anticipation
-          - disgust
-          - fear
-          - joy
-          - sadness
-          - surprise
-          - trust
-        sentiment_classification:
-          - negative
-          - neutral
-          - positive
-        suggestion_classification:
-          - non-suggestion
-          - suggestion 
-        aspect_classification_ohe:
-          - healthcare-worker
-          - vaccine-mandate
-          - care-home
-          - death-rate
-          - social-distancing-rule
-          - positive-for-covid
-          - covid
-          - public-health
-          - coronavirus
-          - covid-case
-          - vaccine
-          - relief-bill
-          - covid-test
-          - govt
-          - corona
-          - pandemic
-          - mask
-          - dose-of-vaccine
-          - flu
-          - school
-          - immune-system
-          - business
-          - patient
+          alias: emotion
+          source: ts_server
+          categories:
+            - anger
+            - anticipation
+            - disgust
+            - fear
+            - joy
+            - sadness
+            - surprise
+            - trust
+          languages: ["en"]
+        sentiment_classification: 
+          alias: sentiment
+          source: ts_server
+          categories:
+            - negative
+            - neutral
+            - positive
+          languages: ["en"]
+        aspect_stitched_unmasked:
+          alias: 
+            class: aspect
+            token: sub-topic
+          source: ts_server
+          bio:
+            token: string_lookup_1
+            class: string_lookup_2
+          languages: ["en"]
+        suggestion:
+          alias: suggestion
+          source: scripto
+          script:
+            name: nuig_suggestion
+            function: annotate
+            type: python
+          languages: ["en"]
       use_sudo: false
       chunk_size: 500
       tensorflow_server_host:  "localhost"

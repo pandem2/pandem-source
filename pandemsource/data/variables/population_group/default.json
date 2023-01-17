@@ -8,7 +8,7 @@
                 "population_type": "community_sample"
             },
             "attr": {
-                "population_group":"Household and community samples"
+                "population_group": "Household and community samples"
             }
         },
         {
@@ -19,7 +19,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Essential non-healthcare workers"
+                "population_group": "Essential non-healthcare workers"
             }
         },
         {
@@ -30,7 +30,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Patients seeking care for non-COVID-19 reasons"
+                "population_group": "Patients seeking care for non-COVID-19 reasons"
             }
         },
         {
@@ -41,7 +41,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Residual sera"
+                "population_group": "Residual sera"
             }
         },
         {
@@ -52,7 +52,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Blood donors"
+                "population_group": "Blood donors"
             }
         },
         {
@@ -63,7 +63,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Persons experiencing homelessness"
+                "population_group": "Persons experiencing homelessness"
             }
         },
         {
@@ -74,7 +74,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Health care workers and caregivers"
+                "population_group": "Health care workers and caregivers"
             }
         },
         {
@@ -85,7 +85,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Persons living in slums"
+                "population_group": "Persons living in slums"
             }
         },
         {
@@ -96,7 +96,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Multiple general populations"
+                "population_group": "Multiple general populations"
             }
         },
         {
@@ -107,7 +107,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Contacts of COVID patients"
+                "population_group": "Contacts of COVID patients"
             }
         },
         {
@@ -118,7 +118,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Pregnant or parturient women"
+                "population_group": "Pregnant or parturient women"
             }
         },
         {
@@ -129,7 +129,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Multiple populations"
+                "population_group": "Multiple populations"
             }
         },
         {
@@ -140,7 +140,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Non-essential workers and unemployed persons"
+                "population_group": "Non-essential workers and unemployed persons"
             }
         },
         {
@@ -151,18 +151,18 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Students and Daycares"
+                "population_group": "Students and Daycares"
             }
         },
         {
             "attrs": {
                 "line_number": 15,
                 "source": "pandem2",
-                "population_type": "lctf",
+                "population_type": "ltcf",
                 "file": ""
             },
             "attr": {
-                "population_group":"Assisted living and long-term care facilities"
+                "population_group": "Assisted living and long-term care facilities"
             }
         },
         {
@@ -173,7 +173,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Representative patient population"
+                "population_group": "Representative patient population"
             }
         },
         {
@@ -184,7 +184,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Persons who are incarcerated"
+                "population_group": "Persons who are incarcerated"
             }
         },
         {
@@ -195,7 +195,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Hospital visitors"
+                "population_group": "Hospital visitors"
             }
         },
         {
@@ -206,7 +206,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Perinatal"
+                "population_group": "Perinatal"
             }
         },
         {
@@ -217,7 +217,7 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Tissue donor"
+                "population_group": "Tissue donor"
             }
         },
         {
@@ -228,18 +228,40 @@
                 "file": ""
             },
             "attr": {
-                "population_group":"Family of essential workers"
+                "population_group": "Family of essential workers"
             }
         },
         {
             "attrs": {
                 "line_number": 22,
                 "source": "pandem2",
+                "population_type": "Urgence Care workers",
+                "file": ""
+            },
+            "attr": {
+                "population_group": "Urgence Care workers"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 23,
+                "source": "pandem2",
+                "population_type": "recommended_population",
+                "file": ""
+            },
+            "attr": {
+                "population_group": "Priority population for vaccination"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 23,
+                "source": "pandem2",
                 "population_type": "uhc",
                 "file": ""
             },
             "attr": {
-                "population_group":"Urgence Care workers"
+                "population_group":"Patients with comorbidities"
             }
         }
     ]

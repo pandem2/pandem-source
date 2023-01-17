@@ -28,6 +28,7 @@ class Storage(worker.Worker):
         # self.job_cache = {}
         # create empty dataframes in self.db_tables if pickle files doesn't exist
         self.db_tables = dict()
+        test_bool = os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle'))
         if os.path.exists(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle')):
             self.db_tables['job'] = pd.read_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database/jobs.pickle'))
         else:
@@ -68,8 +69,12 @@ class Storage(worker.Worker):
 
              
     def write_file(self, path, bytes, mode): #absolute path here
-        with open(path, mode) as f:
+       fd, fn = os.path.split(path)
+       tpath = os.path.join(fd, f'.{fn}.tmp')
+       with open(tpath, mode) as f:
             f.write(bytes) 
+       os.rename(tpath, path)
+
     
 
     def read_file(self, path): #absolute path here
@@ -156,7 +161,7 @@ class Storage(worker.Worker):
         
     def write_db(self, record, db_class):
         df = self.db_tables[db_class]
-        if 'id' not in  record:
+        if not 'id' in  record:
             if df.shape[0] > 0:
                 record['id'] = df.index.max()+1
             else:
@@ -167,9 +172,7 @@ class Storage(worker.Worker):
                 df.at[int(record['id']), key] = value
         self.db_tables[db_class] = df
         dest = os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle') 
-        tmp = f"{dest}.tmp"
-        df.to_pickle(tmp)
-        shutil.move(tmp, dest)
+        util.save_pickle_df(df, dest)
         return record['id']
 
 
@@ -190,7 +193,8 @@ class Storage(worker.Worker):
             if len(to_del)>0:
               df = df.drop(index = to_del.index)
         self.db_tables[db_class] = df
-        df.to_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle'))
+        dest = os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle')
+        util.save_pickle_df(df, dest)
         return df
 
     def get_job_cache(self, job_id):
@@ -203,6 +207,7 @@ class Storage(worker.Worker):
           os.makedirs(util.pandem_path("files", "staging", str(job_id)))
       #  self.job_cache[job_id] =  
       return shelve.open(shelve_path,  writeback=False)
+      #return self.job_cache[job_id]
 
     def to_job_cache(self, job_id, key, data):
       job_id = int(job_id)
@@ -213,6 +218,9 @@ class Storage(worker.Worker):
       return CacheValue(job_id, key, self._self_proxy)
 
     def from_job_cache(self, job_id, key):
+      return CacheValue(job_id, key, self._self_proxy)
+      
+    def value_from_job_cache(self, job_id, key):
       job_id = int(job_id)
       key = str(key)
       with self.get_job_cache(job_id) as cache:
@@ -230,7 +238,7 @@ class Storage(worker.Worker):
       if os.path.exists(shelve_path):
         os.remove(shelve_path)
 
-   
+       
  
 class CacheValue:
   def __init__(self, job_id, key, storage_proxy):
@@ -239,6 +247,6 @@ class CacheValue:
     self._storage_proxy = storage_proxy
 
   def value(self):
-    return self._storage_proxy.from_job_cache(self.job_id, self.key).get()
+    return self._storage_proxy.value_from_job_cache(self.job_id, self.key).get()
 
 

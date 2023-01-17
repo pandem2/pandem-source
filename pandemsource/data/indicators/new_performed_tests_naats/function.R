@@ -1,0 +1,1 @@
+new_performed_tests * 0.5

@@ -1,0 +1,81 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": "1",
+                "source": "pandem2",
+                "file": "",
+                "policy_code": "no_contact_tracing"
+            },
+            "attr": {
+                "policy_type": "Contact tracing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "2",
+                "source": "pandem2",
+                "file": "",
+                "policy_code": "limited_contact_tracing"
+            },
+            "attr": {
+                "policy_type": "Contact tracing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "3",
+                "source": "pandem2",
+                "file": "",
+                "policy_code": "comprehensive_contact_tracing"
+            },
+            "attr": {
+                "policy_type": "Contact tracing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "4",
+                "source": "pandem2",
+                "file": "",
+                "policy_code": "no_testing"
+            },
+            "attr": {
+                "policy_type": "Testing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "5",
+                "source": "pandem2",
+                "file": "",
+                "policy_code": "symptoms_restricted_testing"
+            },
+            "attr": {
+                "policy_type": "Testing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "6",
+                "source": "pandem2",
+                "file": "",
+                "policy_code": "symptoms_testing"
+            },
+            "attr": {
+                "policy_type": "Testing"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": "7",
+                "source": "pandem2",
+                "file": "",
+                "policy_code": "open_testing"
+            },
+            "attr": {
+                "policy_type": "Testing"
+            }
+        }
+    ]
+}

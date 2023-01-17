@@ -1,1 +1,0 @@
-100000 * confirmed_cases / population_with_diabetes

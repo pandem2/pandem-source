@@ -1,0 +1,58 @@
+{
+    "scope": {
+        "source": "twitter-covid19",
+        "source_description": "A large-scale COVID-19 Twitter chatter dataset for open scientific research - an international collaboration.i\nDue to the relevance of the COVID-19 global pandemic, we are releasing our dataset of tweets acquired from the Twitter Stream related to COVID-19 chatter. Since our first release we have received additional data from our new collaborators, allowing this resource to grow to its current size. Dedicated data gathering started from March 11th yielding over 4 million tweets a day\nTnhe peer-reviewed publication for this dataset has now been published in Epidemiologia an MDPI journal, and can be accessed here: https://doi.org/10.3390/epidemiologia2030024. \nMore details can be found (and will be updated faster at: https://github.com/thepanacealab/covid19_twitter). Downloaded from Zenodo.org",
+        "tags": [
+            "Twitter datasets"
+        ],
+        "data_quality": "Open data",
+        "frequency": "daily",
+        "frequency_start_hour": 1,
+        "frequency_end_hour": 1,
+        "reference_user": " Banda, Juan M, Tekumalla, Ramya",
+        "reporting_email": "",
+        "globals": [
+          {"variable": "source"},
+          {"variable":"pathogen_name", "value":"COVID-19"}
+        ],
+        "update_scope": [
+          {"variable": "source"},
+          {"variable":"reporting_time"}
+        ]
+    },
+    "acquisition": {
+        "schedule":{
+          "repeat_until_empty":true
+        },
+        "channel": {
+            "name": "zenodo",
+            "ignore_unchanged":false,
+            "branch": "main",
+            "search": "3723939",
+            "match": "full_dataset_clean.tsv.gz",
+            "post_processing":[
+              "join_files",
+              "index_tweets",
+              "hydrate"
+            ],
+            "after_submit":"chunk_done"
+        },
+        "format": {
+          "name":"json",
+          "new_line_ended":false,
+          "encoding":"UTF-8",
+          "row":"*",
+          "date_format":"%Y-%m-%d %H:%M:%S"
+        }
+    },
+    "columns":[
+      {"name":"id", "variable":"article_id", "path":"@id"},
+      {"name":"created_at", "variable":"article_created_at", "path":"@created_at"},
+      {"name":"text", "variable":"article_text", "path":"@text"},
+      {"name":"lang", "variable":"article_language", "path":"@lang"},
+      {"name":"date", "path":"@date"},
+      {"name":"chunk", "path":"@chunk"},
+      {"name":"reporting_time", "variable":"reporting_time"},
+      {"name":"article_count", "variable":"article_count"}
+    ]
+}

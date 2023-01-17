@@ -1,8 +1,13 @@
 import os
 from . import worker
-from abc import abstractmethod, ABCMeta
-from datetime import timedelta
-import logging as l
+from abc import ABC, abstractmethod, ABCMeta
+from datetime import datetime, timedelta
+import time
+from . import util
+import logging
+import json
+
+l = logging.getLogger("pandem.acqcuisition")
 
 class Acquisition(worker.Worker):
     __metaclass__ = ABCMeta  
@@ -29,17 +34,76 @@ class Acquisition(worker.Worker):
 
     def monitor_source(self, source_id, dls, freq): 
         #print(f'here acquisition monitor_source loop: {source_id} {freq}')
-        last_hash = self._storage_proxy.read_db('source', lambda x: x['id']==source_id).get()['last_hash'].values[0]
-        #Getting new files if any
-        nf = self.new_files(dls, last_hash)
-        files_to_pipeline = nf["files"]
+        #if post processing is present on the dls then each step will have its own hash
+        s = self._storage_proxy.read_db('source', lambda x: x['id']==source_id).get()
+        last_hash = s['last_hash'].values[0]
+        sname = s['name'].values[0]
+
+        last_hashes = []
+        nf = []
+        source_dir = self.source_path(dls)
+        if "post_processing" in dls["acquisition"]["channel"] and last_hash is not None and last_hash != '':
+          try:
+            last_hashes = json.loads(last_hash)
+            last_hash = last_hashes[0]
+          except:
+            pass
+        #Getting new files if the source is not currently saturated
+        source_steps = self._storage_proxy.read_db('job', lambda j:j.status == 'in progress' and j.source == sname).get()
+        if source_steps is not None:
+          saturated = len(source_steps["step"]) > len(source_steps["step"].unique())
+          isat = 2
+          while saturated:
+            source_steps = self._storage_proxy.read_db('job', lambda j:j.status == 'in progress' and j.source == sname).get()
+            saturated = len(source_steps["step"]) > len(source_steps["step"].unique())
+            l.debug(f"source {sname} is saturated. Waiting {isat*isat} seconds")
+            time.sleep(isat*isat)
+            isat = isat + 1
+        
+        nf.append(self.new_files(dls, last_hash))
+        if "post_processing" in dls["acquisition"]["channel"]:
+          for i, function in enumerate(dls["acquisition"]["channel"]["post_processing"]):
+            # we expect the function to be present on the default sorce script
+            f = util.get_custom(["sources", dls["scope"]["source"].replace("-", "_").replace(" ", "_")], function)
+            if f is not None:
+              os.chdir(source_dir)
+              l.debug(f"Calling custom script transformation {function}")
+              nf.append(
+                f(
+                  files_hash = nf[-1], 
+                  last_hash = last_hashes[i + 1] if i + 1 < len(last_hashes) else last_hash, 
+                  dls = dls,
+                  orchestrator = self._orchestrator_proxy,
+                  logger = l,
+                )
+              )
+            else: 
+              raise ValueError(f"Custom post processing action {function} not found custom scripts for {dls['scope']['source']}")
+
+
+        files_to_pipeline = nf[-1]["files"]
         #print(f'files to pipeline: {files_to_pipeline}')
-        new_hash = nf["hash"]
+        new_hash = [nfi["hash"] for nfi in nf]
+        new_hash = new_hash[0] if len(new_hash) == 1 else json.dumps(new_hash)
         # If new files are found they will be send to the pipeline 
         if len(files_to_pipeline)>0:
-            l.info(f'New {len(files_to_pipeline)} hash changed from {last_hash} to {new_hash}')
+            l.info(f'New {len(files_to_pipeline)} files to process, hash went from {last_hash} to {new_hash}')
             # Sending files to the pipeline
             self._pipeline_proxy.submit_files(dls, files_to_pipeline).get()
+            # executing after_submit if set
+            if "after_submit" in dls["acquisition"]["channel"]:
+              function = dls["acquisition"]["channel"]["after_submit"]
+              f = util.get_custom(["sources", dls["scope"]["source"].replace("-", "_").replace(" ", "_")], function)
+              if f is not None:
+                os.chdir(source_dir)
+                l.debug(f"Calling custom script for after submit {function}")
+                f(
+                  files_hash = nf[-1], 
+                  dls = dls,
+                  logger = l
+                )
+              else: 
+                raise ValueError(f"Custom after submit action {function} not found custom scripts for {dls['scope']['source']}")
             # Storing the new hash into the db
             self._storage_proxy.write_db(
                 {'name': dls['scope']['source'],
@@ -48,6 +112,7 @@ class Acquisition(worker.Worker):
                 }, 
                 'source'
             ).get()
+        # updating next execution
         self._storage_proxy.write_db(
            {'id': source_id,
                'last_exec': freq.last_exec,
@@ -56,8 +121,11 @@ class Acquisition(worker.Worker):
            'source'
         ).get()  
 
+        # if something was returned and the source is marked as repeat_until_empty a new acquisition is launched
+        if len(files_to_pipeline) > 0 and "schedule" in dls["acquisition"] and dls["acquisition"]["schedule"].get("repeat_until_empty"):
+          self._self_proxy.monitor_source(source_id, dls, freq)
 
-    def add_datasource(self, dls, force_acquire):
+    def add_datasource(self, dls, force_acquire, ignore_last_exec):
         source_dir = self.source_path(dls)
         if not os.path.exists(source_dir):
             os.makedirs(source_dir)
@@ -73,18 +141,22 @@ class Acquisition(worker.Worker):
                 'source'
             ).get()
         else:
+            id_source = find_source["id"].values[0]
+            # ignoring last exec if force acquire or ignore_last_exec are requested 
+            if force_acquire or ignore_last_exec:
+               last_exec = None
+            else:
+               last_exec = find_source["last_exec"].values[0]
+            
+            # reseting the last_hash if force acquire is requested 
             if force_acquire:
-                for s in find_source.to_dict(orient='records'):
+               for s in find_source.to_dict(orient='records'):
                   s["last_hash"] = ""
                   s["last_exec"] = None
                   s["next_exec"] = None
                   self._storage_proxy.write_db(s, "source").get()
 
-            last_exec = find_source["last_exec"].values[0]
-            id_source = find_source["id"].values[0]
-
-       # reseting the last_hash if force acquire is requested
-       # updating the internal variable current sources
+         # updating the internal variable current sources
         self.current_sources[id_source] = dls 
         
         loop_frequency_str = dls['scope']['frequency'].strip()

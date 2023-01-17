@@ -35,7 +35,7 @@
             "thousands_separator": "",
             "sep": "[\t,]",
             "engine": "python",
-            "date_format": "%Y",
+            "date_format": "isoweek",
             "encoding": "UTF-8",
             "index_col": "False"
         }
@@ -46,8 +46,8 @@
             "variable": "geo_code"
         },
         {
-            "name": "year",
-            "variable": "reporting_year"
+            "name": "week",
+            "variable": "reporting_week"
         },
         {
             "name": "number_of_icu_operable_beds",

@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import re
+import datetime
+import functools
 
 GEO = "geo\\time"
 
@@ -11,11 +13,37 @@ def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     df = df.melt(id_vars=["unit", GEO, "facility", "file"], var_name="year", value_name="number_of_hospital_beds")
     df = remove_letters_in_numeric_columns(df)
     df = separate_nr_hthab(df)
-    df = df[~df['geo\\time'].isin(['NO','RS','LI','IS','TR','ME','MK','CH','AL','FX'])]
+    df = df[~df[GEO].isin(['NO','RS','LI','IS','TR','ME','MK','CH','AL','FX'])]
     df = build_columns_of_interest(df)
     df = df.astype({"year": str})
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    df["year"] = pd.to_datetime(df["year"], format="%Y")
+    #df["week"] = df["year"] + "-01"
+    #df["year"] = pd.to_datetime(df["year"], format="%Y")
+    # simplifying df
+    df = df.groupby(["geo\\time", "year"]).sum()
+    df = df[functools.reduce(lambda c1, c2: c1 | c2, [df[c] != 0 for c in df.columns])]
+    df = df.reset_index(inplace = False)
+    # creating dataframe on a weekly bases until Y + 1
+    dfs = []
+    metrics = [c for c in df.columns if c not in [GEO, "year"]]
+    last = {c:dict() for c in metrics}
+    for year in range(df["year"].astype(int).min(), datetime.datetime.now().date().year + 2):
+      current = {c:dict() for c in metrics}
+      ydf = df[df["year"].astype(int) == year]
+      for i in ydf.index:
+        geo = ydf[GEO][i]
+        for m in metrics:
+          if ydf[m][i] > 0:
+            current[m][geo] = i
+            last[m][geo] = i
+      geos = list({k for vv in last.values() for k in vv})
+      permutation = {m:[current[m][geo] if geo in current[m] else (last[m][geo] if geo in last[m] else pd.NA) for geo in geos] for m in metrics}
+      for w in range(0, 53):
+        data = {**{GEO:geos, "week":[f"{year}-{str(w).zfill(2)}" for geo in geos]}, **{m:[*df[m].reindex(permutation[m], copy = True)] for m  in metrics}}
+        wdf = pd.DataFrame(data)
+        dfs.append(wdf)
+    df = pd.concat(dfs, ignore_index = True)
+    df = df[df["week"] > "2019-01"]
     df["line_number"] = range(1, len(df)+1)
     return df
 
@@ -39,14 +67,26 @@ def remove_letters_in_numeric_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+
 def separate_nr_hthab(df: pd.DataFrame) -> pd.DataFrame:
-    hundred_k_rows = df[df['unit'] == "P_HTHAB"]
     data = []
-    for index, row in hundred_k_rows.iterrows():
-        number_of_hospital_beds = df[(df[GEO] == row[GEO]) & (df["year"] == row["year"]) & (df["unit"] == "NR") & (df["facility"] == row["facility"])]["number_of_hospital_beds"].values[0]
-        data.append([row[GEO], row["facility"], row["year"], number_of_hospital_beds, row["number_of_hospital_beds"]])
-        df = df.drop(index=index)
-    new_df = pd.DataFrame(data, columns=[GEO, "facility", "year", "number_of_hospital_beds", "number_of_hospital_beds_per_100k"])
+    keys = dict() 
+    for index, row in df.iterrows():
+        key = (row[GEO],  row["facility"], row["year"])
+        number_of_hospital_beds = row["number_of_hospital_beds"] if row["unit"] == "NR" else None
+        number_of_hospital_beds_per_100k = row["number_of_hospital_beds"] if row["unit"] == "P_HTHAB" else None
+        if key not in keys:
+          keys[key] = [row[GEO],  row["facility"], row["year"], number_of_hospital_beds, number_of_hospital_beds_per_100k]
+        else:
+          keys[key] = [
+            row[GEO],  
+            row["facility"], 
+            row["year"], 
+            number_of_hospital_beds if number_of_hospital_beds is not None else keys[key][3], 
+            number_of_hospital_beds_per_100k if number_of_hospital_beds_per_100k is not None else keys[key][4]
+          ]
+        
+    new_df = pd.DataFrame([*keys.values()], columns=[GEO, "facility", "year", "number_of_hospital_beds", "number_of_hospital_beds_per_100k"])
     return new_df
 
 

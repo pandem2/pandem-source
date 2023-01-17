@@ -16,7 +16,6 @@ from email.utils import parsedate_to_datetime
 import pytz
 
 l = logging.getLogger("pandem.medysis")
-MEDISYS_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 class AcquisitionMedisys(acquisition.Acquisition):
     def __init__(self, name, orchestrator_ref, settings): 
@@ -25,7 +24,7 @@ class AcquisitionMedisys(acquisition.Acquisition):
     def on_start(self):
         super().on_start()
     
-    def add_datasource(self, dls, force_acquire):
+    def add_datasource(self, dls, force_acquire, ignore_last_exec = True ):
       if len(self.current_sources) > 0:
         raise ValueError("Medisys aqquisition support only a singlr DLS, others will be ignored")
       if "acquisition" in dls and "channel" in dls["acquisition"] and "topics" in dls["acquisition"]["channel"]:
@@ -73,19 +72,19 @@ class AcquisitionMedisys(acquisition.Acquisition):
       else:
         self._excluded_regex = None
 
-      super().add_datasource(dls, force_acquire)
+      super().add_datasource(dls, force_acquire, ignore_last_exec)
 
 
     def new_files(self, dls, last_hash):
         # last_hash is the last until timespamp we captured
         if last_hash is None or last_hash == '':
           # If no last_hash is provided then 'until' = now and 'old_target' = a very early date
-          until = datetime.strftime(datetime.utcnow(), MEDISYS_DATETIME_FORMAT)
+          until = datetime.strftime(datetime.utcnow(), "%Y-%m-%dT%H:%M:%SZ")
           old_target = "2000-00-00T00:00:00Z"
         else: 
           # If a hash is provided then then 'until' = now and 'old_target' = last_hash + 1sec
-          until = datetime.strftime(datetime.utcnow(), MEDISYS_DATETIME_FORMAT)
-          old_target = datetime.strftime(datetime.strptime(last_hash, MEDISYS_DATETIME_FORMAT) + timedelta(0,1), MEDISYS_DATETIME_FORMAT)
+          until = datetime.strftime(datetime.utcnow(), "%Y-%m-%dT%H:%M:%SZ")
+          old_target = datetime.strftime(datetime.strptime(last_hash, "%Y-%m-%dT%H:%M:%SZ") + timedelta(0,1), "%Y-%m-%dT%H:%M:%SZ")
 
         # looping over results until the endpoint produces no more articles
         # until will be the new hash after a successful iteration
@@ -143,7 +142,7 @@ class AcquisitionMedisys(acquisition.Acquisition):
                 
                 # parsing the publication date to datetime
                 art["pub_date"]= parsedate_to_datetime(art["pub_date"]).astimezone(pytz.utc)
-                art["rep_date"]= datetime.strptime(datetime.strftime(art["pub_date"], "%Y-%m-%dT%H:00:00Z"), MEDISYS_DATETIME_FORMAT)
+                art["rep_date"]= datetime.strptime(datetime.strftime(art["pub_date"], "%Y-%m-%dT%H:00:00Z"), "%Y-%m-%dT%H:%M:%SZ")
  
                 # getting full text of article (on this case is just the concatenation of the title and keywords
                 art["text"] = f"{art['title']}. {art['keywords']}"
@@ -163,7 +162,7 @@ class AcquisitionMedisys(acquisition.Acquisition):
             # keep trying with older articles
             # new until will be the oldest of all articles minus one second
             l.debug(f"{len(new_art)} article obtained from medisys on a request")
-            until = min(datetime.strftime(art["pub_date"] - timedelta(0,1), MEDISYS_DATETIME_FORMAT) for art in new_art)
+            until = min(datetime.strftime(art["pub_date"] - timedelta(0,1), "%Y-%m-%dT%H:%M:%SZ") for art in new_art)
             articles.extend(new_art)
           else :
             # stop trying to get articles

@@ -1,9 +1,16 @@
+import pykka
 import os
+import time
+import threading
 import datetime
+import json
 import hashlib
 from collections import defaultdict
 from . import worker
-from abc import ABCMeta
+from . import util
+from abc import ABC, abstractmethod, ABCMeta
+from .util import printMem
+import pickle
 import logging
 
 l = logging.getLogger("pandem.pipeline")
@@ -34,6 +41,7 @@ class Pipeline(worker.Worker):
 
         self.job_steps = defaultdict(dict)
         self.decompressed_files = defaultdict(list)
+        self.job_precalstamp= {}
         self.job_precalstep = {}
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
@@ -49,7 +57,7 @@ class Pipeline(worker.Worker):
 
         self.job_dicos = [
           self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.job_aggrtuples, 
-          self.job_precalinds, self.job_indicators, self.pending_count, self.pending_total, self.job_issues
+          self.job_precalinds, self.job_indicators, self.pending_count, self.pending_total, self.job_issues, self.job_precalstamp, self.job_precalstep
         ]
 
         self.last_step = "ended"
@@ -212,32 +220,45 @@ class Pipeline(worker.Worker):
         
         # Jobs after precalculate ends
         jobs = self.job_steps['precalculate_ended'].copy().values()
-        ivar = 0
+        ipart = 0
         done = False
         while not done: 
           done = True
           for job in jobs:
-            var_list = [*self.job_aggrtuples[job["id"]].keys()]
-            if ivar == 0:
-              self.pending_count[job["id"]] = len(var_list)
-              self.pending_total[job["id"]] = len(var_list)
+            part_list = [*self.job_aggrtuples[job["id"]].keys()]
+            if ipart == 0:
+              self.pending_count[job["id"]] = len(part_list)
+              self.pending_total[job["id"]] = len(part_list)
               self.update_job_step(job, 'publish_started', 0.9)
-            if ivar < len(var_list):
+            if ipart < len(part_list):
               done = False
-              tuples = self.job_aggrtuples[job["id"]][var_list[ivar]]
+              tuples = self.job_aggrtuples[job["id"]][part_list[ipart]]
               self.send_to_publish(tuples, job)
-            if ivar == len(var_list):
+            if ipart == len(part_list):
               # aggregated tuples are not necessary anymore
               self.job_aggrtuples.pop(job["id"])
-          ivar = ivar + 1
+          ipart = ipart + 1
 
 
         # Jobs after calculate ends
-        for job in self.job_steps['calculate_ended'].copy().values():
-            indicators_tuples = self.job_indicators[job["id"]]
-            self.update_job_step(job, 'publish_started', 0.9)
-            self.pending_count[job["id"]] = 1
-            self.send_to_publish(indicators_tuples, job)
+        jobs = self.job_steps['calculate_ended'].copy().values()
+        ipart = 0
+        done = False
+        while not done:
+          done = True
+          for job in jobs:
+            part_list = [*self.job_indicators[job["id"]].keys()]
+            if ipart == 0:
+              self.pending_count[job["id"]] = len(part_list)
+              self.pending_total[job["id"]] = len(part_list)
+              self.update_job_step(job, 'publish_started', 0.9)
+            if ipart < len(part_list):
+              done = False
+              indicators_tuples = self.job_indicators[job["id"]][part_list[ipart]]
+              self.send_to_publish(indicators_tuples, job)
+            if ipart == len(part_list):
+              pass
+          ipart = ipart + 1
 
         # Jobs after publish indicator ended
         for job in self.job_steps['publish_ended'].copy().values():
@@ -406,6 +427,7 @@ class Pipeline(worker.Worker):
           return
         self.job_precalinds[job["id"]] = indicators_to_calculate
         self.job_precalstep[job["id"]] = 0
+        self.job_precalstamp[job["id"]] = time.time()
         self.update_job_step(job, 'precalculate_ended', 0.75)
 
     def send_to_calculate(self, indicators_to_calculate, job): 
@@ -419,8 +441,8 @@ class Pipeline(worker.Worker):
 
     def send_to_publish(self, tuples, job):
         calc_step = self.job_precalstep[job['id']]
-
-        self._variables_proxy.write_variable(tuples, calc_step, job)
+        calc_stamp = self.job_precalstamp[job['id']] 
+        self._variables_proxy.write_variable(tuples, calc_step, calc_stamp, job)
     
     def publish_end(self, job): 
         if job["status"] == "failed":
@@ -434,8 +456,8 @@ class Pipeline(worker.Worker):
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def update_job_step(self, job, step, progress):
-        l.debug(f"Changing to step {step} for job {int(job['id'])} source {job['dls_json']['scope']['source']} {round(progress*100, 1)}%")
-        #print_mem()
+        l.info(f"Changing to step {step} for job {int(job['id'])} source {job['dls_json']['scope']['source']} {round(progress*100, 1)}%")
+        #printMem()
         # removing job from current step dict
         if job["step"] in self.job_steps and job["id"]:
           if job["id"] in self.job_steps[job["step"]]:

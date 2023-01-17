@@ -1,6 +1,7 @@
 
 from . import formatreader
 import pandas as pd
+import re
 import json
 import itertools
 import gzip
@@ -25,7 +26,7 @@ class FormatReaderJSON(formatreader.FormatReader):
         row_steps = list(filter(lambda v: len(v)>0, row_steps.split("/")))
 
         #iterating over rows
-        col_paths = {col['name']:list(filter(lambda v: len(v)>0, col['path'].split("/"))) for col in dls['columns'] }
+        col_paths = {col['name']:list(filter(lambda v: len(v)>0, col['path'].split("/"))) for col in dls['columns'] if 'path' in col }
         cols = list(col_paths.keys())
         rows = []
         for row_index in self.expand(items, row_steps):

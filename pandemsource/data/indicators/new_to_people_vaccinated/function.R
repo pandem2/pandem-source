@@ -1,0 +1,1 @@
+cumsum(new_people_vaccinated)

@@ -1,12 +1,15 @@
 import os
 from . import worker
-from abc import ABCMeta
+from abc import ABC, abstractmethod, ABCMeta
 import logging
+import functools
 import requests
 import json
 import re
 import copy
 import itertools
+from . import util
+from pprint import pprint
 
 l = logging.getLogger("pandem-nlp")
 
@@ -20,10 +23,8 @@ class NLPAnnotator(worker.Worker):
           self._tf_port = settings["pandem"]["source"]["nlp"]["tensorflow_server_port"]
           self._tf_url = f"{settings['pandem']['source']['nlp']['tensorflow_server_protocol']}://{settings['pandem']['source']['nlp']['tensorflow_server_host']}:{settings['pandem']['source']['nlp']['tensorflow_server_port']}"
           self._tf_version = settings["pandem"]["source"]['nlp']["tensorflow_server_version"]
-          self._model_categories = settings["pandem"]["source"]["nlp"]["categories"]
-          self._model_languages = settings["pandem"]["source"]["nlp"]["languages"]
+          self._models_info = settings["pandem"]["source"]["nlp"]["models"]
           self._chunk_size = settings["pandem"]["source"]["nlp"]["chunk_size"]
-          self._aliases = settings["pandem"]["source"]["nlp"]["aliases"]
           self._evaluation_steps = settings["pandem"]["source"]["nlp"]["evaluation_steps"]
     def on_start(self):
         super().on_start()
@@ -31,7 +32,6 @@ class NLPAnnotator(worker.Worker):
           self._storage_proxy = self._orchestrator_proxy.get_actor('storage').get().proxy()
           self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
           self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
-          #self._models = self.get_models()
           self._models = None
 
     def annotate(self, list_of_tuples, path, job):
@@ -40,12 +40,12 @@ class NLPAnnotator(worker.Worker):
         list_of_tuples = list_of_tuples.value() 
         if self._models is None:
             self._models = self.get_models()
+        breakpoint()
+        self._model_languages = {l for info in self._models_info.values() for l in info["languages"]}
         # gathering information about nlp categories
         endpoints = self.model_endpoints()
-        categories = {m:self._model_categories[m] for m in endpoints.keys() if (m in self._model_categories) }
         steps = self._evaluation_steps
-        model_aliases = {m:(self._aliases[m] if m in self._aliases else m) for m in categories}
-        #gatherint information for geo annotation
+        #gathering information for geo annotation
         variables = self._variables_proxy.get_variables().get()
         geos = {var["variable"] for var in variables.values() if var["type"] == "geo_referential"}
         alias_vars = {
@@ -69,49 +69,107 @@ class NLPAnnotator(worker.Worker):
         lang_field = "article_language"
      
         
-        l.debug("Evaluatig NLP models")
         annotated = []
         count = 0
+        l.debug(f"{len(list_of_tuples['tuples'])} articles to annotate ")
         for lang in self._model_languages:
-          for to_annotate in self.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), self._chunk_size):
+          for to_annotate in util.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), self._chunk_size):
             # Getting annotations for chunks using tensorflow server for all categories in language
-            annotations = {}
-            for m in categories.keys():
-              if m in self._model_languages[lang]: 
+            predictions = {}
+            for m, info in self._models_info.items():
+              if m in info["languages"]: 
+                # setting default value for predictions
+                predictions[m] = ["None" for i in range(0, len(to_annotate))]
+                
                 texts = (t["attrs"][text_field] for t in to_annotate)
-                data = json.dumps({"instances": [[t] for t in texts]})
-                result = requests.post(f"{endpoints[m]}:predict", data = data, headers = {'content-type': "application/json"}).content
-                #print(f"++++++++++++++++++++++++++++++  {m}")
-                #pprint(json.loads(result))
-                res =  json.loads(result)
-                if "predictions" not in res:
-                  raise ValueError(f"Not prediction found on tensorflow response: {res}")
-                annotations[m] = res["predictions"]
+                if info["source"] == "tf_server":
+                  data = json.dumps({"instances": [[t] for t in texts]})
+                  result = requests.post(f"{endpoints[m]}:predict", data = data, headers = {'content-type': "application/json"}).content
+                  #print(f"++++++++++++++++++++++++++++++  {m}")
+                  #pprint(json.loads(result))
+                  res =  json.loads(result)
+                  if "predictions" not in res:
+                    raise ValueError(f"Not prediction found on tensorflow response: {res}")
+                  annotations = res["predictions"]
+                  
+                  # catogory classifier 
+                  if "categories" in info:
+                    categories = info["categories"]
+                    #getting positive predictions on step models
+                    for i in range(0, len(to_annotate)):
+                      positivies = [categories[j] for j, score in enumerate(annotations[i]) if score >=0.5] 
+                      if len(positives) > 0:
+                        predictions[m][i] == positives
+                  elif "bio" in info:
+                    bio = info["bio"]
+                    if "token" not in info["bio"] or "class" not in info["bio"]:
+                      raise ValueError(f"Invalid model configuration: Model {m} is an bio model but it does not contains either 'token' or 'class' accessor")
+                    attr_tok = info["bio"]["token"]
+                    attr_cla = info["bio"]["class"]
+                    predictions[m] = ["None" for i in range(0, len(annotations))]
+                    for i in range(0, len(to_annotate)):
+                      tagged = [j for j, t in enumerate(annotations[i][attr_cla]) if t != 'O' and annotations[i][attr_tok][j]!= "[PAD]"]
+                      if len(tagged) > 0:
+                        entities = []
+                        within = False
+                        eoent = False
+                        newent = False
+                        entity = []
+                        for j in tagged:
+                          cl = annotations[i][attr_cla][j]
+                          t = annotations[i][attr_tok][j]
+                          if cl.startswith("B"):
+                            if j == tagged[-1] or within: #last element we are on the end of the entity
+                              eoent = True
+                            else:
+                              eoent = False
+                            within = True
+                            newent = True
+                          elif cl.startswith("I"):
+                            entity.append(t)
+                            if j == tagged[-1]: #last element we are on the end of the entity
+                              eoent = True
+                            else:
+                              eoent = False
+                            newent = False
+                          else:
+                            raise ValueError(f"Entity annotation is expected to start with B, I, O or [PAD], which is not True in {cl}")
+                          if eoent & newent:
+                            within = False
+                            current_class = cl.split("-")[-1]
+                            entities.append({"class":current_class, "entity":t})
+                          elif eoent:
+                            within = False
+                            entities.append({"class":current_class, "entity":" ".join(entity)})
+                          elif newent:
+                            current_class = cl.split("-")[-1]
+                            entity = [t]
+                        predictions[m][i] = entities 
+                  else:
+                    raise ValueError(f"Invalid model configuration: Model {m} should have either bio or category properties")
+
+              elif info["source"] == "script":
+                raise NotImplementedError()
+              else:
+                raise ValueError(f"Invalid model configuration: Model {m} has invalid source {info['source']}")
+
             # creating annotated tuples per step
             for step in steps:
               for i in range(0, len(to_annotate)):
-                #getting default predection per model
-                predictions = {m:[(m,None)] for m in categories.keys()}
-                #getting positive predictions on step models
-                for m in step:
-                  predictions[m] = [(m, a) for a, b in enumerate(annotations[m][i]) if b >=0.5]
-                  if len(predictions[m]) == 0:
-                    predictions[m] = [(m, -1)]
-                
                 #generating a tuple for each combination of positive predictions
-                model_classes = [*itertools.product(*predictions.values()) ]
+                model_classes = [*itertools.product(*[pred[i] for pred in predictions.values()]) ]
                 for allclasses in model_classes:
                   at = copy.deepcopy(to_annotate[i])
                   for m, ic in allclasses:
-                    if ic == -1:
+                    raise NotImplementedError("This featrue is temporarily disabled")
+                    # if dic and point then extract value 
+                    if ic == "None":
                       at["attrs"][model_aliases[m]] = "None"
                     elif ic is not None:
                       at["attrs"][model_aliases[m]] = categories[m][ic]
                   annotated.append(at)
             count = count + len(to_annotate)
-            l.debug(f"{count} articles annotated")
-        l.debug("Evaluating geolocation")
-
+            l.debug(f"{count} articles after NLP")
         # Annotating geographically using extra simplistic approach
         count = 0
         geo_annotated = []
@@ -120,7 +178,7 @@ class NLPAnnotator(worker.Worker):
         for geo_var, regex in alias_regex.items():
           texts = [t["attrs"][text_field] for t in to_annotate]
           for t in to_annotate + annotated:
-            if geo_var not in t["attrs"]:
+            if not geo_var in t["attrs"]:
               text = t["attrs"][text_field].lower()
               if text not in geo_annotation:
                 match = re.search(alias_regex[geo_var], text)
@@ -137,8 +195,7 @@ class NLPAnnotator(worker.Worker):
             count = count + 1
             if count % 10000 == 0:
               l.debug(f"{count} articles geo annotated")
-        l.debug(f"{count} articles geo annotated")
-        l.debug("Removing language from tuples")
+        l.debug(f"{count} articles after geo annotation")
         
         # Adding annotated tuples
         list_of_tuples['tuples'].extend(annotated)
@@ -148,16 +205,12 @@ class NLPAnnotator(worker.Worker):
         for t in list_of_tuples['tuples']:
           if 'attrs' in t and lang_field in t['attrs']:
             t['attrs'].pop(lang_field)
+            t['attrs'].pop(text_field)
         
         ret = self._storage_proxy.to_job_cache(job["id"], f"std_{path}", list_of_tuples).get()
         self._pipeline_proxy.annotate_end(ret, path = path, job = job)
         return ret
 
-    def slices(self, iterable, size):
-       head = list(itertools.islice(iterable, size))
-       while len(head) > 0:
-         yield head
-         head = list(itertools.islice(iterable, size))
 
     def get_models(self):
       if os.path.exists(self._models_path):

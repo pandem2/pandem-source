@@ -1,0 +1,1 @@
+100000 * new_performed_tests / population

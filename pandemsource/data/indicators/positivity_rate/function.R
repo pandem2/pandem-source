@@ -1,1 +1,1 @@
-positive_results/performed_tests
+confirmed_cases/new_performed_tests

@@ -3,10 +3,14 @@ import os
 from . import util 
 from .storage import CacheValue
 from . import admin
+import itertools
 import json
 import datetime
+import numpy
 from collections import defaultdict
+from . import util
 from .util import JsonEncoder
+from .util import printMem
 import logging
 import pickle
 import copy
@@ -41,7 +45,8 @@ class Variables(worker.Worker):
                               "modifiers": v['modifiers'],
                               "description": v['description'],
                               "no_report":v['no_report'],
-                              "synthetic_formula":v['synthetic_formula'],
+                              "synthetic_tag":v['synthetic_tag'],
+                              "synthetic_blocker":v['synthetic_blocker'],
                               "type": v['type']
                               }
                               for v in var_list if v['base_variable']==var['variable']]
@@ -54,7 +59,8 @@ class Variables(worker.Worker):
                           alias_dict['formula'] = alias['formula'] if alias['formula'] is not None else None #base_dict['formula']
                           alias_dict['modifiers'] = alias['modifiers']
                           alias_dict['no_report'] = alias['no_report']
-                          alias_dict['synthetic_formula'] = alias['synthetic_formula']
+                          alias_dict['synthetic_tag'] = alias['synthetic_tag']
+                          alias_dict['synthetic_blocker'] = alias['synthetic_blocker']
                           alias_dict['description'] = alias['description'] if alias['description'] is not None else alias_dict['description']
                           alias_dict['type'] = alias['type'] if alias['type'] is not None else alias_dict['type']
                           dic_variables[alias['alias']] = alias_dict
@@ -79,7 +85,7 @@ class Variables(worker.Worker):
 
 
     def read_variable(self,variable_name, filter = {}):
-        #l.debug(f"requesting {variable_name} with filter = {filter}" )       
+        #l.debug(f"requesting {variable_name} with filters in = {filter.keys()}" )       
         dir_path = util.pandem_path('files/variables/', variable_name)
         variables = self.get_variables()
         if os.path.isdir(dir_path):
@@ -113,6 +119,7 @@ class Variables(worker.Worker):
             for file in target_files:
                 try:
                   var_tuples = self._storage_proxy.read_file(file['path']).get()['tuples']
+                  #l.debug(f"Opening {file['path']}")
                 except Exception as e:
                   l.error(f"Error found while reading file {file['path']}")
                   raise e
@@ -133,6 +140,7 @@ class Variables(worker.Worker):
         if partition is None:
           return 'default.json'
         else:
+          #return '.'.join([key + '=' + str(val) for key, val in tuple['attrs'].items() if key in partition]) + '.json'
           return '.'.join([key + '=' + str(tuple['attrs'][key] if key in tuple['attrs'] and tuple['attrs'][key] is not None else '@None@') for key in partition]) + '.json'
 
     def remove_attrs(self, t, private_attrs):
@@ -145,6 +153,7 @@ class Variables(worker.Worker):
             return tt
 
     def apply_aliases(self, t, aliases):
+        applied = False
         if "obs" not in t or t["obs"].keys().isdisjoint(aliases.keys()):
           return t
         else:
@@ -161,7 +170,7 @@ class Variables(worker.Worker):
                 tt["attrs"][modifier['variable']] = modifier['value']
           return tt
 
-    def write_variable(self, input_tuples, step, job):
+    def write_variable(self, input_tuples, step, delete_stamp, job):
         # if input_tuples is in cache get its value
         if type(input_tuples) == CacheValue:
           input_tuples = input_tuples.value()
@@ -169,7 +178,7 @@ class Variables(worker.Worker):
         variables = self.get_variables()
         partition_dict = defaultdict(list)
         if step ==0:
-            self.write_variable(self.tag_source_var(job["dls_json"]), None, job)
+            self.write_variable(self.tag_source_var(job["dls_json"]), None, None, job)
 
         if input_tuples['tuples']:
             # building a dictionary with destination files for tuples depending on variable name at their partitioning schema
@@ -198,11 +207,11 @@ class Variables(worker.Worker):
             # identifying the scope of data that will be replaced by current tuples
             update_filter = []
             for filter in input_tuples['scope']['update_scope']:
-                if not isinstance(filter['value'], list):
-                    update_filter.append({'variable':filter['variable'], 'value':[str(filter['value'])]})
+                if not isinstance(filter['value'], list) and not isinstance(filter['value'], set):
+                    update_filter.append({'variable':filter['variable'], 'value':[json.dumps(filter["value"], cls=JsonEncoder).replace("\"", "")]})
                 else:
-                    update_filter.append({'variable':filter["variable"], 'value':list([str(f) for f in filter["value"]])})
-            
+                    update_filter.append({'variable':filter["variable"], 'value':list([json.dumps(f, cls=JsonEncoder).replace("\"", "") for f in filter["value"]])})
+                        
             # Iterating on each variable to write
             for var, tuples_dict in partition_dict_final.items():
                 var_dir = util.pandem_path('files/variables', var)
@@ -224,8 +233,7 @@ class Variables(worker.Worker):
                     # If file does not exists then we can just dump the tuples (no need to delete) 
                     tuples_to_dump = {'tuples': tuples_list}
                     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-                        with open(file_path, 'w+') as f:
-                            json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
+                        util.save_json(tuples_to_dump, file_path, indent = 4)
                     # If step = 0 and file exists already then we need to remove lines on the replacement scope
                     # We do that by appending to tuples_list any existing row not in the replacement scope and then overriding the file 
                     else:
@@ -234,20 +242,20 @@ class Variables(worker.Worker):
                               last_tuples = json.load(f)
                             except:
                               raise ValueError(f"Error while interpreting file {f} as JSON")
+                        delete_old = delete_stamp is None or os.path.getmtime(file_path) < delete_stamp
                         for tup in last_tuples['tuples']:
                             cond_count = len(update_filter)
-                            if step is None or step == 0:
+                            if delete_old:
                               for filt in update_filter: 
                                 if filt['variable'] in tup['attrs'].keys() and tup['attrs'][filt['variable']] in filt['value']:
                                     cond_count = cond_count - 1
-                              # addding the tuple of one of the conditions failed
+                              # addding the tuple if one of the conditions failed
                               if cond_count > 0:
                                 tuples_list.append(tup)
                             else:
                                 tuples_list.append(tup)
                         # replacing the file
-                        with open(file_path, 'w') as f:
-                            json.dump(tuples_to_dump, f, cls=JsonEncoder, indent = 4)
+                        util.save_json(tuples_to_dump, file_path, indent = 4)
                    
                     # TODO: get deleted files and remove from time series before adding new ones
                     # Now that we have updated the file we can update the time series cache
@@ -316,27 +324,35 @@ class Variables(worker.Worker):
       res = {}
 
       for var in variables:
+        vfilt = filt.copy()
         tuples = []
         base_var = dico_vars[var]["variable"]
         # making this query work with aliases variables
         if base_var in dico_vars:
           if var in modifiers:
-            filt.update(modifiers[var])
+            vfilt.update(modifiers[var])
         
 
         tries = 2
         found = False
         while tries > 0 and not found:
             if tries == 2 and include_source:
-              f = {k:v for k, v in filt.items() if v is not None}
+              f = {k:v for k, v in vfilt.items() if v is not None}
               f.update({"source":source})
               tuples = self.read_variable(base_var, filter = f)
             if tries == 1 and include_tag:
-              f = {k:v for k, v in filt.items() if v is not None}
+              f = {k:v for k, v in vfilt.items() if v is not None}
               f.update({"source":others})
               tuples = self.read_variable(base_var, filter = f)
             # key_map will contain the non modified attributes for each combination as keys and the original combination as value
-            key_map = {tuple((k, v) for k, v in comb if var not in modifiers or k not in modifiers[var]):comb for comb in indexed_comb}
+            key_map = {}
+            for comb in indexed_comb:
+              freekey = tuple((k, v) for k, v in comb if var not in modifiers or k not in modifiers[var])
+              if freekey not in key_map:
+                key_map[freekey] = set([comb])
+              else:
+                key_map[freekey].add(comb)
+
             if tuples is not None:
               for t in tuples:
                 # file_keys are the non null attrs from in the tuples to be considered as time series keys
@@ -348,19 +364,21 @@ class Variables(worker.Worker):
                       and dico_vars[attr]["linked_attributes"] is None
                   ) # or (var in modifiers and attr in modifiers[var])
                 # free_keys are the keys in the file which are not modified
-                free_keys = list(attr for attr in file_keys if var not in modifiers or attr not in modifiers[var])
-                if tuple((k, t["attrs"][k]) for k in free_keys) in key_map:
-                  key = key_map[tuple((k, t["attrs"][k]) for k in free_keys)]
-                  filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
-                  if key in indexed_comb:
-                    found = True
-                    if key not in res:
-                      res[key] = {}
-                    if "obs" in t:
-                      obs_name =  next(iter(t["obs"].keys()))
-                      if obs_name not in res[key]:
-                        res[key][obs_name] = []
-                      res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
+                free_keys = list(attr for attr in file_keys if not var in modifiers or attr not in modifiers[var])
+                free_key = tuple((k, t["attrs"][k]) for k in free_keys)
+                        
+                if free_key in key_map:
+                  for key in key_map[free_key]: 
+                    filter_value = {k:v for k, v in t["attrs"].items() if k in (filter if filter is not None else [])}  
+                    if key in indexed_comb:
+                      found = True
+                      if key not in res:
+                        res[key] = {}
+                      if "obs" in t:
+                        obs_name =  next(iter(t["obs"].keys()))
+                        if not obs_name in res[key]:
+                          res[key][obs_name] = []
+                        res[key][obs_name].append({"value":t["obs"][obs_name], "attrs":filter_value})
             tries = tries - 1
             tuples = None
       return res
@@ -406,14 +424,15 @@ class Variables(worker.Worker):
             if "obs" in t and len(t["obs"]) > 0 and "attrs" in t:
               var_name = next(iter(t["obs"]))
               if var_name in var_dic and "aliases" in var_dic[var_name]:
-                modifiers = []
                 obs_name = var_name
                 
                 # Fitting an alias if possible
+                biggest_alias = 0
                 for alias in var_dic[var_name]["aliases"]:
-                  if len(alias['modifiers']) > len(modifiers) and not alias['no_report']:
+                  if len(alias['modifiers']) > biggest_alias and not alias['no_report']:
                     if all(m['value'] is None or (m['variable'] in t['attrs'] and t['attrs'][m['variable']] == m['value']) for m in alias['modifiers']):
                       obs_name = alias['alias']
+                      biggest_alias = len(alias['modifiers'])
                 # getting tuple key
                 key = []
                 key.append(("indicator", obs_name))
@@ -449,8 +468,8 @@ class Variables(worker.Worker):
 
       # Saving changes to picke if any change found and save_changes is requested
       if self._timeseries_outdated and save_changes:
-        with open(cache_path, 'wb') as f:
-          pickle.dump(cache, f)
+        util.save_pickle(cache, cache_path)
+        
         self._timeseries_outdated = False
         self.timeseries_hash = str(datetime.datetime.now())
       return cache  

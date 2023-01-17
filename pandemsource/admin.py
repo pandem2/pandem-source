@@ -1,6 +1,7 @@
 import pandas as pd
 import pkg_resources
 import json
+import codecs
 import threading
 import os
 import shutil
@@ -33,6 +34,12 @@ def reset_default_folders(*folders, delete_existing = True):
         shutil.rmtree(var_to)
       shutil.copytree(var_from, var_to, copy_function = shutil.copy, dirs_exist_ok = True)
 
+def parseJsonShowError(j):
+  try:
+    return json.loads(j)
+  except Exception as e:
+    raise ValueError(f"Cannot interpret {j[0:300]} as JSON\n{e}")
+
 def read_variables_definitions():
   path = util.pandem_path("files", "variables", "variables.csv")
   df = pd.read_csv(path, encoding = "ISO-8859-1")
@@ -49,53 +56,101 @@ def read_variables_definitions():
     })
 
   for col in df.columns:
-    if col not in ["description", "modifiers", "formula", "no_report", "synthetic_formula"] and not df[col].isnull().values.all():
+    if col not in ["description", "modifiers", "formula", "no_report", "synthetic_tag", "synthetic_blocker"] and not df[col].isnull().values.all():
       df[col] = df[col].str.lower().str.replace(", ", ",", regex=False).str.replace(".", "", regex=False).str.replace(" ", "_",regex=False)
-    if col in ["linked_attributes", "partition"]:
-      df[col] = df[col].str.split(",")
+    if col in ["linked_attributes", "partition", "synthetic_tag", "synthetic_blocker"]:
+      df[col] = df[col].apply(lambda x : [v.strip() for v in str(x).split(",")] if pd.notna(x) else None)
     if col == "modifiers":
-      df[col] = df[col].apply(lambda x : json.loads(x) if pd.notna(x) else [])
+      df[col] = df[col].apply(lambda x : parseJsonShowError(x) if pd.notna(x) else [])
     if col == "no_report":
       df[col] = df[col].apply(lambda x : str(x).lower() == 'true' if pd.notna(x) else False)
-    if col == "synthetic_formula":
-      print(df[col])
-      df[col] = df[col].str.split(",").apply(lambda x: [e.strip() for e in x]).tolist() if df[col] is not None else []
   result = df.to_json(orient = "records")
   parsed = json.loads(result)
   return parsed
 
-def reset_source(source_name):
+def reset_source(source_name, delete_data = False, reset_acquisition = False ):
   dls_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "DLS", f"{source_name}.json"))
+  dls_to = util.pandem_path("files", "source-definitions", f"{source_name}.json")
+  # copyint DLS files and deleting data if delete_data = True
   if os.path.exists(dls_from):
-    dls_to = util.pandem_path("files", "source-definitions", f"{source_name}.json")
     dls_to_dir = util.pandem_path("files", "source-definitions")
     if not os.path.exists(dls_to_dir):
       os.makedirs(dls_to_dir)
     shutil.copyfile(dls_from, dls_to)
+    if delete_data:
+      delete_source_data(source_name)
   else:
     raise ValueError(f"Cannot find source definition {source_name} within pandem default sources")
   
-  # copytin script if any
-  with open(util.pandem_path("files", "source-definitions", f"{source_name}.json"), "r") as f:
-    dls = json.load(f)
-    
-  if "changed_by" in dls["acquisition"]["channel"] and  "script_type" in dls["acquisition"]["channel"]["changed_by"]:
-    script_type = dls["acquisition"]["channel"]["changed_by"]["script_type"]
-    script_name = dls["acquisition"]["channel"]["changed_by"]["script_name"]
-    script_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", script_type, f"{script_name}.{script_type}"))
-    if os.path.exists(script_from):
-      script_to = util.pandem_path("files", "scripts", script_type, f"{script_name}.{script_type}" )
-      script_to_dir = util.pandem_path("files", "scripts", script_type)
-      if not os.path.exists(script_to_dir):
-        os.makedirs(script_to_dir)
-      shutil.copyfile(script_from, script_to)
+  # resetting source hash if reset_acquisition = True
+  path = util.pandem_path("database/sources.pickle")
+  if reset_acquisition and os.path.exists(path):
+    with open(path, "rb") as f:
+      s = pickle.load(f)
+    for i in s[s["name"] == source_name].index:
+      s.at[i, "last_hash"] = ""
 
-  # Copy the corresponding Python script from package to pandem-home
-  pyscript_fol = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", "py", "sources"))
-  dls_pyscript = dls["scope"]["source"].replace("-", "_").replace(" ", "_") + ".py"
-  pyscript_to = util.pandem_path("files", "scripts", "py", "sources", dls_pyscript)
-  if dls_pyscript in os.listdir(pyscript_fol):
-    shutil.copyfile(os.path.join(pyscript_fol, dls_pyscript), pyscript_to)
+      util.save_pickle(s, path)
+  
+    
+  if os.path.exists(dls_to):
+    # reading DLS file
+    with open(util.pandem_path("files", "source-definitions", f"{source_name}.json"), "r") as f:
+      dls = json.load(f)
+    
+    # copying the changing script if any is defined
+    if "changed_by" in dls["acquisition"]["channel"] and  "script_type" in dls["acquisition"]["channel"]["changed_by"]:
+      script_type = dls["acquisition"]["channel"]["changed_by"]["script_type"]
+      script_name = dls["acquisition"]["channel"]["changed_by"]["script_name"]
+      script_from = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", script_type, f"{script_name}.{script_type}"))
+      if os.path.exists(script_from):
+        script_to = util.pandem_path("files", "scripts", script_type, f"{script_name}.{script_type}" )
+        script_to_dir = util.pandem_path("files", "scripts", script_type)
+        if not os.path.exists(script_to_dir):
+          os.makedirs(script_to_dir)
+        shutil.copyfile(script_from, script_to)
+
+    # Copying sustom Python scripts from package to pandem-home
+    pyscript_fol = pkg_resources.resource_filename("pandemsource", os.path.join("data", "scripts", "py", "sources"))
+    dls_pyscript = dls["scope"]["source"].replace("-", "_").replace(" ", "_") + ".py"
+    pyscript_to = util.pandem_path("files", "scripts", "py", "sources", dls_pyscript)
+    if dls_pyscript in os.listdir(pyscript_fol):
+      shutil.copyfile(os.path.join(pyscript_fol, dls_pyscript), pyscript_to)
+
+def delete_source_data(source_name):
+  ts_path = util.pandem_path("files/variables/time_series.pi" ) 
+  var_path = util.pandem_path("files/variables" ) 
+  ind_to_delete = []
+  i = 0
+  source_to_delete = [source_name]
+  if os.path.exists(ts_path):
+    with open(ts_path, "rb") as f:
+      ts = pickle.load(f)
+
+    for k in [t for t in ts.keys() if (
+            (len(ind_to_delete) == 0 or len([k for k, v in t if k == "indicator" and v in ind_to_delete]) > 0 ) and
+            (len(source_to_delete) == 0 or len([k for k, v in t if k == "source" and v in source_to_delete]) > 0 )
+          )
+        ]:
+      ts.pop(k)
+      i = i + 1
+    util.save_pickle(ts, ts_path)
+
+  l.info(f"{i} timeseries deleted for {source_name}")
+
+  j = 0
+  if os.path.exists(var_path):
+    if len(source_to_delete) > 0:
+      for root, dirs, files in  os.walk(var_path):
+         for name in files:
+           for s in source_to_delete:
+             if s in name:
+               p = os.path.join(root, name)
+               if os.path.exists(p):
+                 os.remove(p)
+                 j = j + 1
+    
+  l.info(f"{j} files deleted for {source_name}")
 
 
 def delete_all():
@@ -132,7 +187,8 @@ def install_issues(check_nlp = True):
         
       devtools::install_github("maous1/Pandem2simulator")
       """)
-  if settings["pandem"]["source"]["nlp"]["active"] and check_nlp:
+  need_nlp = is_nlp_needed() 
+  if settings["pandem"]["source"]["nlp"]["active"] and check_nlp and need_nlp:
      models_path = settings["pandem"]["source"]["nlp"]["models_path"]
      if os.path.exists(models_path):
        if not nlp_models_up():
@@ -153,17 +209,17 @@ def install_issues(check_nlp = True):
            un {util.pandem_path('settings.yml')}
            To fix this ensure that:
              - Docker is installed https://docs.docker.com/engine/install/
-             - You have downloaded the PANDEM-2 sma components to a local folder https://drive.google.com/file/d/1mSl2X4DQQZKf1sHeJaKDZOM6ydi4nVEK/view?usp=sharing
+             - You have downloaded the PANDEM-2 SMA 2.1 components to a local folder https://drive.google.com/file/d/14C1BSmmq_ObB-OvSBpaS5EpsyZ5ueQME/view?usp=share_link
              - You have either set the PANDEM_NLP environment variable to the folder holding the models or set the value pandem.source.nlp.models.path on  {util.pandem_path('settings.yml')}
              - You can test the launching command as follow
                {nlp_docker_launch_command()}
           """
          )
      else:
-       ret.append("""NLP Annotation is active as per settings but the models path has not been found which is necessary to detect the existing models (even when running the server outside PANDEM-2
+       ret.append(f"""NLP Annotation is active as per settings but the models path has not been found which is necessary to detect the existing models (even when running the server outside PANDEM-2
              You have either set the PANDEM_NLP environment variable to the folder holding the models or set the value pandem.source.nlp.models.path on  {util.pandem_path('settings.yml')}
        """)
-  if check_nlp and are_twitter_credentials_missing():
+  if check_nlp and are_twitter_credentials_missing() and need_nlp:
     ret.append(f"""Twitter credentials are necessary since one of your sources uses twitter, but we could not find the credentials
       please try running PANDEM-2 again to provide the right credentials or remove the twitter data source definition on {util.pandem_path("files", "source-definitions")}
       To get twitter credentials please check you have to decralre it. Please check this: https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api
@@ -182,7 +238,7 @@ def nlp_models_up():
     try:
       if requests.get(ep).status_code != 200:
         return False
-    except Exception:
+    except Exception as err:
       return False
   return True
 
@@ -208,10 +264,33 @@ def nlp_docker_launch_command():
   return cmd
 
 def nlp_run_model_server():
+  #sudo_password = getpass.getpass(prompt='enter your sudo password: ')
+  #print("pwd received!")
   cmd = nlp_docker_launch_command()
   l.debug(f"Launching docker comman for nlp model server: {cmd}")
-  subprocess.run(cmd)
+  #p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,  stdin=subprocess.PIPE)
+  #with open(os.devnull, 'w') as devnull:
+  p = subprocess.run(cmd)
+  
+  #try:
+  #  out, err = p.communicate(input=(sudo_password+'\n').encode(),timeout=20)
+  #except subprocess.TimeoutExpired:
+  #  print("\n\n\n\n\n\n BUAAAAAAAAAAAAAAAAAAAAAA")
+  #  p.kill()
 
+def is_nlp_needed():
+  dls_path = util.pandem_path("files", "source-definitions")
+  if not os.path.exists(dls_path):
+    return False
+  for f in os.listdir(dls_path):
+   if f.endswith(".json"):
+     with open(os.path.join(dls_path, f)) as fj:
+       js = json.load(fj)
+     if "columns" in js:
+       for c in js["columns"]:
+         if "variable" in c and c["variable"] == "article_text":
+           return True
+  return False
 
 def are_twitter_credentials_missing():
    dls_path = util.pandem_path("files", "source-definitions")
@@ -273,7 +352,6 @@ def list_sources(local = True, default = False, missing_local = False, missing_d
   if default:
     ret.extend(local_map.items())
   elif missing_default:
-    ret.extend((k, v) for k, v in local_map.items() if k not in default_map)
+    ret.extend((k, v) for k, v in local_map.items() if k not in defaul_map)
   return ret
-
 

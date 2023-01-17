@@ -3,7 +3,7 @@
         "source": "health-resources-national-eurostat",
         "source_description": "Nursing and caring progessionnals (National)",
         "tags": [
-            "Eurostats NUTS"
+            "Eurostats NUTS", "ECDC COVID-19"
         ],
         "data_quality": "Official",
         "frequency": "daily",

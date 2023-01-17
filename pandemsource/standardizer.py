@@ -34,6 +34,7 @@ class Standardizer(worker.Worker):
         std_var={}
         variables=self._variables_proxy.get_variables().get()
         list_issues=[]
+        list_ref=[]
         global_tuple={}
         update_tuple={}
         refs_alias={}
@@ -43,6 +44,7 @@ class Standardizer(worker.Worker):
         type_validate=['referential', 'geo_referential', 'referential_alias', 'referential_label']
         ref_matched = {}
         ref_failed = {}
+        ref_all_none = {}
         for i in range(-2, len(tuples['tuples'])):
             std_var = {}
             #retrieves the globals variable
@@ -56,32 +58,9 @@ class Standardizer(worker.Worker):
                 std_var=copy.deepcopy(tuples['tuples'][i])
             validation_failed = False
             for var_name in std_var['attrs'].copy().keys():
-                if variables[var_name]['type'] in type_translate:
-                  code=variables[var_name]['linked_attributes'][0]
-                else:
-                  code = None
-                #retrieves the referentiel
-                if var_name not in refs_values and var_name in variables and variables[var_name]['type'] in type_validate:
-                    referential=self._variables_proxy.get_referential(var_name).get()
-                    if referential is not None:
-                        refs_values[var_name]=set([x['attr'][var_name] for x in referential])
-                        ref_matched[var_name] = False
-                        ref_failed[var_name] = False
-                    elif var_name not in ignore_check : 
-                        self._pipeline_proxy.standardize_end(tuples = None, n_tuples = 0, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
-                        return
-                if var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
-                    alias=self._variables_proxy.get_referential(var_name).get() 
-                    if alias is not None:
-                        refs_alias[var_name] = dict((x['attr'][var_name],x['attrs'][code]) for x in alias if code in x['attrs'])
-                        ref_matched[var_name] = False
-                        ref_failed[var_name] = False
-                    elif var_name not in ignore_check : 
-                        self._pipeline_proxy.standardize_end(tuples = None, n_tuples = 0, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
-                        return
-
                 var_type = variables[var_name]['type']
                 #variable type is referentiel_translate
+                
                 if type(std_var['attrs'][var_name]) == list:
                   values = std_var['attrs'][var_name]
                   islist = True
@@ -90,13 +69,44 @@ class Standardizer(worker.Worker):
                   islist = False
                 if var_name in ignore_check or var_name not in variables:
                   pass
+                
+                if variables[var_name]['type'] in type_translate:
+                  code=variables[var_name]['linked_attributes'][0]
+                else:
+                  code = None
+                
+                isNone = all([v is None for v in values]) 
+                #retrieves the referentiel
+                if not isNone and var_name not in refs_values and var_name in variables and variables[var_name]['type'] in type_validate:
+                    referential=self._variables_proxy.get_referential(var_name).get()
+                    if referential is not None:
+                        refs_values[var_name]=set([x['attr'][var_name] for x in referential])
+                        ref_matched[var_name] = False
+                        ref_all_none[var_name] = True
+                        ref_failed[var_name] = False
+                    elif var_name not in ignore_check : 
+                        self._pipeline_proxy.standardize_end(tuples = None, n_tuples = 0, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
+                        return
+                if not isNone and var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
+                    alias=self._variables_proxy.get_referential(var_name).get() 
+                    if alias is not None:
+                        refs_alias[var_name] = dict((x['attr'][var_name],x['attrs'][code]) for x in alias if code in x['attrs'])
+                        ref_matched[var_name] = False
+                        ref_all_none[var_name] = True
+                        ref_failed[var_name] = False
+                    elif var_name not in ignore_check : 
+                        self._pipeline_proxy.standardize_end(tuples = None, n_tuples = 0, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
+                        return
+
                 #elif variables[var_name]['type'] in (type_validate + type_translate) and refs_values[var_name] is None:
-                elif var_type in type_translate + type_validate :
+                elif not isNone and var_type in type_translate + type_validate :
                   new_values = []
                   var_ref = refs_values[var_name]
                   if var_type in type_translate:
                     std_var['attrs'].pop(var_name)
                   for var_value in values:
+                    if var_value is not None:
+                      ref_all_none[var_name] = False
                     if var_value is not None and var_value in var_ref:
                       ref_matched[var_name] = True
                       if var_type in type_translate:
@@ -145,7 +155,7 @@ class Standardizer(worker.Worker):
                   std_tuples['tuples'].append(std_var)
         # the source will be delayed if there referentials with some failures and no success
         for ref, failed in ref_failed.items():
-          if failed and not ref_matched[ref]:
+          if failed and not ref_matched[ref] and not ref_all_none[ref]:
             self._pipeline_proxy.standardize_end(tuples = None, n_tuples = 0, issues = list_issues, path = path, job = job)
             return
         std_tuples['scope']['update_scope']= [*({'variable':k, 'value':v} for k,v in update_tuple['attrs'].items())]

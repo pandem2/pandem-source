@@ -22,11 +22,13 @@ from . import variables
 from . import evaluator
 from . import api
 import datetime
+import os
 import pandas as pd
+from itertools import chain
 
 class Orchestration(pykka.ThreadingActor):
 
-    def __init__(self, settings, start_acquisition = True, retry_failed = False, restart_job = 0, retry_active = True, force_acquire = True, no_nlp = False):
+    def __init__(self, settings, start_acquisition = True, retry_failed = False, restart_job = 0, retry_active = True, force_acquire = True, no_nlp = False, ignore_last_exec = False):
         super(Orchestration, self).__init__()
         self.settings = settings
         self.current_actors = dict()
@@ -36,6 +38,7 @@ class Orchestration(pykka.ThreadingActor):
         self.restart_job = restart_job
         self.force_acquire = force_acquire
         self.no_nlp = no_nlp
+        self.ignore_last_exec = ignore_last_exec
 
     def on_start(self):
         # Launching the storage actor which can be used by any actor
@@ -98,7 +101,7 @@ class Orchestration(pykka.ThreadingActor):
         self.current_actors['evaluator'] = {'ref': evaluator_ref}
 
          # launch api actor
-        api_ref = api.ApiREST.start('api', self.actor_ref, self.settings)
+        api_ref = api.apiREST.start('api', self.actor_ref, self.settings)
         self.current_actors['api'] = {'ref': api_ref}
 
         # Launching acquisition actors (active actors)
@@ -132,7 +135,7 @@ class Orchestration(pykka.ThreadingActor):
             dls_label = [dls for dls in dls_dicts if dls['acquisition']['channel']['name'] == label]
             for dls in dls_label:
                 if self.start_acquisition and (not 'active' in dls['acquisition'] or dls['acquisition']['active']):
-                    acquisition_proxy.add_datasource(dls, self.force_acquire)
+                    acquisition_proxy.add_datasource(dls, self.force_acquire, self.ignore_last_exec)
         
             self.current_actors['acquisition_'+label] = {'ref': acquisition_ref, 'sources': dls_label}
 

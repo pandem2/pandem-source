@@ -43,5 +43,12 @@
     {"name":"geoId", "variable":"geo_code"},
     {"name":"countryterritoryCode"},
     {"name":"popData2020", "variable":"population"}
-  ]
+  ],
+  "synthetize": {
+    "active": true,
+    "tags": [
+      "missing_real_data_2022"
+    ]
+  }
+
 }

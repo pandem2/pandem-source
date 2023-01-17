@@ -1,13 +1,22 @@
 import os
 
+from numpy import int64
 from . import worker
-from abc import ABCMeta
-from datetime import datetime
+from abc import ABC, abstractmethod, ABCMeta
+from datetime import datetime, timedelta
+import time
 import re
+from collections import defaultdict
+import itertools as it
+import tempfile
 import json
 import subprocess
+from copy import deepcopy
+from itertools import chain
 import logging
 import traceback
+from . import util
+from .storage import CacheValue
 
 l = logging.getLogger("pandem.evaluator")
 
@@ -79,13 +88,13 @@ class Evaluator(worker.Worker):
         # obs_keys will contain all of the variables found on the tuples with its date period and combinations
         obs_keys = {}
         
+        obs_aliases = {}
         next_keys = {}
         
-        # iterating over all tuples in the pipeline to pu 
-        for var, ttuples in dic_of_tuples.items():
+        # iterating over all tuples in the pipeline to calculate 
+        for ttuples in dic_of_tuples.values():
           # getting tuples from cache
-          list_of_tuples = ttuples.value()['tuples']
-          
+          list_of_tuples = (ttuples.value() if type(ttuples) == CacheValue else ttuples)['tuples']
           for t in list_of_tuples:
             if "obs" in t and "attrs" in t: 
               # getting the base variale of the tuple
@@ -117,8 +126,7 @@ class Evaluator(worker.Worker):
                   if len(sorted_attrs) > 0 and len(date_attrs)>0:
                     obs_keys[var_name]["comb"].add(tuple((vn, t["attrs"][vn]) for vn in sorted_attrs))
                     obs_keys[var_name]["dates"].add(tuple((vn, t["attrs"][vn]) for vn in date_attrs))
-
-
+        var_obs = {}
         indicators_to_cal = []
         step = 0
         stop = False
@@ -127,17 +135,22 @@ class Evaluator(worker.Worker):
         while not stop:
             stop = True
             for ind, params in parameters.items():
-                synthetic_formula = var_dic[ind]['synthetic_formula']
+                synthetic_tag = var_dic[ind]['synthetic_tag'] 
+                synthetic_blocker = set(var_dic[ind]['synthetic_blocker']) if var_dic[ind]['synthetic_blocker'] is not None else {}
                 dls = job['dls_json']
-                # by default, if the tag of the synthetic formula is empty, we calculate the indicator
-                if synthetic_formula and 'synthetize' in dls:
+                is_synthetic = synthetic_tag is not None
+                # test to skip syhthetic formula when not applicable
+                if is_synthetic:
+                  if 'synthetize' not in dls:
+                    continue
                   # if DLS information is available, we look at the 'active' status
-                  if 'active' in dls['synthetize'] and not dls['synthetize']['active']:
+                  elif 'active' in dls['synthetize'] and not dls['synthetize']['active']:
                     continue
                   # if tags are available in DLS, we check the tag of the synthetic formula is in the DLS tags
-                  if not set(synthetic_formula).intersection(set(dls['synthetize']['tags'])):
+                  if len(set(synthetic_tag).intersection(set(dls['synthetize']['tags']))) == 0:
                     continue
                 # preparing variables to evaluate if the current indicator can be calculated
+                mod = modifiers[ind]
                 date_par = next(p for p in params if var_dic[p]['type'] == 'date')
                 base_date = var_dic[date_par]['variable']
                 no_date_pars = [p for p in params if p != date_par]
@@ -146,6 +159,7 @@ class Evaluator(worker.Worker):
                 base_pars =  list([var_dic[p]["variable"] for p in obs_pars])
                 main_obs = obs_pars[0] if len(obs_pars)>0 else None
                 main_base = base_pars[0] if len(base_pars)>0 else None
+
                 # identifying the combinations available for the first parameter so we can identify if new combinations can be calculated for this indicator
                 comb = set()
                 # getting all exixsting combinations for the main obs 
@@ -153,18 +167,15 @@ class Evaluator(worker.Worker):
                   if main_base == var_dic[ptest]['variable']:
                     for c in obs_keys[ptest]["comb"]:
                       sc = dict(c)
-                      if all(k in sc and sc[k] == v for k, v in modifiers[main_obs].items() if v is not None):
+                      # The combination will be included if all not None modifiers of the main observation parameter are found on the combination
+                      # and if none of the blocker attributes are present 
+                      if (all(k in sc and sc[k] == v for k, v in modifiers[main_obs].items() if v is not None) and 
+                            sc.keys().isdisjoint(synthetic_blocker)):
                         comb.add(c)
-                #if main_obs in obs_keys:
-                #  comb = obs_keys[main_obs]["comb"]
-                #elif main_base in obs_keys:
-                #  comb = obs_keys[main_base]["comb"]
-                #else:
-                #  comb = set()
-                # removing already existing combitaions
-                # comb = comb if ind not in obs_keys else comb - obs_keys[ind]["comb"]
+                
                 # in order to test this indicator we need to find at least the first observation on the current values
                 if len(comb) > 0:
+                    scomb = comb
                     comb = list(comb) 
                     # testing the tuples than satisfy the provided parameters
                     #l.debug(f"ind {ind} -> obs_pars {obs_pars} base_pars {base_pars}")
@@ -190,13 +201,13 @@ class Evaluator(worker.Worker):
                                     sc = dict(c)
                                     if all(k in sc and sc[k] == v for k, v in modifiers[obs_to_test].items() if v is not None):
                                       pcomb.add(c)
-                                # if the current obs is missing combination we will see if there is published data for it
+                              # if the current obs is missing combination we will see if there is published data for it
                               missing_combs = set()
                               for cc in comb:
                                 applied = dict(cc)
                                 applied.update(modifiers[obs_to_test])
                                 applied = (tuple(sorted(((k, v) for k,v in applied.items() if v is not None), key = lambda p: p[0])))
-                                if applied not in pcomb:  
+                                if not applied in pcomb:  
                                   missing_combs.add(applied)
                               if len(missing_combs) > 0 :
                                 # if the current obs has null modifiers we have to delete those from lookup key
@@ -224,19 +235,16 @@ class Evaluator(worker.Worker):
                                   # checking that tuple contains the modifiers of the current observation unless is null
                                   attrs_obs_ok = True
                                   for obs_mod_var, obs_mod_value in modifiers[obs_to_test].items():
-                                    if obs_mod_value is not None:
+                                    if obs_mod_value is not None and obs_mod_var not in modifiers[ind]:
                                       if not any(k == obs_mod_var and v == obs_mod_value for k, v in key):
                                         attrs_obs_ok = False
                                         break
                                   if attrs_obs_ok:
                                     # checking if the current combination exists for the expected base variable
-                                    # exluding modifiers
-                                    indep_key = tuple([(k, v) for k, v in key if k not in modifiers[obs_to_test] or modifiers[obs_to_test][k] is not None])
+                                    # applying modifiers
+                                    applied_key = tuple(sorted([(k,v) for k,v in ({**dict(key), **modifiers[obs_to_test]}.items()) if v is not None], key = lambda p: p[0]))
                                     if( i == 0 or 
-                                      (obs_to_test in obs_keys and key in obs_keys[obs_to_test]["comb"]) or 
-                                      (base_to_test in obs_keys and key in obs_keys[base_to_test]["comb"]) or
-                                      (obs_to_test in obs_keys and indep_key in obs_keys[obs_to_test]["comb"]) or 
-                                      (base_to_test in obs_keys and indep_key in obs_keys[base_to_test]["comb"])):
+                                      any(not {key, applied_key}.isdisjoint(obs_keys[o]["comb"]) for o in obs_keys if base_to_test == var_dic[o]['variable'])): 
                                       j = j + 1
                                     else:
                                       comb.pop(j)
@@ -289,6 +297,7 @@ class Evaluator(worker.Worker):
     def prepare_scripts(self, ind, job):
         scripts = self._scripts
         params = self._parameters
+        vars_dic =  self._dict_of_variables
         
         # read the functin code from indcators directory
         function_path = self.pandem_path(f'files', 'indicators', scripts[ind], 'function.R')
@@ -320,12 +329,14 @@ class Evaluator(worker.Worker):
         execf.write(f'jsonlite::write_json(res, "{result_path}", matrix = "columnmajor")'+'\n')
         execf.close()
 
-    def calculate(self, indicators_to_cal, job):
+    def calculate(self, indicators_to_cal, job, ignore_pipeline = False):
         try:
             vars_dic =  self._dict_of_variables
             params = self._parameters
             source =  job['dls_json']['scope']['source']
-            result = {"tuples": []}
+            ret = {}
+
+            part = 0
             # mixing indicators to calculate on all paths
             if indicators_to_cal and len(indicators_to_cal) > 0:
                 # looping trough all indicators
@@ -340,62 +351,77 @@ class Evaluator(worker.Worker):
                     main_par, main_base = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"] ))
                     attrs = {p:vars_dic[p]["variable"] for p in params[ind] if p not in set(obs.keys())}
                     # iterating though each combination and launching the scripts to calculate the results
+                    ii = 0
                     if len(combis) > 0: 
-                      data = self._variables_proxy.lookup(list(obs.keys()), combis, source, {base_date:None} , include_source = True, include_tag = True).get()
-                      # getting sorted dates
-                      dates = sorted({v["attrs"][base_date] for row in data.values() for v in row[main_base] })
-                      # writing parameters matrices 
-                      staging_dir = self.staging_path(job['id'], f'ind/{ind}')
-                      can_run = True
-                      # on file per parameter 
-                      for p in params[ind]:
-                        param_file_path = os.path.join(staging_dir, p+'.json')
-                        with open(param_file_path, 'w') as jsonf:
-                          jsonf.write("[")
-                          sep = ""
-                          # one row per date
-                          all_none = True
-                          for date in dates:
-                            # one element per combination
-                            param_values = [self._get_param_value(p, comb, date, data, obs, attrs, main_par, base_date) for comb in combis]
-                            jsonf.write(sep)
-                            sep = ","
-                            for v in param_values:
-                              if v is not None:
-                                all_none = False
-                            # writing the values on the parameter file 
-                            jsonf.write(json.dumps([(v if v != float('inf') else None) for v in param_values]))
-                          jsonf.write("]")
-                          if all_none:
-                            can_run = False
+                      for cslice in util.slices((c for c in combis), 200):
+                        ii = ii + len(cslice)
+                        part = part + 1
+                        key = f"{ind}_{part}" 
+                        result = {"tuples": []}
+                        if(ii < len(combis)):
+                          l.debug(f"Calculating combinations until {ii}")
+                        data = self._variables_proxy.lookup(list(obs.keys()), cslice, source, {base_date:None} , include_source = True, include_tag = True).get()
+                        #if ind == "new_performed_tests":
+                        #  breakpoint()
+                        # getting sorted dates
+                        dates = sorted({v["attrs"][base_date] for row in data.values() for v in row[main_base] })
+                        # writing parameters matrices 
+                        staging_dir = self.staging_path(job['id'], f'ind/{ind}')
+                        can_run = True
+                        # on file per parameter 
+                        for p in params[ind]:
+                          param_file_path = os.path.join(staging_dir, p+'.json')
+                          with open(param_file_path, 'w') as jsonf:
+                            jsonf.write("[")
+                            sep = ""
+                            # one row per date
+                            all_none = True
+                            for date in dates:
+                              # one element per combination
+                              param_values = [self._get_param_value(p, comb, date, data, obs, attrs, main_par, base_date) for comb in cslice]
+                              jsonf.write(sep)
+                              sep = ","
+                              for v in param_values:
+                                if v is not None:
+                                  all_none = False
+                              # writing the values on the parameter file 
+                              jsonf.write(json.dumps([(v if v != float('inf') else None) for v in param_values]))
+                            jsonf.write("]")
+                            if all_none:
+                              can_run = False
 
-                      # executing the script
-                      exec_file_path = os.path.join(staging_dir, 'exec.R')
-                      result_path = os.path.join(staging_dir, 'result.json')
-                      if can_run:
-                        subprocess.run (f'Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
-                        if os.path.exists(result_path):
-                            modifiers = {t["variable"]:t["value"] for t in vars_dic[ind]["modifiers"] } if "modifiers" in vars_dic[ind] else {}
-                            with open(self.pandem_path(result_path)) as f:
-                                r = json.load(f)
-                            assert(len(r) == len(combis))
-                            for combi_res, comb in zip(r, combis):
-                              for date, value in zip(dates, combi_res):
-                                ind_date_tuple = {'obs': {ind:value if value != "NA" else None},
-                                                'attrs':{**{base_date:date, "source":source},
-                                                         **{k:v for k,v in comb},
-                                                         ** modifiers
-                                                         }
-                                                }
-                                result['tuples'].append(ind_date_tuple)
-                        else:
-                            l.warning(f'result file {result_path} not found')
-            
-            result['scope'] = {}            
-            result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
+                        # executing the script
+                        exec_file_path = os.path.join(staging_dir, 'exec.R')
+                        result_path = os.path.join(staging_dir, 'result.json')
+                        if can_run:
+                          subprocess.run (f'Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
+                          if os.path.exists(result_path):
+                              modifiers = {t["variable"]:t["value"] for t in vars_dic[ind]["modifiers"] } if "modifiers" in vars_dic[ind] else {}
+                              with open(self.pandem_path(result_path)) as f:
+                                  r = json.load(f)
+                              assert(len(r) == len(cslice))
+                              #if ind == "incidence":
+                              #  breakpoint()
+                              for combi_res, comb in zip(r, cslice):
+                                for date, value in zip(dates, combi_res):
+                                  ind_date_tuple = {'obs': {ind:value if value != "NA" else None},
+                                                  'attrs':{**{base_date:date, "source":source},
+                                                           **{k:v for k,v in comb},
+                                                           ** modifiers
+                                                           }
+                                                  }
+                                  result['tuples'].append(ind_date_tuple)
+                              result['scope'] = {}            
+                              result['scope']['update_scope'] = [{'variable':'source', 'value':[source]}]            
+                              ret[key] = self._storage_proxy.to_job_cache(job["id"], f"calc_{key}", result).get()
+                          else:
+                              l.warning(f'result file {result_path} not found')
+             
 
-            ret = self._storage_proxy.to_job_cache(job["id"], f"calc", result).get()
-            self._pipeline_proxy.calculate_end(ret, job = job).get()
+            if ignore_pipeline:
+              return ret
+            else: 
+              self._pipeline_proxy.calculate_end(ret, job = job).get()
         except Exception as e: 
             l.warning(f"Error during calculation, job {job['id']} will fail")
             for line in traceback.format_exc().split("\n"):
@@ -410,7 +436,8 @@ class Evaluator(worker.Worker):
                    "issue_type":"error",
                    'issue_severity':"error"
             }
-            self._pipeline_proxy.fail_job(job, issue = issue).get()
+            if not ignore_pipeline:
+              self._pipeline_proxy.fail_job(job, issue = issue).get()
 
     def _get_param_value(self, param, comb, date, data, obs, attrs, main_par, base_date):
         if comb in data:
@@ -421,7 +448,7 @@ class Evaluator(worker.Worker):
               if v["attrs"][base_date] == date:
                 return v["value"]
           # if not an observation then the result is expected to be on attrs or in combination
-          elif param not in obs:
+          elif not param in obs:
             for v in row[obs[main_par]]:
               if v["attrs"][base_date] == date:
                 if attrs[param] in v["attrs"]:

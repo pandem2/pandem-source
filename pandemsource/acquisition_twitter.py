@@ -11,6 +11,7 @@ import glob
 from math import inf
 import re
 import logging
+import time
 
 l = logging.getLogger("pandem.twitter")
 
@@ -33,10 +34,17 @@ class AcquisitionTwitter(acquisition.Acquisition):
           os.makedirs(name = self._filter_dir)
         if not os.path.exists(self._filter_arc_dir):
           os.makedirs(name = self._filter_arc_dir)
+        # storing the api to do hydrate tweet
+        auth = tweepy.OAuth2AppHandler(
+          consumer_key = self._api_key, 
+          consumer_secret = self._api_key_secret 
+        )
 
-    def add_datasource(self, dls, force_acquire):
+        self._api = tweepy.API(auth, wait_on_rate_limit = True)
+
+    def add_datasource(self, dls, force_acquire, ignore_last_exec = True):
       if len(self.current_sources) > 0:
-        raise ValueError("Twitter aqquisition support only a singlr DLS, others will be ignored")
+        raise ValueError("Twitter aqquisition support only a single DLS, others will be ignored")
       if "acquisition" in dls and "channel" in dls["acquisition"] and "topics" in dls["acquisition"]["channel"]:
         self._topics  = dls["acquisition"]["channel"]["topics"].keys()
         self._maingroup  = dls["acquisition"]["channel"]["main_group"]
@@ -50,7 +58,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
             in_maingroup = dls["acquisition"]["channel"]["topics"][topic]["group"] == self._maingroup
             self._included_regex[topic] = "|".join(map(lambda v: re.escape(v.lower()), phrases))  
             for kw in phrases:
-              if kw not in self._phrases and in_maingroup:
+              if not kw in self._phrases and in_maingroup:
                 if len(kw.encode("utf-8")) > 60:
                   raise ValueError(f"Twitter filter endpoint cannot contain phrases bigger than 60 bytes and {kw} has {len(kw.encode('utf-8'))}")
                 self._phrases.append(kw)
@@ -92,7 +100,44 @@ class AcquisitionTwitter(acquisition.Acquisition):
       )
       self.create_new_gz()
       threading.Thread(target=self.tweet_filter.run).start()
-      super().add_datasource(dls, force_acquire)
+
+
+      super().add_datasource(dls, force_acquire, ignore_last_exec)
+
+    def hydrate_tweet_ids(self, ids):
+      i = 0
+      j = 0
+      ret = {}
+      while i < len(ids):
+        # setting a minumum of 0.5 secs between requests
+        start = time.time()
+        success = False
+        tries = 0
+        while not success:
+          try:
+            res = self._api.lookup_statuses(ids[i:i+100], include_entities = False, trim_user = True)
+            success = True
+          except Exception as e:
+            tries = tries + 1
+            if tries <= 10 :
+              l.debug(f"Tweet request failed with error {e} \nretryng on {tries*tries} seconds")
+              time.sleep(tries * tries)
+            else:
+              l.error("Too many retries failed")
+              raise(e)
+            
+        ret.update({t.id_str:{"id":t.id_str, "text":t.text, "created_at":t.created_at.isoformat(), "lang":t.lang} for t in res})
+        if j % 5 == 0 and j > 0:
+          l.debug(f"{i} tweets rehydrated from {len(ids)}")
+        i = i + 100
+        j = j + 1
+        # spleepling if less than 0.5 secs has happened
+        pending = time.time() - start
+        if pending < 0.5:
+          time.sleep(pending)
+
+      l.debug(f"{i} tweets rehydrated from {len(ids)}")
+      return ret
 
     def create_new_gz(self):
        lfile = f"{datetime.now().strftime('%Y.%m.%d.%H.%M.%S')}.json.gz"
@@ -103,6 +148,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
     
     def new_files(self, dls, last_hash):
         # testing if we need to replay files
+        replay = False
         if os.path.exists(self._replay_dir):
           files_to_replay = glob.glob(f"{self._replay_dir}/**/*.json.gz", recursive = True)
           if len(files_to_replay) > 0:
@@ -119,6 +165,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
               os.makedirs(arc, exist_ok = True)
               dest = os.path.join(arc, to_arc)
               os.rename(to_archive, dest)
+              current_hash = to_arc
               return {"hash":to_archive, "files":[dest]}  
 
 
@@ -237,4 +284,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
           lambda topic: re.search(self._included_regex[topic], text.lower()) is not None and re.search(self._excluded_regex, text.lower()) is None,
           self._included_regex.keys()
         ))
+
+
+    # methods for dataset post process
 

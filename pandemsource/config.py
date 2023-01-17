@@ -13,7 +13,7 @@ class config:
     if location is not None and os.path.exists(location):
       with open(location, "r") as f:
         userconf = yaml.safe_load(f)
-      merge_maps(conf, userconf)
+      merge_config(conf, userconf)
     if "pandem" in conf and "sources" in conf["pandem"]: 
       self._settings = conf["pandem"]["sources"]
     else: 
@@ -47,7 +47,7 @@ class config:
         if type(settings) is dict:
           flatten_map(settings, path = base_path, curr = ret)
         else:
-          ret[base_path] = settings
+          ret[base_path] = setting
       return ret
 
 def merge_maps(a, b, path = []):
@@ -60,7 +60,7 @@ def merge_maps(a, b, path = []):
       elif a[key] == b[key]:
         pass # same leaf value
       else:
-        raise ValueError('Conflict at %s' % '.'.join(path + [str(key)]))
+        raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
     else:
       a[key] = b[key]
   return a
