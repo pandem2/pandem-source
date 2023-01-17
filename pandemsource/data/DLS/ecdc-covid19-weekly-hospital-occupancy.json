@@ -2,7 +2,7 @@
     "scope":{
         "source":"ecdc-covid19-weekly-hospital-occupancy",
         "source_description":"Hospital and ICU admission rates and current occupancy for COVID-19 by date and country",
-        "tags":["ECDC COVID-19", "Eurostats NUTS"],
+        "tags":["ECDC COVID-19", "Eurostats NUTS", "OECD"],
         "data_quality":"Official",
         "frequency":"daily",
         "frequency_start_hour":4,
