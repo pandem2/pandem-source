@@ -67,8 +67,6 @@ class Standardizer(worker.Worker):
                 else: 
                   values = [std_var['attrs'][var_name]] 
                   islist = False
-                if var_name in ignore_check or var_name not in variables:
-                  pass
                 
                 if variables[var_name]['type'] in type_translate:
                   code=variables[var_name]['linked_attributes'][0]
@@ -98,6 +96,8 @@ class Standardizer(worker.Worker):
                         self._pipeline_proxy.standardize_end(tuples = None, n_tuples = 0, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
                         return
 
+                if var_name in ignore_check or var_name not in variables:
+                  pass
                 #elif variables[var_name]['type'] in (type_validate + type_translate) and refs_values[var_name] is None:
                 elif not isNone and var_type in type_translate + type_validate :
                   new_values = []
