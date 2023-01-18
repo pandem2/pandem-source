@@ -6,6 +6,7 @@ import json
 import re
 from datetime import datetime
 from datetime import timedelta
+from pandemsource import util
 
 chunk_size = 5000
 
@@ -118,11 +119,9 @@ def update_index(date, stats, ids, i, logger):
   ntweets = sum([len(d) for d in ids.values()])
   logger.debug(f"updating index for date {date} with {ntweets} a total of {i} tweets scanned")
   stats[date].update({"ntweets":ntweets})
-  with open(stats_path, "w") as f:
-    json.dump(stats, f)
-  with open(ids_path, "w") as f:
-    ids_to_save = {chunk:[*vals] for chunk, vals in ids.items()}
-    json.dump(ids_to_save, f)
+  util.save_json(stats, stats_path)
+  ids_to_save = {chunk:[*vals] for chunk, vals in ids.items()}
+  util.save_json(ids_to_save, ids_path)
 
 def load_date_index(date):
   stats_path = os.path.join(os.getcwd(), "tweets", "tweet_stats.json")
@@ -220,8 +219,7 @@ def load_tweet_date_chunk(date, chunk):
 def save_tweet_date_chunk(data, date, chunk):
   dest_dir = os.path.join(os.getcwd(), "tweets", "tweets_texts", f"{date}")
   dest_file = os.path.join(dest_dir, f"{chunk}.json") 
-  with open(dest_file, "wt") as f:
-    json.dump([*data.values()], f)
+  util.save_json([*data.values()], dest_file)
 
 def chunk_done(files_hash, dls, logger, **kwargs):
   stats = load_index_stats()
@@ -233,8 +231,7 @@ def chunk_done(files_hash, dls, logger, **kwargs):
     if last_chunk in info["to_hydrate"]:
       info["to_hydrate"].pop(last_chunk)
   stats_path = os.path.join(os.getcwd(), "tweets", "tweet_stats.json")
-  with open(stats_path, "w") as f:
-    json.dump(stats, f)
+  util.save_json(stats, stats_path)
 
     
     

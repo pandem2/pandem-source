@@ -69,8 +69,12 @@ class Storage(worker.Worker):
 
              
     def write_file(self, path, bytes, mode): #absolute path here
-        with open(path, mode) as f:
+       fd, fn = os.path.split(path)
+       tpath = os.path.join(fd, f'.{fn}.tmp')
+       with open(tpath, mode) as f:
             f.write(bytes) 
+       os.rename(tpath, path)
+
     
 
     def read_file(self, path): #absolute path here
@@ -168,9 +172,7 @@ class Storage(worker.Worker):
                 df.at[int(record['id']), key] = value
         self.db_tables[db_class] = df
         dest = os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle') 
-        tmp = f"{dest}.tmp"
-        df.to_pickle(tmp)
-        shutil.move(tmp, dest)
+        util.save_pickle_df(df, dest)
         return record['id']
 
 
@@ -191,7 +193,8 @@ class Storage(worker.Worker):
             if len(to_del)>0:
               df = df.drop(index = to_del.index)
         self.db_tables[db_class] = df
-        df.to_pickle(os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle'))
+        dest = os.path.join(os.getenv('PANDEM_HOME'), 'database', db_class+'s'+'.pickle')
+        util.save_pickle_df(df, dest)
         return df
 
     def get_job_cache(self, job_id):

@@ -10,7 +10,13 @@ import pandas as pd
 l = logging.getLogger("pandem")
 
 def main(a):
-  #conf = config()
+  # setting default PANDEM_HOME if not set
+  if os.environ.get("PANDEM_HOME") is None:
+    os.environ["PANDEM_HOME"] = os.path.expanduser('~/.pandemsource').replace('\\', '/')
+    if not os.path.exists(os.environ.get("PANDEM_HOME")):
+      os.mkdir(os.environ.get("PANDEM_HOME"))
+
+  # conf = config()
   # Base argument parser
   parser = argparse.ArgumentParser()
   subs = parser.add_subparsers()
@@ -77,133 +83,133 @@ def main(a):
   start_parser.set_defaults(func = do_start)
   
   # setup 
-  reset_parser = subs.add_parser("reset", help = "reset configuration as system defaults")
+  setup_parser = subs.add_parser("setup", help = "reset configuration as system defaults")
   
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "-v", 
     "--variables", 
     action="store_true", 
     help="Whether to restore variables defiitions to last system defaults", 
   )
-  reset_parser.add_argument(
-    "--restore-factory-defaults", 
+  setup_parser.add_argument(
+    "--install", 
     action="store_true", 
-    help="Delete all files and database elements and restore system defaults", 
+    help="Delete all files and database elements and install system defaults on the environment variable PANDEM_HOME", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--scripts",
     action="store_true",
     help="Restore the default script folder in pandem-home"
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--input-local",
     action="store_true",
     help="Restore the default input-local folder in pandem-home"
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--notations", 
     action="store_true", 
     help="Reset interational standard notation datasources to system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--covid19-datahub", 
     action="store_true", 
     help="Reset covid19-datahub datasource to system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--ecdc-atlas", 
     action="store_true", 
     help="Reset ecdc-atlas datasource to system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--influenzanet", 
     action="store_true", 
     help="Reset influenza net datasource to system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--ecdc-covid19", 
     action="store_true", 
     help="Reset ecdc-covid19 datasource to system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--ecdc-covid19-simulated", 
     action="store_true", 
     help="Reset ecdc-covid19 simulated datasource to system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--serotracker", 
     action="store_true", 
     help="Reset serotracker datasource to system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--pandem-partners-template", 
     action="store_true", 
     help="Reset pandem partner templates to system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--twitter-covid19", 
     action="store_true", 
     help="Reset pandem twitter covid19 to system defaults", 
   )
 
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--twitter", 
     action="store_true", 
     help="Reset pandem twitter system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--medisys", 
     action="store_true", 
     help="Reset pandem medisys system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--flights",
     action="store_true",
     help="Reset pandem flight related information to system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--airports",
     action="store_true",
     help="Reset pandem airports related information to system defaults", 
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--owid",
     action="store_true",
     help="Reset pandem owid related information to system defaults"
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--geonames",
     action="store_true",
     help="Reset pandem geonames related information to system defaults"
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--health-resources-eurostat",
     action="store_true",
     help="Reset pandem health resources staff related information to system defaults"
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--pandem-2-2023-fx",
     action="store_true",
     help="Reset pandem 2023 functional exercise related information to system defaults"
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--oecd",
     action="store_true",
     help="Reset OECD related information to system defaults"
   )
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--delete-data",
     action="store_true",
     help="Delete associated data with the reseted data source"
   )
   
-  reset_parser.add_argument(
+  setup_parser.add_argument(
     "--reset-acquisition",
     action="store_true",
     help="Dismiss source acquisition stamp, making pandemsource reload data on next execution"
   )
 
-  reset_parser.set_defaults(func = do_reset)
+  setup_parser.set_defaults(func = do_setup)
 
   # Launch pandem source list command
   list_parser = subs.add_parser("list", help = "List elements on this Pandem-Source instance")
@@ -341,7 +347,7 @@ def do_start(args, *other):
 
   return orch
   
-def do_reset(args, *other):
+def do_setup(args, *other):
 
   root = logging.getLogger()
   root.setLevel(logging.INFO)
@@ -351,20 +357,20 @@ def do_reset(args, *other):
   handler.setFormatter(formatter)
   root.addHandler(handler)
 
-  if args.restore_factory_defaults:
+  if args.install:
     admin.delete_all()
     admin.reset_default_folders("input-local", "input-local-defaults", "dfcustom", "scripts", "variables", "indicators", "img")
   if args.scripts:
     admin.reset_default_folders("scripts")
   if args.input_local:
     admin.reset_default_folders("input-local")
-  if args.variables or args.restore_factory_defaults:
+  if args.variables or args.install:
     admin.reset_variables()
-  if args.notations or args.restore_factory_defaults:
+  if args.notations or args.install:
     admin.reset_source("nuts-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ICD-10-diseases", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("isco-08-ilo", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.pandem_partners_template or args.restore_factory_defaults:
+  if args.pandem_partners_template:
     admin.reset_source("covid19-template-cases", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-template-cases-RIVM", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-template-cases-THL", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
@@ -388,7 +394,7 @@ def do_reset(args, *other):
     admin.reset_source("covid19-template-local-regions", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-template-local-regions-RIVM", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-template-local-regions-THL", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.covid19_datahub or args.restore_factory_defaults:
+  if args.covid19_datahub:
     admin.reset_source("covid19-datahub", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-datahub-AUT", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-datahub-BEL", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
@@ -419,11 +425,11 @@ def do_reset(args, *other):
     admin.reset_source("covid19-datahub-SWE", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("covid19-datahub-GBR", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
 
-  if args.ecdc_covid19_simulated or args.restore_factory_defaults:
+  if args.ecdc_covid19_simulated:
     admin.reset_source("ecdc-covid19-age-group-variants", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-weekly-hospital-occupancy-variants", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-genomic-data", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.ecdc_covid19 or args.restore_factory_defaults:
+  if args.ecdc_covid19:
     admin.reset_source("ecdc-covid19-vaccination", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-variants", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-age-group", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
@@ -431,37 +437,37 @@ def do_reset(args, *other):
     admin.reset_source("ecdc-covid19-weekly", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-daily", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-weekly-hospital-occupancy", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.serotracker or args.restore_factory_defaults:
+  if args.serotracker:
     admin.reset_source("geonames-countries", delete_data = False)    
     admin.reset_source("serotracker", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    
-  if args.ecdc_atlas or args.restore_factory_defaults:
+  if args.ecdc_atlas:
     admin.reset_source("ecdc-atlas-influenza", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    
-  if args.influenzanet or args.restore_factory_defaults:
+  if args.influenzanet:
     admin.reset_source("influenza-net", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("influenza-net-visits", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.twitter_covid19 or args.restore_factory_defaults:
+  if args.twitter_covid19:
     admin.reset_source("twitter-covid19", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    
-  if args.twitter or args.restore_factory_defaults:
+  if args.twitter:
     admin.reset_source("twitter", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    
-  if args.medisys or args.restore_factory_defaults:
+  if args.medisys:
     admin.reset_source("medisys", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.flights or args.restore_factory_defaults:
+  if args.flights:
     admin.reset_source("ourairports", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ourairports-of-origin", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("opensky-network-coviddataset", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.airports or args.restore_factory_defaults:
+  if args.airports:
     admin.reset_source("ourairports", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ourairports-of-origin", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.owid or args.restore_factory_defaults:
+  if args.owid:
     admin.reset_source("owid-covid19-excess-mortality", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.geonames or args.restore_factory_defaults:
+  if args.geonames:
     admin.reset_source("geonames-countries", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("geonames-countries-of-origin", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition) 
-  if args.health_resources_eurostat or args.restore_factory_defaults:
+  if args.health_resources_eurostat:
     admin.reset_source("health-resources-national-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("health-resources-nuts2-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("health-resources-beds-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-  if args.pandem_2_2023_fx or args.restore_factory_defaults:
+  if args.pandem_2_2023_fx:
     admin.reset_default_folders("input-local")
     admin.reset_source("pandem-2-2023-fx-DEU", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("pandem-2-2023-fx-NLD", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)

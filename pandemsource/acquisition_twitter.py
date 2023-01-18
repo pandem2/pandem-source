@@ -42,7 +42,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
 
         self._api = tweepy.API(auth, wait_on_rate_limit = True)
 
-    def add_datasource(self, dls, force_acquire):
+    def add_datasource(self, dls, force_acquire, ignore_last_exec = True):
       if len(self.current_sources) > 0:
         raise ValueError("Twitter aqquisition support only a single DLS, others will be ignored")
       if "acquisition" in dls and "channel" in dls["acquisition"] and "topics" in dls["acquisition"]["channel"]:
@@ -102,7 +102,7 @@ class AcquisitionTwitter(acquisition.Acquisition):
       threading.Thread(target=self.tweet_filter.run).start()
 
 
-      super().add_datasource(dls, force_acquire)
+      super().add_datasource(dls, force_acquire, ignore_last_exec)
 
     def hydrate_tweet_ids(self, ids):
       i = 0
