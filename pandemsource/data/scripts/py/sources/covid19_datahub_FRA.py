@@ -1,6 +1,8 @@
 import numpy as np
 
 def df_transform(df):
+  # we dont't need national data as we already have detailed data per region
+  df = df[~(df["key_nuts"] == "FR")].reset_index()
   # contact tracing variables
   df["no_tracing"] = np.where(df["contact_tracing"].fillna(-1) == 0, 1, 0)
   df["limited_tracing"] = np.where(df["contact_tracing"].fillna(-1) == 1, 1, 0)

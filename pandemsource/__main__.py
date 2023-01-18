@@ -368,7 +368,6 @@ def do_setup(args, *other):
     admin.reset_variables()
   if args.notations or args.install:
     admin.reset_source("nuts-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-    admin.reset_source("geonames-countries", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ICD-10-diseases", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("isco-08-ilo", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
   if args.pandem_partners_template:
