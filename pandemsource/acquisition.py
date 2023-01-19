@@ -7,7 +7,7 @@ from . import util
 import logging
 import json
 
-l = logging.getLogger("pandem.acqcuisition")
+l = logging.getLogger("pandem.acquisition")
 
 class Acquisition(worker.Worker):
     __metaclass__ = ABCMeta  

@@ -165,8 +165,8 @@ class Storage(worker.Worker):
             if df.shape[0] > 0:
                 record['id'] = df.index.max()+1
             else:
-                record['id'] = 1
-            df.at[int(record['id'])] = record
+                record['id'] = 0
+            df = pd.concat([df, pd.DataFrame([record])], ignore_index = True)
         else:
             for key, value in record.items():
                 df.at[int(record['id']), key] = value

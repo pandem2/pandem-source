@@ -40,6 +40,17 @@ class NLPAnnotator(worker.Worker):
         list_of_tuples = list_of_tuples.value() 
         if self._models is None:
             self._models = self.get_models()
+            self._model_aliases = {}
+            for mn, m in self._models.items():
+              if "alias" in m:
+                if isinstance(m["alias"], str):
+                  self._model_aliases[mn] = m["alias"]
+                elif isinstance(m["alias"], dict):
+                  for k, v in m["alias"].items():
+                    self._model_aliases[f"{mn}.{k}"] = v
+                else:
+                  raise ValueError(f"Unexpected type for alias in model {mn} it should be a str or dict")
+
         breakpoint()
         self._model_languages = {l for info in self._models_info.values() for l in info["languages"]}
         # gathering information about nlp categories
@@ -154,20 +165,37 @@ class NLPAnnotator(worker.Worker):
                 raise ValueError(f"Invalid model configuration: Model {m} has invalid source {info['source']}")
 
             # creating annotated tuples per step
-            for step in steps:
-              for i in range(0, len(to_annotate)):
+            model_classes = [[None for ss in s] for s in steps]
+            for i in range(0, len(to_annotate)):
+              for j in range(0, len(steps)):
+                for k in range(0, len(steps[j])):
+                  s = steps[j][k]
+                  m = s.split(".")[0]
+                  prop = s.split(".")[1] if "." in s else None
+                  c = predictions[m][i]
+                  if isinstance(c, str):
+                    model_classes[j][k] = c
+                  elif isintance(c, dict) and prop is not None:
+                    model_classes[j][k] = c[prop]
+                  else:
+                    raise ValueError(f"Unexpected model step {s} for prediction {c}")
+                    
                 #generating a tuple for each combination of positive predictions
-                model_classes = [*itertools.product(*[pred[i] for pred in predictions.values()]) ]
-                for allclasses in model_classes:
-                  at = copy.deepcopy(to_annotate[i])
-                  for m, ic in allclasses:
-                    raise NotImplementedError("This featrue is temporarily disabled")
-                    # if dic and point then extract value 
-                    if ic == "None":
-                      at["attrs"][model_aliases[m]] = "None"
-                    elif ic is not None:
-                      at["attrs"][model_aliases[m]] = categories[m][ic]
-                  annotated.append(at)
+                
+              class_combs = [*itertools.product(model_classes)]
+              for classes in class_combs:
+                at = copy.deepcopy(to_annotate[i])
+                for m, c in allclasses:
+                  # if dic and point then extract value
+                  if isinstance(c, dict):
+                    for k, v in c.items():
+                      at["attrs"][model_aliases.get(f'{m}.{k}') or f'{m}-{k}'] = v
+                  elif isinstance(c, str):
+                    at["attrs"][model_aliases.get(m) or m] = c
+                  else:
+                    raise ValueError(f"Unexpected type for preciction {c} is is expected to be str or dic")
+                breakpoint()
+                annotated.append(at)
             count = count + len(to_annotate)
             l.debug(f"{count} articles after NLP")
         # Annotating geographically using extra simplistic approach
