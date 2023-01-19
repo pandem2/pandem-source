@@ -17,7 +17,7 @@ l = logging.getLogger("pandem.pipeline")
 
 class Pipeline(worker.Worker):
     __metaclass__ = ABCMeta  
-    def __init__(self, name, orchestrator_ref, settings, retry_failed = False, restart_job = 0, retry_active = True): 
+    def __init__(self, name, orchestrator_ref, settings, retry_failed = False, restart_job = -1, retry_active = True): 
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings)
         self.retry_failed = retry_failed
         self.retry_active = retry_active
@@ -67,7 +67,7 @@ class Pipeline(worker.Worker):
                                                  ((x['status'] == 'in progress' and self.retry_active) or (x['status'] == 'failed' and self.retry_failed)) 
                                                    and x['step'] != 'submitted_started' 
                                                    and x['step'] != self.last_step
-                                                   and self.restart_job == 0
+                                                   and self.restart_job == -1
                                              ) or x["id"] == self.restart_job
                                          ).get()
         if jobs is not None :
@@ -347,8 +347,11 @@ class Pipeline(worker.Worker):
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_tuples[job["id"]][path] = tuples
         self.job_issues[job["id"]].extend(issues)
-        
-        progress =  (1.0/10) * len(self.job_tuples[job["id"]]) / (self.pending_count[job["id"]] + len(self.job_tuples[job["id"]]))
+       
+        if (self.pending_count[job["id"]] + len(self.job_tuples[job["id"]])) == 0:
+          progress = 0.0
+        else: 
+          progress =  (1.0/10) * len(self.job_tuples[job["id"]]) / (self.pending_count[job["id"]] + len(self.job_tuples[job["id"]]))
         
         if self.pending_count[job["id"]] == 0:
             self.write_issues(self.job_issues[job["id"]]) 
@@ -376,8 +379,10 @@ class Pipeline(worker.Worker):
         self._storage_proxy.delete_db("issue", lambda i: int(i["job_id"]) == int(job['id']) and i['issue_type'] == "ref-not-found").get()
         
         self.job_issues[job["id"]].extend(issues)
-        
-        progress =  (1.0/10) * len(self.job_stdtuples[job["id"]]) / (self.pending_count[job["id"]] + len(self.job_stdtuples[job["id"]]))
+        if self.pending_count[job["id"]] + len(self.job_stdtuples[job["id"]]) == 0:
+          progress = 0.0
+        else:
+          progress =  (1.0/10) * len(self.job_stdtuples[job["id"]]) / (self.pending_count[job["id"]] + len(self.job_stdtuples[job["id"]]))
         
         if self.pending_count[job["id"]] == 0:
             self.write_issues(self.job_issues[job["id"]]) 
@@ -448,7 +453,10 @@ class Pipeline(worker.Worker):
         if job["status"] == "failed":
           return
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
-        progress =  ((self.pending_total[job["id"]] - self.pending_count[job["id"]]) / self.pending_total[job["id"]])/10
+        if self.pending_total[job["id"]] == 0:
+          progress == 0
+        else:
+          progress =  ((self.pending_total[job["id"]] - self.pending_count[job["id"]]) / self.pending_total[job["id"]])/10
         if self.pending_count[job["id"]] == 0:
           self.update_job_step(job, 'publish_ended', 1)
         else:
@@ -459,7 +467,7 @@ class Pipeline(worker.Worker):
         l.info(f"Changing to step {step} for job {int(job['id'])} source {job['dls_json']['scope']['source']} {round(progress*100, 1)}%")
         #printMem()
         # removing job from current step dict
-        if job["step"] in self.job_steps and job["id"]:
+        if job["step"] in self.job_steps and job["id"] is not None:
           if job["id"] in self.job_steps[job["step"]]:
             self.job_steps[job["step"]].pop(job["id"])
           else:
@@ -477,7 +485,8 @@ class Pipeline(worker.Worker):
         else:
           self.job_steps[step][job["id"]] = job
 
-        return self._storage_proxy.write_db(job, 'job')
+        ret  = self._storage_proxy.write_db(job, 'job')
+        return ret
     
     # this function returns a future that can be waited to ensure that file job is written to disk
     def fail_job(self, job, delete_job = False, issue = None):
