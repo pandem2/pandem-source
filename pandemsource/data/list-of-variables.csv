@@ -143,6 +143,16 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,number_of_emergency_staff,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,,,,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""response_type"", ""value"": ""emergency""}]"
 03_patient,number_of_hcw_hospital_level,,resource,qty,,"Source, resource_type, geo_code",,number_of_resources,,,,"[{""variable"": ""resource_type"", ""value"": ""staff""}, {""variable"": ""response_type"", ""value"": ""hospital""}, {""variable"": ""staff_type"", ""value"": ""hcw""}]"
 03_patient,staff_type,,characteristic,,,,,,,,,
+03_patient,people_vaccinated_hcw,,observation,qty,,"source, geo_code",,people_vaccinated,TRUE,missing_real_data_2022,,"[{""variable"": ""population_type"", ""value"": ""hcw""}]"
+03_patient,people_vaccinated_hcw_admin_staff,,indicator,qty,,"source, geo_code","people_vaccinated_hcw_admin_staff(reporting_period, people_vaccinated_hcw)",people_vaccinated,TRUE,missing_real_data_2022,,"[{""variable"": ""population_type"", ""value"": ""hcw_admin_staff""}]"
+03_patient,people_vaccinated_hcw_doctors,,indicator,qty,,"source, geo_code","people_vaccinated_hcw_doctors(reporting_period, people_vaccinated_hcw)",people_vaccinated,TRUE,missing_real_data_2022,,"[{""variable"": ""population_type"", ""value"": ""hcw_doctors""}]"
+03_patient,people_vaccinated_hcw_emergency_responders,,indicator,qty,,"source, geo_code","people_vaccinated_hcw_emergency_responders(reporting_period, people_vaccinated_hcw)",people_vaccinated,TRUE,missing_real_data_2022,,"[{""variable"": ""population_type"", ""value"": ""hcw_emergency_responders""}]"
+03_patient,people_vaccinated_hcw_nurses,,indicator,qty,,"source, geo_code","people_vaccinated_hcw_nurses(reporting_period, people_vaccinated_hcw)",people_vaccinated,TRUE,missing_real_data_2022,,"[{""variable"": ""population_type"", ""value"": ""hcw_nurses""}]"
+03_patient,population_hcw,,observation,qty,,"source, geo_code",,population,TRUE,missing_real_data_2022,,"[{""variable"": ""population_type"", ""value"": ""hcw""}]"
+03_patient,population_hcw_admin_staff,,indicator,qty,,"source, geo_code","population_hcw_admin_staff(reporting_period, population_hcw)",population,TRUE,missing_real_data_2022,,"[{""variable"": ""population_type"", ""value"": ""hcw_admin_staff""}]"
+03_patient,population_hcw_doctors,,indicator,qty,,"source, geo_code","population_hcw_doctors(reporting_period, population_hcw)",population,TRUE,missing_real_data_2022,,"[{""variable"": ""population_type"", ""value"": ""hcw_doctors""}]"
+03_patient,population_hcw_emergency_responders,,indicator,qty,,"source, geo_code","population_hcw_emergency_responders(reporting_period, population_hcw)",population,TRUE,missing_real_data_2022,,"[{""variable"": ""population_type"", ""value"": ""hcw_emergency_responders""}]"
+03_patient,population_hcw_nurses,,indicator,qty,,"source, geo_code","population_hcw_nurses(reporting_period, population_hcw)",population,TRUE,missing_real_data_2022,,"[{""variable"": ""population_type"", ""value"": ""hcw_nurses""}]"
 03_patient,response_type,,characteristic,,,,,,,,,
 03_patient,resource_type,,characteristic,,,,,,,,,
 03_patient,qty_of_hospital_resources,,resource,qty,,"source, geo_code",,,,,,
