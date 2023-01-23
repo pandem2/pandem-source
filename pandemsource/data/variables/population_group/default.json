@@ -263,6 +263,50 @@
             "attr": {
                 "population_group":"Patients with comorbidities"
             }
+        },
+        {
+            "attrs": {
+                "line_number": 24,
+                "source": "pandem2",
+                "population_type": "hcw_admin_staff",
+                "file": ""
+            },
+            "attr": {
+                "population_group": "Health Care Workers - Administration Staff"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 25,
+                "source": "pandem2",
+                "population_type": "hcw_doctors",
+                "file": ""
+            },
+            "attr": {
+                "population_group": "Health Care Workers - Doctors"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 26,
+                "source": "pandem2",
+                "population_type": "hcw_emergency_responders",
+                "file": ""
+            },
+            "attr": {
+                "population_group": "Health Care Workers - Emergency Responders"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 27,
+                "source": "pandem2",
+                "population_type": "hcw_nurses",
+                "file": ""
+            },
+            "attr": {
+                "population_group": "Health Care Workers - Nurses"
+            }
         }
     ]
 }

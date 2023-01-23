@@ -263,6 +263,50 @@
             "attr": {
                 "population_type": "recommended_population"
             }
+        },
+        {
+            "attrs": {
+                "line_number": 24,
+                "source": "pandem2",
+                "population_group": "Health Care Workers - Administration Staff",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "hcw_admin_staff"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 25,
+                "source": "pandem2",
+                "population_group": "Health Care Workers - Doctors",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "hcw_doctors"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 26,
+                "source": "pandem2",
+                "population_group": "Health Care Workers - Emergency Responders",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "hcw_emergency_responders"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 27,
+                "source": "pandem2",
+                "population_group": "Health Care Workers - Nurses",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "hcw_nurses"
+            }
         }
     ]
 }

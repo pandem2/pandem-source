@@ -1,0 +1,51 @@
+{
+    "scope": {
+        "source": "oecd-icu-beds",
+        "source_description": "Intensive Care Unit Beds Capacity by Country in 2020 (or nearest year)",
+        "tags": [
+            "OECD"
+        ],
+        "data_quality": "Official",
+        "frequency": "daily",
+        "reference_user": "OECD Stat",
+        "reporting_email": "-",
+        "globals": [],
+        "update_scope": [
+            {
+                "variable": "source"
+            }
+        ]
+    },
+    "acquisition": {
+        "channel": {
+            "name": "input-local",
+            "xls_file": "oecd-icu-beds-capacity.csv",
+            "sheet": "BedsCapacity"
+        },
+        "format": {
+            "name": "csv",
+            "decimal_sign": ".",
+            "thousands_separator": "",
+            "date_format": "isoweek",
+            "encoding": "UTF-8"
+        }
+    },
+    "columns": [
+        {
+            "name": "geo_code",
+            "variable": "geo_code"
+        },
+        {
+            "name": "reporting_date",
+            "variable": "reporting_week"
+        },
+        {
+            "name": "icu_beds",
+            "variable": "number_of_icu_operable_beds"
+        },
+        {
+            "name": "icu_beds_per_100k",
+            "variable": "number_of_icu_operable_beds_per_100k"
+        }
+    ]
+}

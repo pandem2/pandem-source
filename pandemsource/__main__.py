@@ -193,6 +193,11 @@ def main(a):
     help="Reset pandem 2023 functional exercise related information to system defaults"
   )
   setup_parser.add_argument(
+    "--oecd",
+    action="store_true",
+    help="Reset OECD related information to system defaults"
+  )
+  setup_parser.add_argument(
     "--delete-data",
     action="store_true",
     help="Delete associated data with the reseted data source"
@@ -466,6 +471,9 @@ def do_setup(args, *other):
     admin.reset_default_folders("input-local")
     admin.reset_source("pandem-2-2023-fx-DEU", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("pandem-2-2023-fx-NLD", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
+  if args.oecd:
+    admin.reset_default_folders("input-local")
+    admin.reset_source("oecd-icu-beds", delete_data= args.delete_data, reset_acquisition= args.reset_acquisition)
 
 def do_list(args, *other):
   if args.jobs:

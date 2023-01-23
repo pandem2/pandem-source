@@ -1,0 +1,1 @@
+people_vaccinated_hcw * 0.3

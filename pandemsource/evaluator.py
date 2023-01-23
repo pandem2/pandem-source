@@ -159,10 +159,10 @@ class Evaluator(worker.Worker):
                 base_pars =  list([var_dic[p]["variable"] for p in obs_pars])
                 main_obs = obs_pars[0] if len(obs_pars)>0 else None
                 main_base = base_pars[0] if len(base_pars)>0 else None
-
+                
                 # identifying the combinations available for the first parameter so we can identify if new combinations can be calculated for this indicator
                 comb = set()
-                # getting all exixsting combinations for the main obs 
+                # getting all existing combinations for the main obs 
                 for ptest in obs_keys:
                   if main_base == var_dic[ptest]['variable']:
                     for c in obs_keys[ptest]["comb"]:
@@ -361,8 +361,6 @@ class Evaluator(worker.Worker):
                         if(ii < len(combis)):
                           l.debug(f"Calculating combinations until {ii}")
                         data = self._variables_proxy.lookup(list(obs.keys()), cslice, source, {base_date:None} , include_source = True, include_tag = True).get()
-                        #if ind == "new_performed_tests":
-                        #  breakpoint()
                         # getting sorted dates
                         dates = sorted({v["attrs"][base_date] for row in data.values() for v in row[main_base] if main_base in row})
                         # writing parameters matrices 
@@ -400,8 +398,6 @@ class Evaluator(worker.Worker):
                               with open(self.pandem_path(result_path)) as f:
                                   r = json.load(f)
                               assert(len(r) == len(cslice))
-                              #if ind == "incidence":
-                              #  breakpoint()
                               for combi_res, comb in zip(r, cslice):
                                 for date, value in zip(dates, combi_res):
                                   ind_date_tuple = {'obs': {ind:value if value != "NA" else None},
