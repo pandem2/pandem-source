@@ -1,7 +1,7 @@
 {
     "scope":{
       "source":"serotracker",
-      "source_description":"National seroprevalence studies reported by SeroTracekr. SeroTracker is a dashboard and data platform for SARS-CoV-2 serosurveys. Their team conduct an ongoing systematic review to track serosurveys (antibody testing-based surveillance efforts) around the world and visualize findings on this dashboard. Antibodies against SARS-CoV-2, the virus that causes COVID-19, indicate previous infection or vaccination.",
+      "source_description":"National seroprevalence studies reported by SeroTracker. SeroTracker is a dashboard and data platform for SARS-CoV-2 serosurveys. Their team conducts an ongoing systematic review to track serosurveys (antibody testing-based surveillance efforts) around the world and visualize findings on this dashboard. Antibodies against SARS-CoV-2, the virus that causes COVID-19, indicate previous infection or vaccination.",
       "tags":["SeroTracker"],
       "data_quality":"Survey (third-party compilation)",
       "frequency":"daily",
