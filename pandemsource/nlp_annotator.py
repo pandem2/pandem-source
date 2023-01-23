@@ -41,7 +41,7 @@ class NLPAnnotator(worker.Worker):
         if self._models is None:
             self._models = self.get_models()
             self._model_aliases = {}
-            for mn, m in self._models.items():
+            for mn, m in self._models_info.items():
               if "alias" in m:
                 if isinstance(m["alias"], str):
                   self._model_aliases[mn] = m["alias"]
@@ -51,7 +51,6 @@ class NLPAnnotator(worker.Worker):
                 else:
                   raise ValueError(f"Unexpected type for alias in model {mn} it should be a str or dict")
 
-        breakpoint()
         self._model_languages = {l for info in self._models_info.values() for l in info["languages"]}
         # gathering information about nlp categories
         endpoints = self.model_endpoints()
@@ -88,11 +87,11 @@ class NLPAnnotator(worker.Worker):
             # Getting annotations for chunks using tensorflow server for all categories in language
             predictions = {}
             for m, info in self._models_info.items():
-              if m in info["languages"]: 
+              if lang in info["languages"]: 
                 # setting default value for predictions
                 predictions[m] = ["None" for i in range(0, len(to_annotate))]
                 
-                texts = (t["attrs"][text_field] for t in to_annotate)
+                texts = [t["attrs"][text_field] for t in to_annotate]
                 if info["source"] == "tf_server":
                   data = json.dumps({"instances": [[t] for t in texts]})
                   result = requests.post(f"{endpoints[m]}:predict", data = data, headers = {'content-type': "application/json"}).content
@@ -108,10 +107,12 @@ class NLPAnnotator(worker.Worker):
                     categories = info["categories"]
                     #getting positive predictions on step models
                     for i in range(0, len(to_annotate)):
-                      positivies = [categories[j] for j, score in enumerate(annotations[i]) if score >=0.5] 
+                      positives = [categories[j] for j, score in enumerate(annotations[i]) if score >=0.5] 
                       if len(positives) > 0:
-                        predictions[m][i] == positives
+                        predictions[m][i] = positives
+                    breakpoint()
                   elif "bio" in info:
+                    breakpoint()
                     bio = info["bio"]
                     if "token" not in info["bio"] or "class" not in info["bio"]:
                       raise ValueError(f"Invalid model configuration: Model {m} is an bio model but it does not contains either 'token' or 'class' accessor")
@@ -156,13 +157,28 @@ class NLPAnnotator(worker.Worker):
                             current_class = cl.split("-")[-1]
                             entity = [t]
                         predictions[m][i] = entities 
+                    breakpoint()
                   else:
                     raise ValueError(f"Invalid model configuration: Model {m} should have either bio or category properties")
 
-              elif info["source"] == "script":
-                raise NotImplementedError()
-              else:
-                raise ValueError(f"Invalid model configuration: Model {m} has invalid source {info['source']}")
+                elif info["source"] == "script":
+                  if "script" in info and "name" in info["script"] and "function" in info["script"] and "type" in info["script"]:
+                    if info["script"]["type"] != "python":
+                      raise NotImplementedError(f"Invalid configuration for model {m}. Only python scruipts are supported")
+                    # calling annotation function
+                    custom_annotate = util.get_custom(info["script"]["name"],info["script"]["function"])
+                    if custom_annotate is not None:
+                      annotations = custom_annotate(texts, [lang for t in texts])
+                      predictions[m] = [a if isinstance(a, list) else [a] for a in annotations]
+                      predictions[m] = [[v if v is not None else 'None' for v in a] for a in predictions[m]]
+                      breakpoint()
+                    else:
+                      raise ValueError(f"Could not find function {info['script']['function']} in script {info['script']['name']} as defined on model {m}")
+                  else:
+                    raise ValueError(f"Invalid configuration for model {m}. When type is script a scipt attribute needs to be set with name, function and type defined")
+                
+                else:
+                  raise ValueError(f"Invalid model configuration: Model {m} has invalid source {info['source']}")
 
             # creating annotated tuples per step
             model_classes = [[None for ss in s] for s in steps]
@@ -172,31 +188,36 @@ class NLPAnnotator(worker.Worker):
                   s = steps[j][k]
                   m = s.split(".")[0]
                   prop = s.split(".")[1] if "." in s else None
-                  c = predictions[m][i]
-                  if isinstance(c, str):
-                    model_classes[j][k] = c
-                  elif isintance(c, dict) and prop is not None:
-                    model_classes[j][k] = c[prop]
-                  else:
-                    raise ValueError(f"Unexpected model step {s} for prediction {c}")
+                  c = predictions[m][i].copy()
+                  model_classes[j][k] = c
+                  for h in range(0, len(c)):
+                    if isinstance(c[h], str):
+                      pass #c[h] = c[h]
+                    elif isinstance(c[h], dict) and prop is not None and prop in c[h]:
+                      c[h] = c[h][prop]
+                    else:
+                      raise ValueError(f"Unexpected model step {s} for prediction {c[h]}")
                     
                 #generating a tuple for each combination of positive predictions
                 
-              class_combs = [*itertools.product(model_classes)]
-              for classes in class_combs:
-                at = copy.deepcopy(to_annotate[i])
-                for m, c in allclasses:
-                  # if dic and point then extract value
-                  if isinstance(c, dict):
-                    for k, v in c.items():
-                      at["attrs"][model_aliases.get(f'{m}.{k}') or f'{m}-{k}'] = v
-                  elif isinstance(c, str):
-                    at["attrs"][model_aliases.get(m) or m] = c
-                  else:
-                    raise ValueError(f"Unexpected type for preciction {c} is is expected to be str or dic")
-                breakpoint()
-                annotated.append(at)
-            count = count + len(to_annotate)
+              for j in range(0, len(steps)):
+                class_combs = [*itertools.product(model_classes[j])]
+                for classes in class_combs:
+                  at = copy.deepcopy(to_annotate[i])
+                  for k in range(0, len(steps[j])):
+                    s = steps[j][k]
+                    m = s.split(".")[0]
+                    prop = s.split(".")[1] if "." in s else None
+                    breakpoint()
+                    c = classes[k]
+                    # if dic and point then extract value
+                    if prop is not None:
+                      at["attrs"][self._model_aliases.get(f'{m}.{prop}') or f'{m}-{prop}'] = c
+                    else:
+                      at["attrs"][self._model_aliases.get(m) or m] = c
+                  breakpoint()
+                  annotated.append(at)
+                  count = count + 1
             l.debug(f"{count} articles after NLP")
         # Annotating geographically using extra simplistic approach
         count = 0

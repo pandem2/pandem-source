@@ -12,14 +12,14 @@ pandem:
       models_path:  ""
       evaluation_steps:
         - ["aspect_stitched_unmasked.class"]
-        - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.token"]
-        - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.token", "suggestion"]
+        - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.entity"]
+        - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.entity", "suggestion"]
         - ["aspect_stitched_unmasked.class", "emotion_classification_multi"]
         - ["aspect_stitched_unmasked.class", "sentiment_classification"]
       models:
         emotion_classification_multi:
           alias: emotion
-          source: ts_server
+          source: tf_server
           categories:
             - anger
             - anticipation
@@ -32,7 +32,7 @@ pandem:
           languages: ["en"]
         sentiment_classification: 
           alias: sentiment
-          source: ts_server
+          source: tf_server
           categories:
             - negative
             - neutral
@@ -41,17 +41,17 @@ pandem:
         aspect_stitched_unmasked:
           alias: 
             class: aspect
-            token: sub-topic
-          source: ts_server
+            entity: sub-topic
+          source: tf_server
           bio:
             token: string_lookup_1
             class: string_lookup_2
           languages: ["en"]
         suggestion:
           alias: suggestion
-          source: scripto
+          source: script
           script:
-            name: nuig_suggestion
+            name: rule_based_suggestion_extraction
             function: annotate
             type: python
           languages: ["en"]
