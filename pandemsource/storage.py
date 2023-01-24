@@ -168,6 +168,7 @@ class Storage(worker.Worker):
                 record['id'] = 0
             df = pd.concat([df, pd.DataFrame([record])], ignore_index = True)
             df = df.set_index(df["id"].astype(int))
+            df.index.names = ["index"]
         else:
             for key, value in record.items():
                 df.at[int(record['id']), key] = value
