@@ -13,7 +13,7 @@ pandem:
       evaluation_steps:
         - ["aspect_stitched_unmasked.class"]
         - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.entity"]
-        - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.entity", "suggestion"]
+        - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.entity", "suggestion_classification", "suggestion"]
         - ["aspect_stitched_unmasked.class", "emotion_classification_multi"]
         - ["aspect_stitched_unmasked.class", "sentiment_classification"]
       models:
@@ -41,20 +41,32 @@ pandem:
         aspect_stitched_unmasked:
           alias: 
             class: aspect
-            entity: sub-topic
+            entity: sub_topic
           source: tf_server
           bio:
             token: string_lookup_1
             class: string_lookup_2
           languages: ["en"]
+        suggestion_classification:
+          alias: is_suggestion
+          source: tf_server
+          categories:
+            - non-suggestion
+            - suggestion 
+          languages: ["en"]
+          order: 1
         suggestion:
           alias: suggestion
           source: script
           script:
             name: rule_based_suggestion_extraction
             function: annotate
+            args: ["text", "is_suggestion"]
             type: python
+          order: 2
+          limit_top: 200
           languages: ["en"]
+
       use_sudo: false
       chunk_size: 500
       tensorflow_server_host:  "localhost"

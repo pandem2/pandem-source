@@ -112,13 +112,27 @@ def save_pickle_df(df, path):
   df.to_pickle(tpath)
   os.rename(tpath, path)
 
-def save_json(o, path, indent = None):
+def save_json(o, path, indent = None, new_lined = False):
   fd, fn = os.path.split(path)
   tpath = os.path.join(fd, f'.{fn}.tmp')
   with open(tpath, 'w') as f:
-    json.dump(o, f, cls=JsonEncoder, indent = indent)
+    if new_lined:
+      f.write("\n".join([json.dumps(l, cls = JsonEncoder) for l in o]))
+    else:
+      json.dump(o, f, cls=JsonEncoder, indent = indent)
   os.rename(tpath, path)
 
+def load_json(path, new_lined = False):
+  try:
+    with open(path, 'r') as f:
+      if new_lined:
+        o = [json.loads(l) for l in f]
+      else:
+        o = json.load(f)
+    return o
+  except Exception as e:
+    l.error(f"Error found while reading JSON file {path}")
+    raise e
 
 def compress(x, get_id = {}, get_val = {}, i = [0]):
   if type(x) == dict:

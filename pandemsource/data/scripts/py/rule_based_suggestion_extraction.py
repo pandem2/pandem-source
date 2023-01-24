@@ -20,7 +20,7 @@ class Config:
     trails = ("should", "could ", "would", "option", "ensure", "how about" "allow", "think", "wish",
               "please", "enable", "include", "need", " able", "needs", "better", "suggest", "propose", "provide", "add",
               "detect", "hope", "must")
-    ends = ("or", "for example", "by", "unless", "", " :", "\(", "but", ",", "!")
+    ends = ('\\bor\\', 'for example', '\\bby\\b', '\\b”unless\\b', ':', '\\(', '\\)', '\\bbut\\b', ',', '\\!', '\\.', "\\n", "\\-")
 
     begining_words = ['you', 'your', 'would', 'please', 'great', 'this', 'tell', 'have', 'been',
                       'much', 'wish', 'also', 'is', 'like', 'to', 'be', 'that', 'if', 'ing', 'ity', 'ed', 'a', 'one']
@@ -62,8 +62,8 @@ class DataPreprocessing:
         temp = re.sub("[\'\"]", "", temp) # to avoid removing contractions in english
         temp = re.sub("@[A-Za-z0-9_]+","<user>", temp)
         temp = re.sub(r'http\S+', '<url>', temp)
-        temp = temp.replace('\\n','')
-        temp = re.sub('\n','', temp)
+        temp = temp.replace('\\n',' ')
+        temp = re.sub('\n',' ', temp)
         temp = temp.split()
         temp = " ".join(word for word in temp)
         # print(temp)
@@ -81,8 +81,8 @@ class DataPreprocessing:
         # print('-------------------------------------------------------')
         # print('Getting tweets that are marked as containing suggestion by SMA tool')
         # print()
-        sugg_df = df[df.label == 1]
-        sugg_df = sugg_df.drop('label', axis=1)
+        df['cleaned_sentence'] = np.where(df["label"] == 1, df['cleaned_sentence'] , '')
+        sugg_df = df.drop('label', axis=1)
         # print('Total tweets that might contain suggestions: ', len(sugg_df))
         # print('-------------------------------------------------------')
 
@@ -260,31 +260,20 @@ class ExtractSpan:
 
     def get_span(self, sugg_df):
         result = []
+        re_end ="|".join(config.ends)
+        re_trails = "\\b"+("\\b|\\b".join(config.trails))+"\\b" 
+
         for i in range(len(sugg_df)):
             s = sugg_df['cleaned_sentence'][i]
-            # s = 'i would like to be able to pull in bing news search results for a specified keyword'
             if s is None:
-              result.append(None)
-            else:
-              s = s.lstrip()
-              suggestions = []
-              for j in config.trails:
-                  for k in config.ends:
-                      # get suggestions between suggestion word (left word priority) and end word (left word priority)
-                      temp_sugg = self.find_between(s, j, k)
-                      if len(temp_sugg) > 0:
-                          sugg = temp_sugg
-                          if (sugg not in suggestions) and (len(sugg.split()) >= 2):
-                              # print(sugg)
-                              suggestions.append(sugg)
-
-                      # get suggestions between suggestion word (right word priority) and end word (right word priority)
-                      temp_sugg = self.find_between_r(s, j, k)
-                      if len(temp_sugg) > 0:
-                          sugg = temp_sugg
-                          if (sugg not in suggestions) and (len(sugg.split()) >= 2):
-                              suggestions.append(sugg)
+              s = ""
+            parts = re.split(re_end, s)
+            sugg_parts = [p for p in parts if re.findall(re_trails, p)]
+            suggestions = [re.split(re_trails, s)[-1].strip() for s in sugg_parts] 
+            if len(suggestions)>0:
               result.append(suggestions)
+            else: 
+              result.append(None)
         return result
 
     def filter_span(self, result):
@@ -365,18 +354,26 @@ class ExtractSpan:
         input: CSV. If not provided will be picked from config.inputfile
         output: CSV file with suggestions included
         """
-        
         df = self.dataprep.load_and_clean_data(df)
 
         # extract suggestions from the sentence
         result = self.get_span(df)
 
         # pick most suitable suggestion for a sentence
-        filtered_span = self.filter_span(result)
+        #filtered_span = self.filter_span(result)
 
         # clean the suggestion
-        final_span = self.get_final_span(filtered_span)
-
+        #final_span = self.get_final_span(filtered_span)
+        final_span = result
+        for i in range(0, len(result)):
+          suggs = result[i]
+          if suggs is not None:
+            prio = [(s, len(re.split("\\W", s))) for s in suggs]
+            prio = [(s, l) for s, l in prio]
+            prio = sorted(prio, key = lambda v: v[1] if v[1] > 1 else v[1] + 100)
+            sugg = [s for s, l in prio][0]
+            final_span[i] = sugg
+        
         # if BIO annotaion is required as part of output
         if with_tag == True:
             corpus = df['cleaned_sentence']
@@ -406,8 +403,8 @@ class ExtractSpan:
             df.loc[df['Suggestion'] == '[]', 'Suggestion'] = None
             return df
 
-def annotate(text, lang = None):
+def annotate(text, suggestion):
   extract = ExtractSpan()
   ix = [*range(0, len(text))]
-  df = extract.get_span_from_df(pd.DataFrame({"index":ix, "text":text, "label":[1 for i in ix]}))
+  df = extract.get_span_from_df(pd.DataFrame({"index":ix, "text":text, "label":[(1 if s == ["suggestion"] else 0) for s in suggestion]}))
   return df["Suggestion"].to_list()

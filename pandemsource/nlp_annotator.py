@@ -33,6 +33,10 @@ class NLPAnnotator(worker.Worker):
           self._pipeline_proxy = self._orchestrator_proxy.get_actor('pipeline').get().proxy() 
           self._variables_proxy = self._orchestrator_proxy.get_actor('variables').get().proxy()
           self._models = None
+          self._model_stats = {}
+          self._stats_path = util.pandem_path("files", "nlp")
+          if not os.path.exists(self._stats_path):
+            os.makedirs(self._stats_path)
 
     def annotate(self, list_of_tuples, path, job):
       if self.run:
@@ -50,6 +54,9 @@ class NLPAnnotator(worker.Worker):
                     self._model_aliases[f"{mn}.{k}"] = v
                 else:
                   raise ValueError(f"Unexpected type for alias in model {mn} it should be a str or dict")
+              self.load_stats(mn)
+
+            self._alias_models = {v:k for k,v in self._model_aliases.items()}
 
         self._model_languages = {l for info in self._models_info.values() for l in info["languages"]}
         # gathering information about nlp categories
@@ -82,14 +89,15 @@ class NLPAnnotator(worker.Worker):
         annotated = []
         count = 0
         l.debug(f"{len(list_of_tuples['tuples'])} articles to annotate ")
+        ordered_models = sorted(self._models_info.items(), key = lambda p: p[1].get("order") or 0)
         for lang in self._model_languages:
           for to_annotate in util.slices((t for t in list_of_tuples['tuples'] if "attrs" in t and text_field in t["attrs"] and lang_field in t["attrs"] and t["attrs"][lang_field]==lang), self._chunk_size):
             # Getting annotations for chunks using tensorflow server for all categories in language
             predictions = {}
-            for m, info in self._models_info.items():
+            for m, info in ordered_models:
               if lang in info["languages"]: 
                 # setting default value for predictions
-                predictions[m] = ["None" for i in range(0, len(to_annotate))]
+                predictions[m] = [None for i in range(0, len(to_annotate))]
                 
                 texts = [t["attrs"][text_field] for t in to_annotate]
                 if info["source"] == "tf_server":
@@ -110,15 +118,13 @@ class NLPAnnotator(worker.Worker):
                       positives = [categories[j] for j, score in enumerate(annotations[i]) if score >=0.5] 
                       if len(positives) > 0:
                         predictions[m][i] = positives
-                    breakpoint()
                   elif "bio" in info:
-                    breakpoint()
                     bio = info["bio"]
                     if "token" not in info["bio"] or "class" not in info["bio"]:
                       raise ValueError(f"Invalid model configuration: Model {m} is an bio model but it does not contains either 'token' or 'class' accessor")
                     attr_tok = info["bio"]["token"]
                     attr_cla = info["bio"]["class"]
-                    predictions[m] = ["None" for i in range(0, len(annotations))]
+                    predictions[m] = [None for i in range(0, len(annotations))]
                     for i in range(0, len(to_annotate)):
                       tagged = [j for j, t in enumerate(annotations[i][attr_cla]) if t != 'O' and annotations[i][attr_tok][j]!= "[PAD]"]
                       if len(tagged) > 0:
@@ -157,7 +163,6 @@ class NLPAnnotator(worker.Worker):
                             current_class = cl.split("-")[-1]
                             entity = [t]
                         predictions[m][i] = entities 
-                    breakpoint()
                   else:
                     raise ValueError(f"Invalid model configuration: Model {m} should have either bio or category properties")
 
@@ -168,10 +173,29 @@ class NLPAnnotator(worker.Worker):
                     # calling annotation function
                     custom_annotate = util.get_custom(info["script"]["name"],info["script"]["function"])
                     if custom_annotate is not None:
-                      annotations = custom_annotate(texts, [lang for t in texts])
-                      predictions[m] = [a if isinstance(a, list) else [a] for a in annotations]
-                      predictions[m] = [[v if v is not None else 'None' for v in a] for a in predictions[m]]
-                      breakpoint()
+                      args = info["script"].get("args") or ["text"]
+                      argvals = [None]* len(args)
+                      for iar in range(0, len(args)):
+                        if args[iar] == "text":
+                          argvals[iar] = texts
+                        elif args[iar] == "lang":
+                          argvals[iar] = [lang for t in texts]
+                        elif (self._alias_models.get(args[iar]) or args[iar]) in predictions:
+                          argvals[iar] = predictions[self._alias_models.get(args[iar]) or args[iar]]
+                        else:
+                          raise ValueError(f"The argument of models can only be 'text', 'lang' or a model/alias with a lower evaluation order. Cannot evaluate {args[iar]} for model '{m}'")
+                      annotations = custom_annotate(*argvals)
+                      ann = annotations.copy()
+                      for ia in range(0, len(ann)):
+                        if isinstance(ann[ia], str):
+                          ann[ia] = [ann[ia]]
+                        elif isinstance(ann[ia], list):
+                          pass
+                        elif ann[ia] is None or ann[ia]== '':
+                          ann[ia] = None
+                        else:
+                          raise ValueError(f"Invalid return type for model {m}: {ann[ia]}")
+                      predictions[m] = ann
                     else:
                       raise ValueError(f"Could not find function {info['script']['function']} in script {info['script']['name']} as defined on model {m}")
                   else:
@@ -179,6 +203,10 @@ class NLPAnnotator(worker.Worker):
                 
                 else:
                   raise ValueError(f"Invalid model configuration: Model {m} has invalid source {info['source']}")
+
+            # updating stats
+            for m, preds in predictions.items():
+                self.update_stats(m, preds)
 
             # creating annotated tuples per step
             model_classes = [[None for ss in s] for s in steps]
@@ -188,7 +216,13 @@ class NLPAnnotator(worker.Worker):
                   s = steps[j][k]
                   m = s.split(".")[0]
                   prop = s.split(".")[1] if "." in s else None
-                  c = predictions[m][i].copy()
+                  if predictions[m][i] is None:
+                    c = ['None']
+                  else:
+                    c = predictions[m][i].copy()
+                  # filtering to top N categories if defined on algorithl
+                  if self._models_info[m].get("limit_top"):
+                    c = [cc for cc in c if cc in self._model_stats[m] and self._model_stats[m][1]> self._models_info[m]["limit_top"]]
                   model_classes[j][k] = c
                   for h in range(0, len(c)):
                     if isinstance(c[h], str):
@@ -198,27 +232,34 @@ class NLPAnnotator(worker.Worker):
                     else:
                       raise ValueError(f"Unexpected model step {s} for prediction {c[h]}")
                     
-                #generating a tuple for each combination of positive predictions
+              #generating a tuple for each combination of positive predictions
                 
               for j in range(0, len(steps)):
-                class_combs = [*itertools.product(model_classes[j])]
+                class_combs = [*itertools.product(*model_classes[j])]
                 for classes in class_combs:
                   at = copy.deepcopy(to_annotate[i])
                   for k in range(0, len(steps[j])):
                     s = steps[j][k]
                     m = s.split(".")[0]
                     prop = s.split(".")[1] if "." in s else None
-                    breakpoint()
                     c = classes[k]
                     # if dic and point then extract value
                     if prop is not None:
                       at["attrs"][self._model_aliases.get(f'{m}.{prop}') or f'{m}-{prop}'] = c
                     else:
                       at["attrs"][self._model_aliases.get(m) or m] = c
-                  breakpoint()
                   annotated.append(at)
                   count = count + 1
+            # hhh = 0
+            # for aaa in annotated:
+            #   hhh = hhh + 1
+            #   xxx = {k:v for k,v in aaa["attrs"].items() if (v != "None" and v != "non-suggestion")  and k in ["is_suggestion", "suggestion"]}#["aspect", "sub-topic", "suggestion", "emotion", "sentiment"]}
+            #   if len(xxx) > 1:
+            #     print(f'{hhh} - {xxx}')
             l.debug(f"{count} articles after NLP")
+        # Saving stats
+        self.save_stats()
+
         # Annotating geographically using extra simplistic approach
         count = 0
         geo_annotated = []
@@ -270,5 +311,44 @@ class NLPAnnotator(worker.Worker):
     def model_endpoints(self):
       return {m:f"{self._tf_url}/v1/models/{m}" for m in self.get_models()}
 
-       
+    def load_stats(self, model):
+      stats_path = os.path.join(self._stats_path, f"{model}.json")
+      if os.path.exists(stats_path):
+        ml = util.load_json(stats_path, new_lined = True)
+      else:
+        ml = []
+      self._model_stats[model] = {}
+      for i, r in enumerate(ml):
+        cat = r[0]
+        if isinstance(cat, list):
+          for j in range(0, len(cat)):
+            if isinstance(cat[j], list):
+              cat[j] = tuple(cat[j])
+          cat = tuple(cat)
+        rank = i
+        freq = r[1]
+        self._model_stats[model][cat] = (freq, rank)
+    
+    def update_stats(self, m, preds):
+      # Updatubng counters
+      for cat in preds:
+        if cat is not None:
+          for p in cat:
+            if isinstance(p, dict):
+              p = tuple(sorted(p.items(), key = lambda p:p[0])) 
+            if p not in self._model_stats[m]:
+              self._model_stats[m][p] = (1, None)
+            else:
+              self._model_stats[m][p] = (self._model_stats[m][p][0] + 1, None)
+      
+      # calculating stats rankings
+      ranked = [*enumerate(sorted(self._model_stats[m].items(), key = lambda p:-p[1][0]))]
+      self._model_stats[m] = {cat:(freq, rank) for rank, (cat, (freq, old_rank)) in ranked[0:10000]}
 
+    def save_stats(self):
+      for m, stats in self._model_stats.items():
+        stats_path = os.path.join(self._stats_path, f"{m}.json")
+        ranked = [*enumerate(sorted(self._model_stats[m].items(), key = lambda p:-p[1][0]))]
+        stat_list = [[cat, freq, rank] for rank, (cat, (freq, old_rank)) in ranked[0:10000]]
+        util.save_json(stat_list, stats_path, new_lined = True)
+       
