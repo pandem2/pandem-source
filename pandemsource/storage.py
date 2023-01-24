@@ -163,10 +163,11 @@ class Storage(worker.Worker):
         df = self.db_tables[db_class]
         if not 'id' in  record:
             if df.shape[0] > 0:
-                record['id'] = df.index.max()+1
+                record['id'] = int(df["id"].max()+1)
             else:
                 record['id'] = 0
             df = pd.concat([df, pd.DataFrame([record])], ignore_index = True)
+            df = df.set_index(df["id"].astype(int))
         else:
             for key, value in record.items():
                 df.at[int(record['id']), key] = value
