@@ -1,7 +1,7 @@
 {
     "scope":{
         "source":"ecdc-covid19-weekly-hospital-occupancy-variants",
-        "source_description":"Hospital current occupancy for COVID-19 & variant Dataset simulated by an algorithm developed by the Catholic University of Leuven Algorithm https://github.com/maous1/Pandem2simulator ",
+        "source_description":"Hospital current occupancy for COVID-19 & variant Dataset simulated with the Catholic University of Leuven Algorithm https://github.com/maous1/Pandem2simulator ",
         "tags":["ECDC COVID-19 Simulated"],
         "data_quality":"simulated",
         "frequency":"daily",
