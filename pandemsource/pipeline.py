@@ -199,7 +199,7 @@ class Pipeline(worker.Worker):
               done = False
               path = paths[ipath]
               if self.job_to_annotate(job):
-                self.send_to_annotate(tuples[path], path, job)
+                self.send_to_annotate(tuples[path], path, job, last_in_job = ipath + 1 == len(paths))
               elif ipath == 0:
                 self.send_to_aggregate(tuples, job)
           ipath = ipath + 1
@@ -399,8 +399,8 @@ class Pipeline(worker.Worker):
         else:
             self.update_job_step(job, job["step"], 0.4 + progress)
 
-    def send_to_annotate(self, tuples, path, job):
-        self._nlp_proxy.annotate(tuples, path, job)
+    def send_to_annotate(self, tuples, path, job, last_in_job):
+        self._nlp_proxy.annotate(tuples, path, job, last_in_job)
 
     def annotate_end(self, tuples, path, job):
         if job["status"] == "failed":

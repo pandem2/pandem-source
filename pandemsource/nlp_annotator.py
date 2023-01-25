@@ -38,7 +38,7 @@ class NLPAnnotator(worker.Worker):
           if not os.path.exists(self._stats_path):
             os.makedirs(self._stats_path)
 
-    def annotate(self, list_of_tuples, path, job):
+    def annotate(self, list_of_tuples, path, job, last_in_job):
       if self.run:
         # getting tuples from cache
         list_of_tuples = list_of_tuples.value() 
@@ -84,7 +84,14 @@ class NLPAnnotator(worker.Worker):
 
         text_field = "article_text"
         lang_field = "article_language"
-     
+        # checking if the job has been already processed
+        processed_jobs_path = os.path.join(self._stats_path, f"jobs.json")
+        if os.path.exists(processed_jobs_path):
+          job_ids = util.load_json(processed_jobs_path, new_lined = True)
+          update_stats = int(job["id"]) not in job_ids
+        else:
+          update_stats = True
+          job_ids = []
         
         annotated = []
         count = 0
@@ -187,12 +194,12 @@ class NLPAnnotator(worker.Worker):
                       annotations = custom_annotate(*argvals)
                       ann = annotations.copy()
                       for ia in range(0, len(ann)):
-                        if isinstance(ann[ia], str):
+                        if ann[ia] is None or ann[ia]== '':
+                          ann[ia] = None
+                        elif isinstance(ann[ia], str):
                           ann[ia] = [ann[ia]]
                         elif isinstance(ann[ia], list):
                           pass
-                        elif ann[ia] is None or ann[ia]== '':
-                          ann[ia] = None
                         else:
                           raise ValueError(f"Invalid return type for model {m}: {ann[ia]}")
                       predictions[m] = ann
@@ -205,7 +212,8 @@ class NLPAnnotator(worker.Worker):
                   raise ValueError(f"Invalid model configuration: Model {m} has invalid source {info['source']}")
 
             # updating stats
-            for m, preds in predictions.items():
+            if update_stats:
+              for m, preds in predictions.items():
                 self.update_stats(m, preds)
 
             # creating annotated tuples per step
@@ -222,7 +230,9 @@ class NLPAnnotator(worker.Worker):
                     c = predictions[m][i].copy()
                   # filtering to top N categories if defined on algorithl
                   if self._models_info[m].get("limit_top"):
-                    c = [cc for cc in c if cc in self._model_stats[m] and self._model_stats[m][1]> self._models_info[m]["limit_top"]]
+                    if c != ["None"]:
+                      c = [cc for cc in c if cc in self._model_stats[m] and self._model_stats[m][cc][1] < self._models_info[m]["limit_top"] and self._model_stats[m][cc][0] > 1]
+                    
                   model_classes[j][k] = c
                   for h in range(0, len(c)):
                     if isinstance(c[h], str):
@@ -258,7 +268,11 @@ class NLPAnnotator(worker.Worker):
             #     print(f'{hhh} - {xxx}')
             l.debug(f"{count} articles after NLP")
         # Saving stats
-        self.save_stats()
+        if update_stats:
+          self.save_stats()
+          if last_in_job:
+            job_ids.append(int(job["id"]))
+            util.save_json(job_ids, processed_jobs_path, new_lined = True)
 
         # Annotating geographically using extra simplistic approach
         count = 0
@@ -330,7 +344,7 @@ class NLPAnnotator(worker.Worker):
         self._model_stats[model][cat] = (freq, rank)
     
     def update_stats(self, m, preds):
-      # Updatubng counters
+      # Updatibng counters
       for cat in preds:
         if cat is not None:
           for p in cat:
