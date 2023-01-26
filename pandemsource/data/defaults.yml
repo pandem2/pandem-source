@@ -42,7 +42,7 @@ pandem:
           alias: 
             class: aspect
             entity: sub_topic
-            limit_top: 100
+          limit_top: 100
           source: tf_server
           bio:
             token: string_lookup_1
