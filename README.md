@@ -107,12 +107,12 @@ If the command `python -m pandemsource start -d --no-nlp` does not work. Please 
 
 (In your terminal)
 ```bash
-sudo apt install libxml2-dev libsodium-dev libssl-dev libcurl4-openssl-dev
+sudo apt install libxml2-dev libsodium-dev libssl-dev libcurl4-openssl-dev libgdal-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev 
 ```
 
 (In the R interpreter)
 ```R
-install.packages(c("epitweetr", "dplyr", "shiny", "plotly", "DT", "jsonlite", "httr"))
+install.packages(c("epitweetr", "dplyr", "shiny", "plotly", "DT", "jsonlite", "httr", "XML", "ggplot2", "epitweetr", "reticulate", "seqinr", "readr"))
 ```
 
 
