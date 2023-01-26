@@ -132,6 +132,7 @@ class NLPAnnotator(worker.Worker):
                     attr_tok = info["bio"]["token"]
                     attr_cla = info["bio"]["class"]
                     predictions[m] = [None for i in range(0, len(annotations))]
+                    current_class = ''
                     for i in range(0, len(to_annotate)):
                       tagged = [j for j, t in enumerate(annotations[i][attr_cla]) if t != 'O' and annotations[i][attr_tok][j]!= "[PAD]"]
                       if len(tagged) > 0:

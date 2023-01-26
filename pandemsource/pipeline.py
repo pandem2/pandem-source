@@ -416,7 +416,6 @@ class Pipeline(worker.Worker):
     def aggregate_end(self, tuples, var, progress, job): 
         if job["status"] == "failed":
           return
-        
         self.job_aggrtuples[job["id"]][var] = tuples
         
         if progress == 1:
