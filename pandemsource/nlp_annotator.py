@@ -232,7 +232,11 @@ class NLPAnnotator(worker.Worker):
                   # filtering to top N categories if defined on algorithl
                   if self._models_info[m].get("limit_top"):
                     if c != ["None"]:
-                      c = [cc for cc in c if cc in self._model_stats[m] and self._model_stats[m][cc][1] < self._models_info[m]["limit_top"] and self._model_stats[m][cc][0] > 1]
+                      c = [cc for cc in c if 
+                        self.get_pred_key(cc) in self._model_stats[m] 
+                          and self._model_stats[m][self.get_pred_key(cc)][1] < self._models_info[m]["limit_top"] 
+                          and self._model_stats[m][self.get_pred_key(cc)][0] > 1
+                      ]
                     
                   model_classes[j][k] = c
                   for h in range(0, len(c)):
@@ -349,8 +353,7 @@ class NLPAnnotator(worker.Worker):
       for cat in preds:
         if cat is not None:
           for p in cat:
-            if isinstance(p, dict):
-              p = tuple(sorted(p.items(), key = lambda p:p[0])) 
+            p = self.get_pred_key(p) 
             if p not in self._model_stats[m]:
               self._model_stats[m][p] = (1, None)
             else:
@@ -366,4 +369,12 @@ class NLPAnnotator(worker.Worker):
         ranked = [*enumerate(sorted(self._model_stats[m].items(), key = lambda p:-p[1][0]))]
         stat_list = [[cat, freq, rank] for rank, (cat, (freq, old_rank)) in ranked[0:10000]]
         util.save_json(stat_list, stats_path, new_lined = True)
-       
+    
+    def get_pred_key(self, p):
+      if isinstance(p, dict):
+        return tuple(sorted(p.items(), key = lambda p:p[0]))
+      else: 
+        return p
+      
+      self._
+
