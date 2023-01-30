@@ -482,7 +482,7 @@ class TimeSerieHandler(tornado.web.RequestHandler):
                   date = dtime[0:10]
                   if fr is None or fr <= date and to is None or to >= date:
                     if (date, datevar) not in resp:
-                      resp[(date, datevar)] = {'date':date, 'date_var':datevar, 'indicator':indicator}#, "key":json.dumps({k:v for k,v in key})
+                      resp[(date, datevar)] = {'date':date, 'date_var':datevar, 'indicator':indicator, "key":json.dumps({k:v for k,v in key})}
                       #resp[(date, datevar)].update({k:v for k,v in keys})
                     v = value if value is None or not math.isinf(float(value)) else None
                     if "value" not in resp[(date, datevar)]:
