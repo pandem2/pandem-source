@@ -432,6 +432,18 @@ class TimeSerieHandler(tornado.web.RequestHandler):
         description: Time series available in PANDEM-2
         operationId: getTimeSeries
         parameters:
+          - name: from
+            in: query
+            description: date from filter
+            required: false
+            schema:
+              type: string
+          - name: to
+            in: query
+            description: date to filter
+            required: false
+            schema:
+              type: strinng
         responses:
             '200':
               description: List of time series available
@@ -449,6 +461,8 @@ class TimeSerieHandler(tornado.web.RequestHandler):
         variables_proxy = self.variables_proxy
         var_dic = await variables_proxy.get_variables()
         query = tornado.escape.json_decode(self.request.body)
+        fr = self.get_argument('from', default = None)
+        to  = self.get_argument('to', default = None)
         resp = {}
         if query is not None:
           comb = [(k, v) for (k,v) in query.items() if v is not None and k != 'indicator' and k != 'source']
@@ -466,15 +480,16 @@ class TimeSerieHandler(tornado.web.RequestHandler):
                 value = t["value"]
                 for datevar, dtime in t["attrs"].items():
                   date = dtime[0:10]
-                  if (date, datevar) not in resp:
-                    resp[(date, datevar)] = {'date':date, 'date_var':datevar, "key":json.dumps({k:v for k,v in key})}
-                    #resp[(date, datevar)].update({k:v for k,v in keys})
-                  if var not in resp[(date, datevar)]:
-                    resp[(date, datevar)]["indicator"] = indicator
-                    resp[(date, datevar)]["value"] = value if value is None or not math.isinf(float(value)) else None
-                  else :
-                    # TODO: change the aggregation function depending on the unit
-                    resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + value
+                  if fr is None or fr <= date and to is None or to >= date:
+                    if (date, datevar) not in resp:
+                      resp[(date, datevar)] = {'date':date, 'date_var':datevar, 'indicator':indicator}#, "key":json.dumps({k:v for k,v in key})
+                      #resp[(date, datevar)].update({k:v for k,v in keys})
+                    v = value if value is None or not math.isinf(float(value)) else None
+                    if "value" not in resp[(date, datevar)]:
+                      resp[(date, datevar)]["value"] = v
+                    else :
+                      # TODO: change the aggregation function depending on the unit
+                      resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + v
         response = {"timeserie":list(resp.values())}
         self.write(response)
 
@@ -517,7 +532,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
               type: string
           - name: key
             in: query
-            description: Adds time series key to call timeserue endpoint
+            description: Adds time series key to call timeserie endpoint
             required: false
             schema:
               type: bool
