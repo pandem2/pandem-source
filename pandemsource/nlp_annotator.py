@@ -298,7 +298,8 @@ class NLPAnnotator(worker.Worker):
               if match is not None:
                 matched_alias = match.group()
                 at = copy.deepcopy(t)
-                at["attrs"][geo_var] = geo_aliases[geo_var][matched_alias]
+                #TODO remove the country limit of two first after performance fixes
+                at["attrs"][geo_var] = geo_aliases[geo_var][matched_alias][0:2]
                 geo_annotated.append(at)
               t["attrs"][geo_var] = "All"
             count = count + 1
@@ -315,7 +316,8 @@ class NLPAnnotator(worker.Worker):
           if 'attrs' in t and lang_field in t['attrs']:
             t['attrs'].pop(lang_field)
             t['attrs'].pop(text_field)
-        
+
+ 
         ret = self._storage_proxy.to_job_cache(job["id"], f"std_{path}", list_of_tuples).get()
         self._pipeline_proxy.annotate_end(ret, path = path, job = job)
         return ret
