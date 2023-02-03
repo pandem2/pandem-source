@@ -83,7 +83,7 @@ def main(a):
   start_parser.set_defaults(func = do_start)
   
   # setup 
-  setup_parser = subs.add_parser("setup", help = "reset configuration as system defaults")
+  setup_parser = subs.add_parser("setup", help = "Setting up PANDEM source components")
   
   setup_parser.add_argument(
     "-v", 
