@@ -10,9 +10,9 @@
 '''
 
 import re
-from .config import Config
+from suggestion_extraction.config import Config
 import typing
-from .data_preprocessing import DataPreprocessing
+from suggestion_extraction.data_preprocessing import DataPreprocessing
 import csv
 import pandas as pd
 
@@ -27,7 +27,7 @@ class ExtractSpan:
     def include_terms(self):
         terms = set()
 
-        df = pd.read_csv(config.topic_clusters)
+        df = pd.read_csv('data/topic_clusters.csv')
         terms = set()
 
         for i in range(len(df)):
@@ -176,8 +176,6 @@ class ExtractSpan:
         for i in range(len(sugg_df)):
             s = sugg_df['cleaned_sentence'][i]
             # s = 'i would like to be able to pull in bing news search results for a specified keyword'
-            if s is None:
-              s = ''
             s = s.lstrip()
             suggestions = []
             for j in config.trails:
@@ -269,13 +267,13 @@ class ExtractSpan:
     def get_span_from_text_list(self, lst_text) -> typing.List[str]:
         return list(map(lambda x: self.get_span_from_text(x), lst_text))
 
-    def get_span_from_df(self, df, with_tag=False):
+    def get_span_from_df(self, csv_file=config.input_file, with_tag=False):
         """
         input: CSV. If not provided will be picked from config.inputfile
         output: CSV file with suggestions included
         """
         
-        df = self.dataprep.load_and_clean_data(df)
+        df = self.dataprep.load_and_clean_data(csv_file)
 
         # extract suggestions from the sentence
         result = self.get_span(df)
@@ -291,28 +289,32 @@ class ExtractSpan:
             corpus = df['cleaned_sentence']
             tag = self.tagging_suggestion(final_span, corpus)
             
-            df = pd.DataFrame({
-                   'Sentence':df['sentence'],
-                   'Cleaned_stentence':df['cleaned_sentence'],
-                   'Tag':tag,
-                   'Suggestion':final_span
-                 })
+            # write result to csv
+            with open('output/Suggestion_dataset_with_tag.csv', 'w') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Sentence','Cleaned_stentence','Tag','Suggestion'])
+                writer.writerows(zip(df['sentence'], df['cleaned_sentence'], tag, final_span))
+            f.close()
 
-            df.loc[df['Suggestion'] == '[]', 'Suggestion'] = None
-            return df
+            df = pd.read_csv('output/Suggestion_dataset_with_tag.csv')
+            df = df[df.Suggestion != '[]']
+            # df.loc[df['Suggestion'] == '[]', 'Suggestion'] = None
+            df.to_csv('output/Suggestion_dataset_with_tag.csv', index=False)
 
         # default: if only suggestion is required as output
         else:
             # write result to csv
-            df = pd.DataFrame({
-                   'Sentence':df['sentence'],
-                   'Cleaned_stentence':df['cleaned_sentence'],
-                   'Suggestion':final_span
-                 })
+            with open('output/Suggestion_dataset.csv', 'w') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Sentence','Cleaned_stentence','Suggestion'])
+                writer.writerows(zip(df['sentence'], df['cleaned_sentence'], final_span))
+            f.close()
 
-            #df = df[df.Suggestion != '[]']
-            df.loc[df['Suggestion'] == '[]', 'Suggestion'] = None
-            return df
+            df = pd.read_csv('output/Suggestion_dataset.csv')
+            df = df[df.Suggestion != '[]']
+            # df.loc[df['Suggestion'] == '[]', 'Suggestion'] = None
+            df.to_csv('output/Suggestion_dataset.csv', index=False)
+        print('***********************  DONE  ************************')
 
 
 # sample usage

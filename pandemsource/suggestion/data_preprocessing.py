@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import re
 
-from .config import Config
+from suggestion_extraction.config import Config
 
 config = Config
 
@@ -34,23 +34,23 @@ class DataPreprocessing:
         # print(temp)
         return temp
 
-    def load_and_clean_data(self, df):
-        #print('-------------------------------------------------------')
-        #print('Reading input file')
+    def load_and_clean_data(self, input_file=config.input_file):
+        print('-------------------------------------------------------')
+        print('Reading input file')
+        df = pd.read_csv(input_file)
         # print(df.head())
         # read tweet text column and sugg_label column
         df = df.iloc[: , 1:]
         df.columns = ['sentence','label']
         df['cleaned_sentence'] = df['sentence'].apply(lambda x: self.clean_tweet(x))
-        df['cleaned_sentence'] = np.where(df["label"] == 1, df['cleaned_sentence'] , '')
-        #print()
-        #print('Total number of tweets: ', len(df))
-        ## print('-------------------------------------------------------')
-        #print('Getting tweets that are marked as containing suggestion by SMA tool')
-        #print()
-        #sugg_df = df[df.label == 1]
-        sugg_df = df.drop('label', axis=1)
-        #print('Total tweets that might contain suggestions: ', len(sugg_df))
+        print()
+        print('Total number of tweets: ', len(df))
+        # print('-------------------------------------------------------')
+        print('Getting tweets that are marked as containing suggestion by SMA tool')
+        print()
+        sugg_df = df[df.label == 1]
+        sugg_df = sugg_df.drop('label', axis=1)
+        print('Total tweets that might contain suggestions: ', len(sugg_df))
         # print('-------------------------------------------------------')
 
         for i, text in enumerate(sugg_df['cleaned_sentence']):
@@ -60,10 +60,10 @@ class DataPreprocessing:
                 sugg_df['cleaned_sentence'][i] = None
 
         # keep only rows that contain suggestion words
-        #sugg_df = sugg_df.dropna()
-        #sugg_df = sugg_df.reset_index()
+        sugg_df = sugg_df.dropna()
+        sugg_df = sugg_df.reset_index()
 
-        #print('Total tweets that contain "suggestion words" in it: ', len(sugg_df))
+        print('Total tweets that contain "suggestion words" in it: ', len(sugg_df))
         # print(sugg_df.head())
         return sugg_df
 

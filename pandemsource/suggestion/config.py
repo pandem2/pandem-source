@@ -6,7 +6,6 @@
 @Time    :   2022/06/09 17:02:42
 @Desc    :   None
 '''
-import pkg_resources
 
 # import os
 #
@@ -15,7 +14,8 @@ import pkg_resources
 
 
 class Config:
-    topic_clusters = pkg_resources.resource_filename("pandemsource", "data/suggestion/topic_clusters.csv")
+    input_file = 'data/temp_sug.csv'
+    output_path = 'output/suggestion_span.csv'
 
     trails = ("should", "could ", "would", "option", "ensure", "how about" "allow", "think", "wish",
               "please", "enable", "include", "need", " able", "needs", "better", "suggest", "propose", "provide", "add",
