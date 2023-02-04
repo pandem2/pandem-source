@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import re
 
-from suggestion_extraction.config import Config
+from .config import Config
 
 config = Config
 

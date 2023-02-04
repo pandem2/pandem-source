@@ -10,9 +10,9 @@
 '''
 
 import re
-from suggestion_extraction.config import Config
+from .config import Config
 import typing
-from suggestion_extraction.data_preprocessing import DataPreprocessing
+from .data_preprocessing import DataPreprocessing
 import csv
 import pandas as pd
 
@@ -27,7 +27,7 @@ class ExtractSpan:
     def include_terms(self):
         terms = set()
 
-        df = pd.read_csv('data/topic_clusters.csv')
+        df = pd.read_csv(config.topic_clusters)
         terms = set()
 
         for i in range(len(df)):
