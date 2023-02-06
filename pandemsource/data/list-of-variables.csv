@@ -337,8 +337,8 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,alerts_on_humans,,observation,,,"source, alert_topic, geo",,number_of_alerts,,,,"[{""variable"": ""alert_topic"", ""value"": ""potential_case_in_humans""}]"
 01_cases,alerts_on_animals,,observation,,,"source, alert_topic, geo",,number_of_alerts,,,,"[{""variable"": ""alert_topic"", ""value"": ""potential_case_in_animals""}]"
 01_cases,alert_topic,,characteristic,,,,,,,,,
-01_cases,number_of_participants,,observation,people,,"source, geo_code",,population,,,,"[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
-01_cases,participants_declaring_symptoms,,observation,people,,"source, geo_code",,number_of_cases,,,,"[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
+01_cases,number_of_participants,,observation,people,,"source, geo_code",,,,,,"[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
+01_cases,participants_declaring_symptoms,,observation,people,,"source, geo_code",,,,,,"[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
 01_cases,ari_ili_patients,,observation,people,,"source, geo_code",,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""ari-ili""}]"
 01_cases,hospitalised_sari_patients,,observation,people,,"source, geo_code",,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""sari""}, {""variable"": ""response_status"", ""value"": ""hospitalised""}]"
 01_cases,hospitalised_sari_infected_patients,,observation,people,,"source, geo_code",,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""sari""}, {""variable"": ""response_status"", ""value"": ""hospitalised""}, {""variable"": ""case_status"", ""value"": ""confirmed""}]"
