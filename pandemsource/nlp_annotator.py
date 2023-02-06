@@ -327,22 +327,23 @@ class NLPAnnotator(worker.Worker):
         to_point = [t for t in list_of_tuples["tuples"] if not t["attrs"].keys().isdisjoint(point_storage)]
         list_of_tuples["tuples"] = to_ts
         if update_stats:
-          self.to_point_storage(to_point)
+          self.to_point_storage(to_point, job)
         ret = self._storage_proxy.to_job_cache(job["id"], f"std_{path}", list_of_tuples).get()
         self._pipeline_proxy.annotate_end(ret, path = path, job = job)
         return ret
 
-    def to_point_storage(self, tuples):
-      lines = [self.tuples_to_line(t) for t in tuples]
+    def to_point_storage(self, tuples, job):
+      lines = [self.tuples_to_line(t, int(job["id"]), int(job["start_on"].timestamp())) for t in tuples]
       periods = {l["reporting_period"] for l in lines}
       for p in periods:
         path = os.path.join(self._p_storage_path, f"{p.strftime('%Y-%m-%d')}.json")
         util.append_json([l for l in lines if l["reporting_period"] == p], path)
 
-    def tuples_to_line(self, t):
+    def tuples_to_line(self, t, job_id, job_timestamp):
       return {
          **{"indicator":next(iter(t["obs"].keys())), "value":next(iter(t["obs"].values()))}, 
-         **{k:t["attrs"][k] for k in {*t["attrs"].keys()}.difference({"line_number", "article_created_at", "file", "period_type", "created_on"})}
+         **{k:t["attrs"][k] for k in {*t["attrs"].keys()}.difference({"line_number", "article_created_at", "file", "period_type", "created_on"})},
+         **{"job":job_id, "stamp":job_timestamp}
       }
     def get_models(self):
       if os.path.exists(self._models_path):
