@@ -807,6 +807,99 @@ class DatasetHandler(tornado.web.RequestHandler):
             self.write({"dataset": df.to_dict('records')})
 
 
+class PointsHandler(tornado.web.RequestHandler):
+    def initialize(self, storage_proxy, variables_proxy):
+        self.storage_proxy = storage_proxy
+        self.variables_proxy = variables_proxy
+
+    async def get(self):
+        """
+        ---
+        tags:
+          - Get Data points 
+        summary: Get daily aggregates for data points not structired as timeseries
+        description: Get daily aggregates for data points not structured as timeseries
+        operationId: getPoints
+        parameters:
+          - name: groupby
+            description: group by attributes
+            in: query
+            required : false
+            schema:
+              type: string
+          - name: source
+            in: query
+            description: source name
+            required: false
+            schema:
+              type: string
+          - name: indicator
+            in: query
+            description: indicator name
+            required: false
+            schema:
+              type: string
+          - name: geo_code
+            in: query
+            description: geographic location code
+            required: false
+            schema:
+              type: string
+        responses:
+            '200':
+              description: Returns a all found data points
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/PointModel'
+                application/xml:
+                  schema:
+                    $ref: '#/components/schemas/PointModel'
+                text/plain:
+                  schema:
+                    type: string
+        """
+        variables_proxy = self.variables_proxy
+        var_dic = await variables_proxy.get_variables()
+        f_groupby = self.get_argument('groupby', default = "").split(",")
+        f_source = self.get_argument('source', default = None)
+        f_indicator = self.get_argument('indicator', default = None)
+        f_geo_code = self.get_argument('geo_code', default = None)
+       
+        constants = ConstantsNamespace()
+        dlss = [(await self.storage_proxy.read_file(f["path"])) 
+          for f in (await self.storage_proxy.list_files(util.pandem_path("files", "source-definitions"))) 
+            if f["name"].endswith(constants.JSON_EXT)
+        ]
+        if f_source is not None:
+           dlss = [dls for dls in dlss if f_source == (dls["scope"]["tags"][0] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else f_source) or f_source ==  dls["scope"]["source"]]
+        sources = {dls["scope"]["source"] for dls in dlss}
+        dfs = []
+        for f in (await self.storage_proxy.list_files(util.pandem_path("files", "nlp", "points"))): 
+            if f["name"].endswith(constants.JSON_EXT):
+              df = pd.read_json(f["path"], lines = True, orient = "records")
+
+              df = df[df.apply(
+                lambda r:
+                  (r["source"] in sources)
+                  and (f_indicator is None or r["indicator"] == f_indicator)
+                  and (f_geo_code is None or r["geo_code"] == f_geo_code)
+                , axis=1
+              )]
+              df["reporting_period"] = df["reporting_period"].str[:10]
+              if f_groupby != [""]:
+                df = df.groupby([*{"source", "indicator", "geo_code", "reporting_period"}.union(f_groupby)]).sum("value").reset_index()
+              df = df.replace({np.nan: None})
+              dfs.append(df)
+
+              
+        if len(dfs) > 0:
+          self.write({"points": pd.concat(dfs).sort_values('value', ascending=False).to_dict('records')})
+        else:
+          self.write({"points": []})
+
+
+
     def __build_needed_variables(self, query, var_dic):
         """Build a list of needed_variables and adds required filters"""
         needed_variables = []
@@ -874,30 +967,6 @@ class DatasetHandler(tornado.web.RequestHandler):
                     return rows[row_key]
 
 
-class SlowHandler(tornado.web.RequestHandler):
-    def initialize(self, storage_proxy, variables_proxy, api_proxy):
-        self.storage_proxy = storage_proxy
-        self.variables_proxy = variables_proxy
-        self.api_proxy = api_proxy
-
-    async def post(self):
-      total = 800
-      count = 0
-      for _ in range(0, total):
-        ref = await self.variables_proxy.get_referential("geo_code")
-        if ref is not None:
-          count += len(ref)
-      print(f"Total count is {count}")
-      self.write({'timeseries_length': count})
-
-
-class FastHandler(tornado.web.RequestHandler):
-    def initialize(self, storage_proxy, variables_proxy):
-        self.storage_proxy = storage_proxy
-        self.variables_proxy = variables_proxy
-    
-    def post(self):
-      self.write({'datetime': str(datetime.now())})
 
 @components.schemas.register
 class SourcesModel(object):
@@ -977,6 +1046,17 @@ class DatasetModel(object):
         dataset:
             type: array
     """
+@components.schemas.register
+
+class PointModel(object):
+    """
+    ---
+    type: array
+    description: Points returned by a published variable
+    properties:
+        points:
+            type: array
+    """
 
 
 class Application(tornado.web.Application):
@@ -992,8 +1072,7 @@ class Application(tornado.web.Application):
           tornado.web.url(r"/timeseries", TimeSeriesHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
           tornado.web.url(r"/timeserie", TimeSerieHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
           tornado.web.url(r"/dataset", DatasetHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
-          tornado.web.url(r"/slow", SlowHandler, {'storage_proxy': storage_proxy, 'variables_proxy': variables_proxy, 'api_proxy': api_proxy}),
-          tornado.web.url(r"/fast", FastHandler, {'storage_proxy': storage_proxy, 'variables_proxy': variables_proxy})
+          tornado.web.url(r"/points", PointsHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy})
         ]
         setup_swagger(
             self._routes,

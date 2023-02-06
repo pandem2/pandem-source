@@ -24,6 +24,7 @@ class NLPAnnotator(worker.Worker):
           self._tf_url = f"{settings['pandem']['source']['nlp']['tensorflow_server_protocol']}://{settings['pandem']['source']['nlp']['tensorflow_server_host']}:{settings['pandem']['source']['nlp']['tensorflow_server_port']}"
           self._tf_version = settings["pandem"]["source"]['nlp']["tensorflow_server_version"]
           self._models_info = settings["pandem"]["source"]["nlp"]["models"]
+          self._point_storage = settings["pandem"]["source"]["nlp"].get("point_storage") or []
           self._chunk_size = settings["pandem"]["source"]["nlp"]["chunk_size"]
           self._evaluation_steps = settings["pandem"]["source"]["nlp"]["evaluation_steps"]
     def on_start(self):
@@ -37,6 +38,9 @@ class NLPAnnotator(worker.Worker):
           self._stats_path = util.pandem_path("files", "nlp")
           if not os.path.exists(self._stats_path):
             os.makedirs(self._stats_path)
+          self._p_storage_path = util.pandem_path("files", "nlp", "points")
+          if not os.path.exists(self._p_storage_path):
+            os.makedirs(self._p_storage_path)
 
     def annotate(self, list_of_tuples, path, job, last_in_job):
       if self.run:
@@ -55,7 +59,6 @@ class NLPAnnotator(worker.Worker):
                 else:
                   raise ValueError(f"Unexpected type for alias in model {mn} it should be a str or dict")
               self.load_stats(mn)
-
             self._alias_models = {v:k for k,v in self._model_aliases.items()}
 
         self._model_languages = {l for info in self._models_info.values() for l in info["languages"]}
@@ -317,12 +320,30 @@ class NLPAnnotator(worker.Worker):
             t['attrs'].pop(lang_field)
             t['attrs'].pop(text_field)
 
- 
+
+        # Splitting out tuples to be stored as points and those to be sent for aggregation
+        point_storage = self._point_storage
+        to_ts = [t for t in list_of_tuples["tuples"] if t["attrs"].keys().isdisjoint(point_storage)]
+        to_point = [t for t in list_of_tuples["tuples"] if not t["attrs"].keys().isdisjoint(point_storage)]
+        list_of_tuples["tuples"] = to_ts
+        if update_stats:
+          self.to_point_storage(to_point)
         ret = self._storage_proxy.to_job_cache(job["id"], f"std_{path}", list_of_tuples).get()
         self._pipeline_proxy.annotate_end(ret, path = path, job = job)
         return ret
 
+    def to_point_storage(self, tuples):
+      lines = [self.tuples_to_line(t) for t in tuples]
+      periods = {l["reporting_period"] for l in lines}
+      for p in periods:
+        path = os.path.join(self._p_storage_path, f"{p.strftime('%Y-%m-%d')}.json")
+        util.append_json([l for l in lines if l["reporting_period"] == p], path)
 
+    def tuples_to_line(self, t):
+      return {
+         **{"indicator":next(iter(t["obs"].keys())), "value":next(iter(t["obs"].values()))}, 
+         **{k:t["attrs"][k] for k in {*t["attrs"].keys()}.difference({"line_number", "article_created_at", "file", "period_type", "created_on"})}
+      }
     def get_models(self):
       if os.path.exists(self._models_path):
         return list(filter(lambda v: not v.startswith("."), next(os.walk(self._models_path))[1]))
@@ -378,5 +399,3 @@ class NLPAnnotator(worker.Worker):
       else: 
         return p
       
-      self._
-
