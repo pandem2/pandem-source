@@ -168,7 +168,7 @@ def install_issues(check_nlp = True):
   if shutil.which("R") is None:
     ret.append("Cannot find R language. Please installe it. PANDEM2 needs it to calculate indecators")
   else:
-    r_packages = '"dplyr", "shiny", "plotly", "DT", "jsonlite", "httr", "XML", "ggplot2", "epitweetr", "reticulate", "seqinr", "readr"'
+    r_packages = '"dplyr", "shiny", "plotly", "DT", "jsonlite", "httr", "XML", "ggplot2", "epitweetr", "reticulate", "seqinr", "readr, BiocManager"'
     installed = subprocess.run(['R', '-e', f'if(length(setdiff(c({r_packages}), names(installed.packages()[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
     if installed == 1:
       ret.append(f'Cannot find some necessary R packages, please intall them from CRAN, by running install.packages(c({r_packages}))')
@@ -184,7 +184,7 @@ def install_issues(check_nlp = True):
       ret.append(f"""Cannot find Pandem2simulator R packages necessary for simulating COVID19 detailed data from ecdc datasets. 
       You can install this package with the following command:
         install.packages("devtools")
-        
+      BiocManager::install("Biostrings")        
       devtools::install_github("maous1/Pandem2simulator")
       """)
   need_nlp = is_nlp_needed() 
