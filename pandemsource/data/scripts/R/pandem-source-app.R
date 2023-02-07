@@ -967,7 +967,7 @@ if (length(args)==0) {
   options = options(shiny.fullstacktrace = TRUE)
 }
 if (length(args)>0) {
-  options = options(shiny.fullstacktrace = TRUE, shiny.port = as.integer(args[1]))
+  options = options(shiny.fullstacktrace = TRUE, shiny.port = as.integer(args[1]), shiny.host = '0.0.0.0')
 }
 if (length(args)>1) {
   logo_path = args[2]
