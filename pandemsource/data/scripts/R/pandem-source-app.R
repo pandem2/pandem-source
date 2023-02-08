@@ -324,7 +324,7 @@ server <- function(input, output, session, ...) {
         shiny::updateSelectizeInput(session, this_select,
           choices = values,
           selected = selected,
-          server = T
+          server = F
         )
       }
     }, ignoreNULL = F)
@@ -353,7 +353,7 @@ server <- function(input, output, session, ...) {
         select = paste("ts_filter",col, sep = "_")
         selection = shiny::isolate(input[[select]])
         if(!is.null(selection)) {
-          shiny::updateSelectizeInput(session, select, choices = NULL, selected = list(), server = T)
+          shiny::updateSelectizeInput(session, select, choices = NULL, selected = list(), server = F)
         }
       }
     })
