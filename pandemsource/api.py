@@ -887,6 +887,8 @@ class PointsHandler(tornado.web.RequestHandler):
                 , axis=1
               )]
               df["reporting_period"] = df["reporting_period"].str[:10]
+              df["job_id"] = np.where(pd.notna(df["job_id"]), df["job_id"], 0)
+              df["stamp"] = np.where(pd.notna(df["stamp"]), df["stamp"], 0)
               if f_groupby != [""]:
                 df = df.groupby([*{"source", "indicator", "geo_code", "reporting_period"}.union(f_groupby)]).sum("value").reset_index()
               df = df.replace({np.nan: None})
