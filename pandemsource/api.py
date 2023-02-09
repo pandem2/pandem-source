@@ -887,10 +887,10 @@ class PointsHandler(tornado.web.RequestHandler):
                 , axis=1
               )]
               df["reporting_period"] = df["reporting_period"].str[:10]
-              if "job_id" not in df:
-                df["job_id"] = 0
+              if "job" not in df:
+                df["job"] = 0
               else:
-                df["job_id"] = np.where(pd.notna(df["job_id"]), df["job_id"], 0)
+                df["job"] = np.where(pd.notna(df["job"]), df["job"], 0)
               if "stamp" not in df:
                 df["stamp"] = 0
               else:
