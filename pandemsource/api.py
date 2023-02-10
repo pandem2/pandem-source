@@ -552,6 +552,11 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
             required: false
             schema:
               type: int
+          - name: hide_none_sma
+            description: Hide timeseries with 'None' values on the social media components
+            required: false
+            schema:
+              type: bool
         responses:
             '200':
               description: Data of time serie
@@ -576,6 +581,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
         f_key = ast.literal_eval(self.get_argument('key', default = 'False'))
         f_limit = ast.literal_eval(self.get_argument('limit', default = "0"))
         f_offset = ast.literal_eval(self.get_argument('offset', default = "0"))
+        f_hide_none_sma = ast.literal_eval(self.get_argument('hide_none_sma', default = 'True'))
         
         # calculating time series
         constants = ConstantsNamespace()
@@ -615,6 +621,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
             and (f_source_table is None or len({k:v for k, v in key if k == "source" and v == f_source_table}) > 0)
             and (f_indicator is None or len({k:v for k, v in key if k == "indicator" and v == f_indicator}) > 0)
             and (f_geo_code is None or len({k:v for k, v in key if k == "geo_code" and v == f_geo_code}) > 0)
+            and (not f_hide_none_sma or len({k:v for k, v in key if k in ["aspect", "sub_topic", "sentiment", "emotion", "suggestion"] and v =="None"}) == 0)
         ]
         refs_read = set()
         
