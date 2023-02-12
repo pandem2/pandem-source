@@ -4,7 +4,7 @@ pandem:
     app:
       port: 8001
     pipeline:
-      jobs-to-keep: 10 
+      jobs-to-keep: 100 
     api:
       port: 8000
     nlp:
