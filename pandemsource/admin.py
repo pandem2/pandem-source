@@ -201,7 +201,7 @@ def install_issues(check_nlp = True):
            threading.Thread(target=nlp_run_model_server).start()
            while retries > 0 and not nlp_models_up():
              l.info("Waiting 1 until models are running")
-             time.sleep(1)
+             time.sleep(2)
              retries = retries - 1
        if not nlp_models_up():
          ret.append(f"""Launching of docker NLP server failed. Please check any previous errors.
