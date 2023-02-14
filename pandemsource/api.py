@@ -471,8 +471,9 @@ class TimeSerieHandler(tornado.web.RequestHandler):
           indicator = query["indicator"]
           variable = var_dic[indicator]["variable"]
           datevars = [v for v, varinfo in var_dic.items() if varinfo['type']=='date' and varinfo['variable']==v]
+          none_filter = {e:None for e in set(var_dic[indicator]["partition"]).difference([k for k, v in comb]).difference(["indicator", "source"])}
 
-          data = await variables_proxy.lookup([variable], source = source, combinations = [tuple(comb)], filter = {d:None for d in datevars})
+          data = await variables_proxy.lookup([variable], source = source, combinations = [tuple(comb)], filter = {d:None for d in datevars}, none_filters = none_filter)
           # making an aggregation at day level
           for key, values in data.items():
             for var, tuples in values.items():
@@ -489,7 +490,10 @@ class TimeSerieHandler(tornado.web.RequestHandler):
                       resp[(date, datevar)]["value"] = v
                     else :
                       # TODO: change the aggregation function depending on the unit
-                      resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + v
+                      if indicator == "cum_article_count":
+                        resp[(date, datevar)]["value"] = max(resp[(date, datevar)]["value"], v)
+                      else:
+                        resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + v
         response = {"timeserie":list(resp.values())}
         self.write(response)
 

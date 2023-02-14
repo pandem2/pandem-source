@@ -111,7 +111,7 @@ class Variables(worker.Worker):
                         elif var in filter and type(filter[var]) in [list, set] and val not in filter[var]:
                             can_ignore = True
                             break
-                        elif var in filter and type(filter[var]) not in [list, set] and filter[var] != val:
+                        elif var in filter and type(filter[var]) not in [list, set] and (filter[var] or '@None@') != val:
                             can_ignore = True
                             break
                     if not can_ignore:
@@ -125,7 +125,7 @@ class Variables(worker.Worker):
                   raise e
                 requested_vars = []
                 for var_tuple in var_tuples:
-                    if all(att in var_tuple['attrs'].keys() for att in filter.keys()):
+                    if all(att in var_tuple['attrs'].keys() for att, v in filter.items() if v is not None):
                         if all((val is None or var_tuple['attrs'][att]==val or var_tuple['attrs'][att] in val) for att, val in filter.items()) :
                             requested_vars.append(var_tuple)
                 requested_list.extend(requested_vars)
@@ -278,7 +278,7 @@ class Variables(worker.Worker):
          'tuples':[*({'attr':{'tag_source': tag+'_'+source}, 'attrs':{'tag':tag, 'source': source}} for tag in tags)]
        }
 
-    def lookup(self, variables, combinations, source, filter = None, include_source = True, include_tag = False, types=['referential', 'geo_referential', 'characteristic']):
+    def lookup(self, variables, combinations, source, filter = None, include_source = True, include_tag = False, types=['referential', 'geo_referential', 'characteristic'], none_filters = None):
       # doing recursive calls if the combination includes different granularities
       granularities = {tuple(k for k, v in t) for t in combinations}
       if len(granularities) > 1:
@@ -339,9 +339,13 @@ class Variables(worker.Worker):
             if tries == 2 and include_source:
               f = {k:v for k, v in vfilt.items() if v is not None}
               f.update({"source":source})
+              if none_filters is not None:
+                f.update(none_filters)
               tuples = self.read_variable(base_var, filter = f)
             if tries == 1 and include_tag:
               f = {k:v for k, v in vfilt.items() if v is not None}
+              if none_filters is not None:
+                f.update(none_filters)
               f.update({"source":others})
               tuples = self.read_variable(base_var, filter = f)
             # key_map will contain the non modified attributes for each combination as keys and the original combination as value
