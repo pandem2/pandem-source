@@ -11,8 +11,12 @@ def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     normalize_age_groups(df)
     normalize_dates(df)
     df = split_interest_columns(df)
-    generate_population_column(df)
+    # Generate the data for all ages
     df = pd.concat([df.groupby(["date", "country"]).sum(numeric_only = True).reset_index(), df], ignore_index = True)
+    df["age"] = ["ALL" if pd.isna(age) else age for age in df["age"]]
+    df = daily_to_weekly(df)
+    df["age"] = [age if age != "ALL" else None for age in df["age"]]
+    generate_population_column(df)
     df['line_number'] = range(1, len(df)+1)
     return df
 
@@ -60,3 +64,17 @@ def do_split_interest_columns(row: pd.Series, indicator_name: str, base_col: str
 
 def generate_population_column(df: pd.DataFrame):
     df["population"] = NLD_POP
+
+
+def daily_to_weekly(daily_data: pd.DataFrame) -> pd.DataFrame:
+    daily_data['date'] = pd.to_datetime(daily_data['date'])
+    daily_data = daily_data.set_index('date')
+    weekly_data = daily_data.groupby(['country', 'age', pd.Grouper(freq='W-MON')]).agg({
+        'cases': 'sum',
+        'hospitalisations': 'sum',
+        'deaths': 'sum'
+    }).reset_index()
+    daily_data['period_type'] = 'daily'
+    daily_data.reset_index(inplace=True)
+    weekly_data['period_type'] = 'weekly'
+    return pd.concat([weekly_data, daily_data], ignore_index=True)
