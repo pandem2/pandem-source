@@ -1,0 +1,41 @@
+{
+    "scope":{
+      "source":"sma-fx-2023",
+      "source_description":"Synthetic data used for sma components on PANDEM-2 2023 FX",
+      "tags":["Pandem-2 2023 FX"],
+      "data_quality":"Simulated",
+      "frequency":"every 1 hours",
+      "reference_user":"PANDEM-2 consortium",
+      "reporting_email":"",
+      "globals":[
+        {"variable":"source"}
+      ],
+      "update_scope":[
+        {"variable":"source"}
+      ]
+    },
+    "acquisition":{
+      "active":true,
+      "channel":{
+        "name":"git-local",
+        "changed_by": {"script_type":"py", "script_name":"synthetic_sma_source"}
+      },
+      "format": {
+        "name":"csv",
+        "decimal_sign":".",
+        "thousands_separator":"",
+        "date_format":"%Y-%m-%d",
+        "encoding":"UTF-8"
+      }
+    },
+    "columns":[
+      {"name":"date", "variable":"reporting_date"},
+      {"name":"aspect", "variable":"aspect"},
+      {"name":"emotion", "variable":"emotion"},
+      {"name":"sentiment", "variable":"sentiment"},
+      {"name":"geo_code", "variable":"geo_code"},
+      {"name":"pathogen_code", "variable":"pathogen_code"},
+      {"name":"article_count", "variable":"article_count"}
+       
+    ]
+}

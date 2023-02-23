@@ -70,7 +70,7 @@ def main(a):
     "--restart-job", 
     type=int, 
     required = False,
-    default = 0,
+    default = -1,
     help="Job id to re-run if its data is still stored" 
   )
   
@@ -83,7 +83,7 @@ def main(a):
   start_parser.set_defaults(func = do_start)
   
   # setup 
-  setup_parser = subs.add_parser("setup", help = "reset configuration as system defaults")
+  setup_parser = subs.add_parser("setup", help = "Setting up PANDEM source components")
   
   setup_parser.add_argument(
     "-v", 
@@ -263,7 +263,7 @@ def main(a):
     args.func(args, parser)
 
 # handlers
-def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart_job = 0, not_retry_active = False, no_app = True, force_acquire = False, no_nlp = False):
+def do_start_dev(debug = True, no_acquire = False, retry_failed = False, restart_job = -1, not_retry_active = False, no_app = True, force_acquire = False, no_nlp = False):
   from types import SimpleNamespace
   return do_start(SimpleNamespace(**{"debug":True, "no_acquire":no_acquire, "retry_failed":retry_failed, "limit_collection":None, "restart_job":restart_job, "no_app":no_app, "not_retry_active":not_retry_active, "force_acquire":force_acquire, "no_nlp": no_nlp}))
 
@@ -299,7 +299,7 @@ def do_start(args, *other):
     """)
     return None
   
-  if args.restart_job > 0:
+  if args.restart_job >= 0:
     orchestrator_ref = Orchestration.start(
       settings, 
       start_acquisition = False, 
@@ -471,6 +471,7 @@ def do_setup(args, *other):
     admin.reset_default_folders("input-local")
     admin.reset_source("pandem-2-2023-fx-DEU", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("pandem-2-2023-fx-NLD", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
+    admin.reset_source("sma-fx-2023", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
   if args.oecd:
     admin.reset_default_folders("input-local")
     admin.reset_source("oecd-icu-beds", delete_data= args.delete_data, reset_acquisition= args.reset_acquisition)

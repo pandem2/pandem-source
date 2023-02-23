@@ -213,7 +213,7 @@ def load_tweet_date_chunk(date, chunk):
   res = {}
   if os.path.exists(dest_file):
     with open(dest_file, "rt") as f:
-      res = {t["id"]:t for t in json.load(f)}
+      res = {t["id"]:t for t in json.load(f) if "id" in t}
   return res
 
 def save_tweet_date_chunk(data, date, chunk):
