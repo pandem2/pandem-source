@@ -1,4 +1,4 @@
-max = 10
+max = 5
 random_variance = 0.2
 confirmed_cases_weight = 2
 
