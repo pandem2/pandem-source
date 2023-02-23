@@ -187,6 +187,13 @@ def install_issues(check_nlp = True):
       BiocManager::install("Biostrings")        
       devtools::install_github("maous1/Pandem2simulator")
       """)
+    installed = subprocess.run(['R', '-e', f'if(length(setdiff(c("p2synthr"), names(installed.packages()[,1])))> 0) stop("some packages are missing!!")'], stdout=FNULL, stderr=FNULL).returncode
+    if installed == 1:
+      ret.append(f"""Cannot find p2synthr R packages necessary for generating synthetic data 
+      You can install this package with the following command:
+        install.packages("devtools")
+      devtools::install_github("JimDuggan/p2synthr")
+      """)
   need_nlp = is_nlp_needed() 
   if settings["pandem"]["source"]["nlp"]["active"] and check_nlp and need_nlp:
      models_path = settings["pandem"]["source"]["nlp"]["models_path"]
