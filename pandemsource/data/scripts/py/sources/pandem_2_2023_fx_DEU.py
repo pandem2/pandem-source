@@ -5,6 +5,8 @@ from datetime import date, timedelta
 INIT_DATE = date(2023, 1, 1)
 DEU_POP = 84438383
 
+
+
 def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     normalize_column_names(df)
     normalize_country(df)

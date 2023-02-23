@@ -336,7 +336,10 @@ class NLPAnnotator(worker.Worker):
       lines = [self.tuples_to_line(t, int(job["id"]), int(job["start_on"].timestamp())) for t in tuples]
       periods = {l["reporting_period"] for l in lines}
       for p in periods:
-        path = os.path.join(self._p_storage_path, f"{p.strftime('%Y-%m-%d')}.json")
+        d =  os.path.join(self._p_storage_path, job["source"])
+        if not os.path.exists(d):
+          d.makedirs(d)
+        path = os.path.join(d, f"{p.strftime('%Y-%m-%d')}.json")
         util.append_json([l for l in lines if l["reporting_period"] == p], path)
 
     def tuples_to_line(self, t, job_id, job_timestamp):

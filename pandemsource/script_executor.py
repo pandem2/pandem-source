@@ -20,5 +20,10 @@ class ScriptExecutor(worker.Worker):
             print(f'R script will be runned with: {self.script_path(script_type = script_type, script_name = script_name)}')
             subprocess.run(['Rscript', '--vanilla',  self.script_path(script_type = script_type, script_name = script_name)], cwd=working_dir) 
             print('R script has just been run')
+        elif script_type == "py":
+            print(f'Python script will be runned with: {self.script_path(script_type = script_type, script_name = script_name)}')
+            subprocess.run(['python',  self.script_path(script_type = script_type, script_name = script_name)], cwd=working_dir) 
+            print('Python script has just been run')
+            
         else: 
-            raise NotImplementedError("So far only R scripts are supported")
+            raise NotImplementedError("So far only R and python scripts are supported")
