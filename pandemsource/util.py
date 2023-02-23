@@ -112,6 +112,12 @@ def save_pickle_df(df, path):
   df.to_pickle(tpath)
   os.rename(tpath, path)
 
+def append_json(o, path):
+  with open(path, 'a') as f:
+    f.write("\n".join([json.dumps(l, cls = JsonEncoder) for l in o]))
+    if(len(o) > 0):
+      f.write("\n")
+
 def save_json(o, path, indent = None, new_lined = False):
   fd, fn = os.path.split(path)
   tpath = os.path.join(fd, f'.{fn}.tmp')

@@ -4,7 +4,7 @@ pandem:
     app:
       port: 8001
     pipeline:
-      jobs-to-keep: 10 
+      jobs-to-keep: 100 
     api:
       port: 8000
     nlp:
@@ -16,6 +16,10 @@ pandem:
         - ["aspect_stitched_unmasked.class", "aspect_stitched_unmasked.entity", "suggestion_classification", "suggestion"]
         - ["aspect_stitched_unmasked.class", "emotion_classification_multi"]
         - ["aspect_stitched_unmasked.class", "sentiment_classification"]
+      point_storage:
+        - suggestion
+        - is_suggestion
+        - sub_topic
       models:
         emotion_classification_multi:
           alias: emotion
@@ -42,7 +46,6 @@ pandem:
           alias: 
             class: aspect
             entity: sub_topic
-            limit_top: 100
           source: tf_server
           bio:
             token: string_lookup_1
@@ -65,9 +68,7 @@ pandem:
             args: ["text", "is_suggestion"]
             type: python
           order: 2
-          limit_top: 200
           languages: ["en"]
-
       use_sudo: false
       chunk_size: 500
       tensorflow_server_host:  "localhost"

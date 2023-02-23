@@ -28,7 +28,7 @@ from itertools import chain
 
 class Orchestration(pykka.ThreadingActor):
 
-    def __init__(self, settings, start_acquisition = True, retry_failed = False, restart_job = 0, retry_active = True, force_acquire = True, no_nlp = False, ignore_last_exec = False):
+    def __init__(self, settings, start_acquisition = True, retry_failed = False, restart_job = -1, retry_active = True, force_acquire = True, no_nlp = False, ignore_last_exec = False):
         super(Orchestration, self).__init__()
         self.settings = settings
         self.current_actors = dict()

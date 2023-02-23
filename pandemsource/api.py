@@ -432,6 +432,18 @@ class TimeSerieHandler(tornado.web.RequestHandler):
         description: Time series available in PANDEM-2
         operationId: getTimeSeries
         parameters:
+          - name: from
+            in: query
+            description: date from filter
+            required: false
+            schema:
+              type: string
+          - name: to
+            in: query
+            description: date to filter
+            required: false
+            schema:
+              type: strinng
         responses:
             '200':
               description: List of time series available
@@ -449,6 +461,8 @@ class TimeSerieHandler(tornado.web.RequestHandler):
         variables_proxy = self.variables_proxy
         var_dic = await variables_proxy.get_variables()
         query = tornado.escape.json_decode(self.request.body)
+        fr = self.get_argument('from', default = None)
+        to  = self.get_argument('to', default = None)
         resp = {}
         if query is not None:
           comb = [(k, v) for (k,v) in query.items() if v is not None and k != 'indicator' and k != 'source']
@@ -457,8 +471,9 @@ class TimeSerieHandler(tornado.web.RequestHandler):
           indicator = query["indicator"]
           variable = var_dic[indicator]["variable"]
           datevars = [v for v, varinfo in var_dic.items() if varinfo['type']=='date' and varinfo['variable']==v]
+          none_filter = {e:None for e in set(var_dic[indicator]["partition"]).difference([k for k, v in comb]).difference(["indicator", "source"])}
 
-          data = await variables_proxy.lookup([variable], source = source, combinations = [tuple(comb)], filter = {d:None for d in datevars})
+          data = await variables_proxy.lookup([variable], source = source, combinations = [tuple(comb)], filter = {d:None for d in datevars}, none_filters = none_filter)
           # making an aggregation at day level
           for key, values in data.items():
             for var, tuples in values.items():
@@ -466,15 +481,19 @@ class TimeSerieHandler(tornado.web.RequestHandler):
                 value = t["value"]
                 for datevar, dtime in t["attrs"].items():
                   date = dtime[0:10]
-                  if (date, datevar) not in resp:
-                    resp[(date, datevar)] = {'date':date, 'date_var':datevar, "key":json.dumps({k:v for k,v in key})}
-                    #resp[(date, datevar)].update({k:v for k,v in keys})
-                  if var not in resp[(date, datevar)]:
-                    resp[(date, datevar)]["indicator"] = indicator
-                    resp[(date, datevar)]["value"] = value if value is None or not math.isinf(float(value)) else None
-                  else :
-                    # TODO: change the aggregation function depending on the unit
-                    resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + value
+                  if fr is None or fr <= date and to is None or to >= date:
+                    if (date, datevar) not in resp:
+                      resp[(date, datevar)] = {'date':date, 'date_var':datevar, 'indicator':indicator, "key":json.dumps({k:v for k,v in key})}
+                      #resp[(date, datevar)].update({k:v for k,v in keys})
+                    v = value if value is None or not math.isinf(float(value)) else None
+                    if "value" not in resp[(date, datevar)]:
+                      resp[(date, datevar)]["value"] = v
+                    else :
+                      # TODO: change the aggregation function depending on the unit
+                      if indicator == "cum_article_count":
+                        resp[(date, datevar)]["value"] = max(resp[(date, datevar)]["value"], v)
+                      else:
+                        resp[(date, datevar)]["value"] = resp[(date, datevar)]["value"] + v
         response = {"timeserie":list(resp.values())}
         self.write(response)
 
@@ -517,7 +536,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
               type: string
           - name: key
             in: query
-            description: Adds time series key to call timeserue endpoint
+            description: Adds time series key to call timeserie endpoint
             required: false
             schema:
               type: bool
@@ -537,6 +556,11 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
             required: false
             schema:
               type: int
+          - name: hide_none_sma
+            description: Hide timeseries with 'None' values on the social media components
+            required: false
+            schema:
+              type: bool
         responses:
             '200':
               description: Data of time serie
@@ -561,6 +585,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
         f_key = ast.literal_eval(self.get_argument('key', default = 'False'))
         f_limit = ast.literal_eval(self.get_argument('limit', default = "0"))
         f_offset = ast.literal_eval(self.get_argument('offset', default = "0"))
+        f_hide_none_sma = ast.literal_eval(self.get_argument('hide_none_sma', default = 'True'))
         
         # calculating time series
         constants = ConstantsNamespace()
@@ -600,6 +625,7 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
             and (f_source_table is None or len({k:v for k, v in key if k == "source" and v == f_source_table}) > 0)
             and (f_indicator is None or len({k:v for k, v in key if k == "indicator" and v == f_indicator}) > 0)
             and (f_geo_code is None or len({k:v for k, v in key if k == "geo_code" and v == f_geo_code}) > 0)
+            and (not f_hide_none_sma or len({k:v for k, v in key if k in ["aspect", "sub_topic", "sentiment", "emotion", "suggestion"] and v =="None"}) == 0)
         ]
         refs_read = set()
         
@@ -792,6 +818,109 @@ class DatasetHandler(tornado.web.RequestHandler):
             self.write({"dataset": df.to_dict('records')})
 
 
+class PointsHandler(tornado.web.RequestHandler):
+    def initialize(self, storage_proxy, variables_proxy):
+        self.storage_proxy = storage_proxy
+        self.variables_proxy = variables_proxy
+
+    async def get(self):
+        """
+        ---
+        tags:
+          - Get Data points 
+        summary: Get daily aggregates for data points not structired as timeseries
+        description: Get daily aggregates for data points not structured as timeseries
+        operationId: getPoints
+        parameters:
+          - name: groupby
+            description: group by attributes
+            in: query
+            required : false
+            schema:
+              type: string
+          - name: source
+            in: query
+            description: source name
+            required: false
+            schema:
+              type: string
+          - name: indicator
+            in: query
+            description: indicator name
+            required: false
+            schema:
+              type: string
+          - name: geo_code
+            in: query
+            description: geographic location code
+            required: false
+            schema:
+              type: string
+        responses:
+            '200':
+              description: Returns a all found data points
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/PointModel'
+                application/xml:
+                  schema:
+                    $ref: '#/components/schemas/PointModel'
+                text/plain:
+                  schema:
+                    type: string
+        """
+        variables_proxy = self.variables_proxy
+        var_dic = await variables_proxy.get_variables()
+        f_groupby = self.get_argument('groupby', default = "").split(",")
+        f_source = self.get_argument('source', default = None)
+        f_indicator = self.get_argument('indicator', default = None)
+        f_geo_code = self.get_argument('geo_code', default = None)
+       
+        constants = ConstantsNamespace()
+        dlss = [(await self.storage_proxy.read_file(f["path"])) 
+          for f in (await self.storage_proxy.list_files(util.pandem_path("files", "source-definitions"))) 
+            if f["name"].endswith(constants.JSON_EXT)
+        ]
+        if f_source is not None:
+           dlss = [dls for dls in dlss if f_source == (dls["scope"]["tags"][0] if "tags" in dls["scope"] and len(dls["scope"]["tags"]) > 0 else f_source) or f_source ==  dls["scope"]["source"]]
+        sources = {dls["scope"]["source"] for dls in dlss}
+        dfs = []
+        for s in sources:
+          if await self.storage_proxy.exists(util.pandem_path("files", "nlp", "points", s)):
+            for f in (await self.storage_proxy.list_files(util.pandem_path("files", "nlp", "points", s))): 
+                if f["name"].endswith(constants.JSON_EXT):
+                  df = pd.read_json(f["path"], lines = True, orient = "records")
+
+                  df = df[df.apply(
+                    lambda r:
+                      (r["source"] in sources)
+                      and (f_indicator is None or r["indicator"] == f_indicator)
+                      and (f_geo_code is None or r["geo_code"] == f_geo_code)
+                    , axis=1
+                  )]
+                  df["reporting_period"] = df["reporting_period"].str[:10]
+                  if "job" not in df:
+                    df["job"] = 0
+                  else:
+                    df["job"] = np.where(pd.notna(df["job"]), df["job"], 0)
+                  if "stamp" not in df:
+                    df["stamp"] = 0
+                  else:
+                    df["stamp"] = np.where(pd.notna(df["stamp"]), df["stamp"], 0)
+                  if f_groupby != [""]:
+                    df = df.groupby([*{"source", "indicator", "geo_code", "reporting_period"}.union(f_groupby)]).sum("value").reset_index()
+                  df = df.replace({np.nan: None})
+                  dfs.append(df)
+
+                
+        if len(dfs) > 0:
+          self.write({"points": pd.concat(dfs).sort_values('value', ascending=False).to_dict('records')})
+        else:
+          self.write({"points": []})
+
+
+
     def __build_needed_variables(self, query, var_dic):
         """Build a list of needed_variables and adds required filters"""
         needed_variables = []
@@ -859,30 +988,6 @@ class DatasetHandler(tornado.web.RequestHandler):
                     return rows[row_key]
 
 
-class SlowHandler(tornado.web.RequestHandler):
-    def initialize(self, storage_proxy, variables_proxy, api_proxy):
-        self.storage_proxy = storage_proxy
-        self.variables_proxy = variables_proxy
-        self.api_proxy = api_proxy
-
-    async def post(self):
-      total = 800
-      count = 0
-      for _ in range(0, total):
-        ref = await self.variables_proxy.get_referential("geo_code")
-        if ref is not None:
-          count += len(ref)
-      print(f"Total count is {count}")
-      self.write({'timeseries_length': count})
-
-
-class FastHandler(tornado.web.RequestHandler):
-    def initialize(self, storage_proxy, variables_proxy):
-        self.storage_proxy = storage_proxy
-        self.variables_proxy = variables_proxy
-    
-    def post(self):
-      self.write({'datetime': str(datetime.now())})
 
 @components.schemas.register
 class SourcesModel(object):
@@ -962,6 +1067,17 @@ class DatasetModel(object):
         dataset:
             type: array
     """
+@components.schemas.register
+
+class PointModel(object):
+    """
+    ---
+    type: array
+    description: Points returned by a published variable
+    properties:
+        points:
+            type: array
+    """
 
 
 class Application(tornado.web.Application):
@@ -977,8 +1093,7 @@ class Application(tornado.web.Application):
           tornado.web.url(r"/timeseries", TimeSeriesHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
           tornado.web.url(r"/timeserie", TimeSerieHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
           tornado.web.url(r"/dataset", DatasetHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy}),
-          tornado.web.url(r"/slow", SlowHandler, {'storage_proxy': storage_proxy, 'variables_proxy': variables_proxy, 'api_proxy': api_proxy}),
-          tornado.web.url(r"/fast", FastHandler, {'storage_proxy': storage_proxy, 'variables_proxy': variables_proxy})
+          tornado.web.url(r"/points", PointsHandler, {'storage_proxy': storage_proxy, 'variables_proxy':variables_proxy})
         ]
         setup_swagger(
             self._routes,

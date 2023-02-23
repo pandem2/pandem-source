@@ -66,6 +66,10 @@
         {
             "name": "population",
             "variable": "population"
+        },
+        {
+            "name": "period_type",
+            "variable": "period_type"
         }
     ],
     "synthetize": {
