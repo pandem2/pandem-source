@@ -469,8 +469,7 @@ def do_setup(args, *other):
     admin.reset_source("health-resources-beds-eurostat", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
   if args.pandem_2_2023_fx:
     admin.reset_default_folders("input-local")
-    admin.reset_source("pandem-2-2023-fx-DEU", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
-    admin.reset_source("pandem-2-2023-fx-NLD", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
+    admin.reset_source("pandem-2-2023-fx", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("sma-fx-2023", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
   if args.oecd:
     admin.reset_default_folders("input-local")
