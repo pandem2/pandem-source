@@ -167,7 +167,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 03_patient,icu_admissions_per_100k,ICU admission rate for COVID-19 each 100.000 people by week and country ,observation,qty,,"source, geo_code",,admissions_per_100k,,,,"[{""variable"": ""care_type"", ""value"": ""hospitalised""}, {""variable"": ""bed_type"", ""value"": ""icu""}]"
 03_patient,icu_admissions,ICU admission rate for COVID-19 each 100.000 people by week and country ,observation,qty,,"source, geo_code","icu_admissions(reporting_week, icu_admissions_per_100k, population)",admissions,,,,"[{""variable"": ""care_type"", ""value"": ""hospitalised""}, {""variable"": ""bed_type"", ""value"": ""icu""}]"
 03_patient,hospitalised_patients_per_100k,Number of occupied hospital beds each 100.000 people by day and country,indicator,qty,,"Source, care_type, geo_code","hospitalised_patients_per_100k(reporting_date, hospitalised_infected_patients, population)",,,,,
-03_patient,number_of_visits,,indicator,people/people,,"source, geo_code",,,,,,
+03_patient,number_of_visits,,indicator,people/people,,"source, geo_code","number_of_visits(reporting_period, number_of_visits_per_100)",number_of_visits_per_100,TRUE,fx2023,"age_group, gender_code, comorbidity_code","[{""variable"": ""visit_type_code"", ""value"": ""visit""}]"
 03_patient,number_of_visits_per_100,,indicator,people/people,,"source, geo_code",,,,,,
 03_patient,number_of_visits_per_100_low_ci,,indicator,people/people,,"source, geo_code",,,,,,
 03_patient,number_of_visits_per_100_high_ci,,indicator,people/people,,"source, geo_code",,,,,,
@@ -355,7 +355,7 @@ data_family,variable,description,type,unit,linked_attributes,partition,formula,b
 01_cases,alerts_on_humans,,observation,,,"source, alert_topic, geo",,number_of_alerts,,,,"[{""variable"": ""alert_topic"", ""value"": ""potential_case_in_humans""}]"
 01_cases,alerts_on_animals,,observation,,,"source, alert_topic, geo",,number_of_alerts,,,,"[{""variable"": ""alert_topic"", ""value"": ""potential_case_in_animals""}]"
 01_cases,alert_topic,,characteristic,,,,,,,,,
-01_cases,number_of_participants,,observation,people,,"source, geo_code",,,,,,"[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
+01_cases,number_of_participants,,observation,people,,"source, geo_code","number_of_participants(reporting_period, population)",,,fx2023,"age_group, gender_code, comorbidity_code, population_type","[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
 01_cases,participants_declaring_symptoms,,observation,people,,"source, geo_code",,,,,,"[{""variable"": ""case_status"", ""value"": ""participatory_surveillance""}]"
 01_cases,ari_ili_patients,,observation,people,,"source, geo_code",,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""ari-ili""}]"
 01_cases,hospitalised_sari_patients,,observation,people,,"source, geo_code",,number_of_patients,,,,"[{""variable"": ""patient_status"", ""value"": ""sari""}, {""variable"": ""response_status"", ""value"": ""hospitalised""}]"
