@@ -8,7 +8,7 @@ class AcquisitionLocalFS(acquisition.Acquisition):
         super().__init__(name = name, orchestrator_ref = orchestrator_ref, settings = settings, channel = "input-local")
         
     def new_files(self, dls, last_hash):
-        file_path = self.source_path(dls, dls['acquisition']['channel']['xls_file'])
+        file_path = self.source_path(dls, dls['acquisition']['channel']['file'] if "file" in  dls['acquisition']['channel'] else dls['acquisition']['channel']['xls_file'])
         if os.path.exists(file_path):
             current_hash = hashlib.md5(open(file_path,'rb').read()).hexdigest()
             files_to_pipeline = []
