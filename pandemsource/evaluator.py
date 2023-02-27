@@ -362,7 +362,7 @@ class Evaluator(worker.Worker):
                           l.debug(f"Calculating combinations until {ii}")
                         data = self._variables_proxy.lookup(list(obs.keys()), cslice, source, {base_date:None} , include_source = True, include_tag = True).get()
                         # getting sorted dates
-                        dates = sorted({v["attrs"][base_date] for row in data.values() for v in row[main_base] if main_base in row})
+                        dates = sorted({v["attrs"][base_date] for row in data.values() for v in row.get(main_base) or []})
                         # writing parameters matrices 
                         staging_dir = self.staging_path(job['id'], f'ind/{ind}')
                         can_run = True

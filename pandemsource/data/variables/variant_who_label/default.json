@@ -1,0 +1,30 @@
+{
+    "tuples": [
+        {
+            "attrs": {
+                "line_number": 1,
+                "source": "fx2023",
+                "pathogen_code": "J09.X",
+                "variant": "J09.X_Alpha"            
+
+            },
+            "attr": {
+                "variant_who_label": "Alpha"
+
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 2,
+                "source": "fx2023",
+                "pathogen_code": "J09.X",
+
+                "variant": "J09.X_Gamma"
+            },
+            "attr": {
+                "variant_who_label": "Gamma"
+            }
+        }
+
+    ]
+}

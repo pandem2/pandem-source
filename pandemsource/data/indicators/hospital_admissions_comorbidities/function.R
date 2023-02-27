@@ -1,1 +1,1 @@
-round(hospital_admissions * 0.0001 * 3)
+round(hospital_admissions * 0.22 * 3)
