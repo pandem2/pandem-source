@@ -1,5 +1,6 @@
 devtools/
 scala/lib_managed
+pandemsource/data/o
 *.swo
 *.swp
 .~*#
