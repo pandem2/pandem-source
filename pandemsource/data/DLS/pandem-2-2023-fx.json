@@ -49,9 +49,11 @@
         {"name": "icu_admissions","variable": "icu_admissions"},
         {"name": "people_in_hospital","variable": "hospitalised_infected_patients"},
         {"name": "people_in_icu", "variable":"hospitalised_infected_patients_in_icu"},
+        {"name": "people_in_ward", "variable":"hospitalised_infected_patients_in_ward"},
         {"name": "population","variable": "population"},
         {"name": "number_of_beds","variable": "number_of_operable_beds"},
-        {"name": "number_of_icu_beds","variable": "number_of_icu_operable_beds"}
+        {"name": "number_of_icu_beds","variable": "number_of_icu_operable_beds"},
+        {"name": "number_of_ward_beds","variable": "number_of_ward_operable_beds"}
     ],
     "synthetize": {
         "active": true,

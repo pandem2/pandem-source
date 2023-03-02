@@ -1,5 +1,5 @@
 library(Pandem2simulator)
-ratio = 60000 / max(confirmed_cases)
+ratio = 600 / max(confirmed_cases)
 df0 = data.frame(time = reporting_period, cases = round(confirmed_cases * ratio))
 df <- Pandem2simulator::fx_simulator(df0,startdate = "2023-10-15")
 gamma <- df[df$variant == "gamma" & !is.na(df$cases) & df$cases > 0,]$cases

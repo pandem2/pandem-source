@@ -5,7 +5,10 @@ from datetime import date, timedelta
 INIT_DATE = date(2023, 10, 2)
 max_indicators = ["people in hospital", "people in icu", "population"]
 sum_indicators = ["cases", "hospitalisations", "deaths", "vaccination", "icu admissions"]
-bed_capacity = {"DE":249500, "NL":17500}
+beds_capacity = ["number_of_icu_beds", "number_of_ward_beds"]
+calc_indicators = ["number_of_beds", "people_in_ward"]
+
+ward_capacity = {"DE":249500, "NL":17500}
 icu_capacity = {"DE":13800, "NL":455}
 
 def df_transform(df: pd.DataFrame) -> pd.DataFrame:
@@ -18,6 +21,7 @@ def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     df = daily_to_weekly(df)
     df["age"] = [age if age != "ALL" else None for age in df["age"]]
     add_bed_capacity(df) 
+    add_calculated(df) 
     df['line_number'] = range(1, len(df)+1)
     return df
 
@@ -68,6 +72,12 @@ def daily_to_weekly(daily_data: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([weekly_data, daily_data], ignore_index=True)
 
 def add_bed_capacity(df):
-    df["number_of_beds"] = df.apply(lambda r: bed_capacity.get(r["country"]) if pd.isna(r["age"]) else None, axis = 1)
     df["number_of_icu_beds"] = df.apply(lambda r: icu_capacity.get(r["country"]) if pd.isna(r["age"]) else None, axis = 1)
+    df["number_of_ward_beds"] = df.apply(lambda r: ward_capacity.get(r["country"]) if pd.isna(r["age"]) else None, axis = 1)
+    return df
+
+
+def add_calculated(df):
+    df["number_of_beds"] = df["number_of_icu_beds"] + df["number_of_ward_beds"]
+    df["people_in_ward"] = df["people_in_hospital"] + df["people_in_icu"]
     return df

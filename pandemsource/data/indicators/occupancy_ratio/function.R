@@ -5,5 +5,4 @@ fillgaps <- function(x) {
   goodVals[fillIdx]
 }
 
-
-hospitalised_infected_patients / fillgaps(number_of_operable_beds)
+number_of_patients / fillgaps(number_of_beds)
