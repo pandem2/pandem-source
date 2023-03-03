@@ -1,1 +1,2 @@
-hospitalised_infected_patients_with_comorbidities / hospitalised_infected_patients
+#patients_with_comorbidities / number_of_patients
+0.22 * ifelse(bed_type == "icu", 3, 2)

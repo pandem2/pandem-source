@@ -79,5 +79,5 @@ def add_bed_capacity(df):
 
 def add_calculated(df):
     df["number_of_beds"] = df["number_of_icu_beds"] + df["number_of_ward_beds"]
-    df["people_in_ward"] = df["people_in_hospital"] + df["people_in_icu"]
+    df["people_in_ward"] = df["people_in_hospital"] - df["people_in_icu"]
     return df

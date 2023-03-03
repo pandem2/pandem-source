@@ -59,11 +59,11 @@
         },
         {
             "name": "number_of_non_icu_beds",
-            "variable": "number_of_non_icu_beds"
+            "variable": "number_of_ward_operable_beds"
         },
         {
             "name": "number_of_non_icu_beds_per_100k",
-            "variable": "number_of_non_icu_beds_per_100k"
+            "variable": "number_of_ward_operable_beds_per_100k"
         }
     ]
 }

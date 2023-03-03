@@ -1,1 +1,1 @@
-hospitalised_infected_patients * 100000 / population
+number_of_patients * 100000 / population
