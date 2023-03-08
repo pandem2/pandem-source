@@ -1,4 +1,12 @@
 #new_performed_tests * 0.1
 library(dplyr)
 library(p2synthr)
-synth1(new_performed_tests, group_names=c("antigen","naats","unknow"), group_prob=c(0.4,0.5,0.1), setSeed = T, seedValue = 10)$unknow
+i<-which(new_performed_tests!=0, arr.ind = TRUE)[1]
+if(i+30<=length(new_performed_tests)){
+	synth1(new_performed_tests, group_names=c("naats","unknow"), group_prob=c(0.7,0.3), setSeed = T, seedValue = 10)$unknow
+}else{
+	first <- synth1(new_performed_tests[1:i+30], group_names=c("naats","unknow"), group_prob=c(0.7,0.3), setSeed = T, seedValue = 10)$unknow
+	last <- synth1(new_performed_tests[i+31:length(new_performed_tests)], group_names=c("antigen", "naats","unknow"), group_prob=c(0.4,0.5, 0.1), setSeed = T, seedValue = 10)$unknow
+	c(first, last)
+}
+
