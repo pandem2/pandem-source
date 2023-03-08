@@ -12,6 +12,8 @@ calc_indicators = ["number_of_beds", "people_in_ward"]
 ward_capacity = {"DE":249500, "NL":17500}
 icu_capacity = {"DE":13800, "NL":455}
 
+country_pop = {"ES":47332614,"MT":514564,"BE":11522440,"CY":888005,"FR":67320216,"IT":59641488,"NL":17407585,"RO":19328838,"EE":1328976,"PL":37958138,"DE":83166711,"SE":10327589,"SI":2095861,"SK":5457873,"HU":9769526,"BG":6951482,"FI":5525292,"AT":8901064,"IE":4964440,"PT":10295909,"DK":5822763,"HR":4058165,"CZ":10693939,"LU":626108,"LV":1907675,"LT":2794090,"EL":10718565}
+
 nuts_pop = {
   "DE":{"DE93":1710914,"DE11":4143418,"DE92":2149805,"DE80":1609675,"DEA1":5202321,"DEB3":2057952,"DE50":682986,"DE60":1841179,"DE23":1109269,"DEC0":990509,"DEA4":2055310,"DE13":2264469,"DEE0":2208321,"DE71":3998724,"DEB1":1495885,"DE24":1067482,"DE73":1219823,"DE40":2511917,"DEA3":2623619,"DE25":1770401,"DE27":1887754,"DE22":1238528,"DE94":2525333,"DE72":1047262,"DE14":1856517,"DE26":1317124,"DE91":1596396,"DEF0":2896712,"DED5":1043293,"DEB2":531007,"DE21":4686163,"DED4":1436445,"DE12":2805129,"DED2":1598199,"DEA2":4468904,"DEA5":3582497,"DEG0":2143145},
   "NL":{"NL42":1117201,"NL11":586009,"NL21":1081266,"NL23":423021,"NL33":3636552,"NL34":383488,"NL31":1354834,"NL32":2764017,"NL41":2401202,"NL12":649957,"NL22":2085952,"NL13":493682}
@@ -23,6 +25,10 @@ for c in nuts_pop:
 def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     seed = 'pandem-2'
     print("..........Transforming data for thr 2023 FX")
+    print("..............Adding two months of zero rows")
+    df = add_previous_days(df, 60)
+    print("..............Adding country level rows for other EU countries and EU level")
+    df = add_other_countries(df, nuts_pop, country_pop)
     print("..............Split  by NUTS-2")
     # implemeting split bu nuts
     df = split_by_nuts(df,nuts_pop, nuts_weights, seed)
@@ -75,7 +81,7 @@ def split_interest_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def get_interest_column(df, indicator) -> pd.Series:
-  return df.apply(lambda row: do_split_interest_columns(row, indicator, "synthetic_val"), axis=1)
+    return df.apply(lambda row: do_split_interest_columns(row, indicator, "synthetic_val"), axis=1)
 
 def do_split_interest_columns(row: pd.Series, indicator_name: str, base_col: str):
     return row[base_col] if row["indicator"] == indicator_name else np.nan
@@ -105,6 +111,52 @@ def add_calculated(df):
     df["number_of_beds"] = df["number_of_icu_beds"] + df["number_of_ward_beds"]
     df["people_in_ward"] = df["people_in_hospital"] - df["people_in_icu"]
     return df
+
+def add_previous_days(df, days):
+  ref_time = 1
+  rows = [] 
+  for index, row in df.iterrows():
+    if row['Time'] == ref_time:
+      for d in range(-days, 0):
+        rows.append({
+          'Time':row['Time']+d,
+          'Age':row['Age'],
+          'model_val':row['model_val'],
+          'synthetic_val':row['synthetic_val'],
+          'indicator':row['indicator'],
+          'country':row['country'],
+          'population':row['population']
+        })
+  return pd.concat([pd.DataFrame(rows), df], ignore_index = True)
+
+
+def add_other_countries(df, nuts_pop, country_pop):
+  ref_pop = {c:sum(v.values()) for c, v in nuts_pop.items()}
+  ref_countries = {c:{cc:pop for cc,pop in country_pop.items() if cc not in nuts_pop and  c == [*sorted([(ccc, abs(ref_pop[ccc] - pop)) for ccc in nuts_pop], key = lambda p:p[1])][0][0]} for c in nuts_pop}
+  rows = []
+  all_code = "EU"
+  for index, row in df.iterrows():
+    if row['country'] in ref_countries:
+      cref = row['country']
+      for c, cpop in ref_countries[cref].items():
+          rows.append({
+            'Time':row['Time'],
+            'Age':row['Age'],
+            'model_val':row['model_val'],
+            'synthetic_val':int(row['synthetic_val']*cpop/ref_pop[cref]) ,
+            'indicator':row['indicator'],
+            'country':c,
+            'population':int(row['population']*cpop/ref_pop[cref])
+          })
+  # Joining with other countries
+  df =  pd.concat([df, pd.DataFrame(rows)], ignore_index = True)
+  # Calculating all countries dataframe 
+  alldf = df[df.country.isin(country_pop)].groupby(["Time", "Age", "indicator"]).agg({"model_val":"sum", "synthetic_val":"sum", "population":"sum"}).reset_index()
+  alldf["country"] = all_code
+  # joining with all 
+  return pd.concat([df, alldf], ignore_index = True)
+
+
 
 def split_by_nuts(df, nuts_pop, nuts_weights, seed = None):
   rows = [] 

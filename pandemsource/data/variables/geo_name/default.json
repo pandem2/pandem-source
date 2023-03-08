@@ -2,6 +2,18 @@
     "tuples": [
         {
             "attrs": {
+                "line_number": 1,
+                "source": "pandemsource",
+                "file": "default.json",
+                "geo_code": "EU",
+                "geo_level": "Zone"
+            },
+            "attr": {
+                "geo_name": "European Union"
+            }
+        },
+        {
+            "attrs": {
                 "line_number": 5,
                 "source": "pandemsource",
                 "file": "default.json",
