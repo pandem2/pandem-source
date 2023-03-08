@@ -1,5 +1,5 @@
 library(Pandem2simulator)
-if(nchar(geo_code[[1]]) > 2)
+if(nchar(geo_code[[1]]) > 2 || geo_code[[1]] == "EU")
   sapply(confirmed_cases, function(c) 0)
 else {
   ratio = 60000 / max(confirmed_cases)
