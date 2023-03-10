@@ -256,7 +256,6 @@ for geo in countries:
     aspects_pop = sorted(tuple(counts.loc[d,].to_dict()["article_count"].items()), key = lambda p: -p[1])
     sumpop = sum(v for k, v in aspects_pop)
     if sumpop > 0:
-      breakpoint()
       nsug = 35
       tops = [get_topic(aspects_pop, random.randint(0, sumpop-1)) for i in range(0, nsug)]
       topcounts = {t:len([tt for tt in tops if tt == t]) for t in set(tops)}
