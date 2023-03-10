@@ -9,19 +9,27 @@ from pandemsource import util
 signals = {
   "new-threat":{
     "start":dt(2023, 10, 2), 
-    "end":dt(2024, 12, 31),
+    "end":dt(2024, 10, 30),
     "emotion":["fear", "anger", "surprise"],
     "sentiment":["negative", "", "", "", "", "positive"],
     "aspect":["contagion", "healthcare worker", "masks", "test", "flu", "pandemic"],
-    "weight":50
+    "weight":100
   },
-  "npi":{
+  "npi-bad":{
     "start":dt(2023, 10, 12),
     "end":dt(2024, 6, 30),
     "emotion":["anger", "sadness", "disgust", "trust", "anticipation"],
-    "sentiment":["negative", "positive"],
-    "aspect":["vaccines", "business", "school", "masks", "test", "govt", "care home"],
-    "weight":30
+    "sentiment":["negative", "", "", "", "positive"],
+    "aspect":["business", "school", "masks", "test", "govt", "care home"],
+    "weight":60
+  },
+  "npi-good":{
+    "start":dt(2023, 1, 1),
+    "end":dt(2024, 6, 30),
+    "emotion":["sadness", "trust", "anticipation"],
+    "sentiment":["positive", "negative"],
+    "aspect":["masks", "test", "govt", "care home"],
+    "weight":60
   },
   "deads": {
     "start":dt(2023, 12, 7), 
@@ -29,7 +37,7 @@ signals = {
     "emotion":["fear", "sadness", "anger", "trust", "disgust"],
     "sentiment":["negative"],
     "aspect":["death rate", "cases", "healthcare worker","care home", "pandemic", "business"],
-    "weight":20
+    "weight":80
   },
   "saturation":{
     "start": dt(2023, 10, 3),
@@ -49,7 +57,7 @@ signals = {
   },
   "vaccination-good":{
     "start": dt(2023, 12, 15),
-    "end":dt(2024, 4, 30),
+    "end":dt(2024, 6, 30),
     "emotion":["trust", "anticipation", "anger", "joy", "business", "fear"],
     "sentiment":["positive", "", "", "", "negative"],
     "aspect":["vaccines", "care home", "govt"],
@@ -167,7 +175,7 @@ suggestions={
     "cases":{
       "exponential cases":["Lock-down is te only solution to prevent exponential growth of cases", "follow the rules and the cases will go back agein", "doing nothing is the best solution to reach herd immunity"], 
       "fever":["you should not count as a case just because you have fever", "fever is the first of the symptomps, stay at home if you have it you may ne a case", "should treat te viros not the fever"], 
-      "coughing":["better stay at home than caughing all the day long infenting collegues", "kids have always caugh! should let them go to school!", "if you hear coughing on a bus, get off it!"]
+      "coughing":["better stay at home than caughing all day long rather than infecting collegues", "kids have always caugh! should let them go to school!", "if you hear coughing on a bus, get off it!"]
     }
   }
 
@@ -179,7 +187,7 @@ steps = [
 
 countries = {
   "DE":5,
-  "NL":1
+  "NL":3
 }
 
 lines = []
@@ -241,15 +249,17 @@ for f in os.listdir(sugg_dir):
 # generating suggestion mining data
 flat_sugs = {t:[{"sub_topic":st, "suggestion":s} for st in suggestions[t].keys() for s in suggestions[t][st]] for t in suggestions}
 for geo in countries:
-  counts = df[pd.isna(df["emotion"]) & pd.isna(df["emotion"]) & (df["geo_code"] == geo)].groupby(["date", "aspect"]).sum("article_count")
+  counts = df[pd.isna(df["emotion"]) & pd.isna(df["sentiment"]) & (df["geo_code"] == geo)].groupby(["date", "aspect"]).sum("article_count")
   dates = [*counts.index.get_level_values(0).unique()]
 
   for d in dates:
     aspects_pop = sorted(tuple(counts.loc[d,].to_dict()["article_count"].items()), key = lambda p: -p[1])
     sumpop = sum(v for k, v in aspects_pop)
     if sumpop > 0:
-      top10 = [get_topic(aspects_pop, random.randint(0, sumpop-1)) for i in range(0, 10)]
-      topcounts = {t:len([tt for tt in top10 if tt == t]) for t in set(top10)}
+      breakpoint()
+      nsug = 35
+      tops = [get_topic(aspects_pop, random.randint(0, sumpop-1)) for i in range(0, nsug)]
+      topcounts = {t:len([tt for tt in tops if tt == t]) for t in set(tops)}
       sugges_by_topic = {t:[flat_sugs[t][i] for i in random.sample(range(0, len(flat_sugs[t])), min(wanted, len(flat_sugs[t])))] for t, wanted in topcounts.items()}
       suggs = [
         {

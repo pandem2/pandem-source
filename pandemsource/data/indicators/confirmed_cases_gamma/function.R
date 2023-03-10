@@ -10,7 +10,7 @@ else {
   
   l = nrow(df0)
   ind_start_date = nrow(df0[df0$time < "2023-10-15",])
-  seq_zeros = sample(0, size = ind_start_date, replace = TRUE)
+  seq_zeros = rep(NA, size = ind_start_date, replace = TRUE)
   cases_fin = c(seq_zeros,gamma)
   cases_fin = cases_fin[0:l]
   cases_fin <- ifelse(is.na(cases_fin), 0, cases_fin)
