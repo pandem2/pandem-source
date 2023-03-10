@@ -910,12 +910,12 @@ class PointsHandler(tornado.web.RequestHandler):
                     df["stamp"] = np.where(pd.notna(df["stamp"]), df["stamp"], 0)
                   if f_groupby != [""]:
                     df = df.groupby([*{"source", "indicator", "geo_code", "reporting_period"}.union(f_groupby)]).sum("value").reset_index()
-                  df = df.replace({np.nan: None})
                   dfs.append(df)
 
                 
         if len(dfs) > 0:
-          self.write({"points": pd.concat(dfs).sort_values('value', ascending=False).to_dict('records')})
+          df = pd.concat(dfs).replace({np.nan: None})
+          self.write({"points": df.sort_values('value', ascending=False).to_dict('records')})
         else:
           self.write({"points": []})
 

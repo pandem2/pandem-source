@@ -24,7 +24,7 @@ signals = {
     "weight":60
   },
   "npi-good":{
-    "start":dt(2023, 1, 1),
+    "start":dt(2024, 1, 1),
     "end":dt(2024, 6, 30),
     "emotion":["sadness", "trust", "anticipation"],
     "sentiment":["positive", "negative"],
@@ -186,8 +186,8 @@ steps = [
 ]
 
 countries = {
-  "DE":5,
-  "NL":3
+  "DE":100,
+  "NL":60
 }
 
 lines = []

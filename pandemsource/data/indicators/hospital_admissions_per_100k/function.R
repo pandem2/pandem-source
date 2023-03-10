@@ -1,2 +1,2 @@
-hospital_admissions * 100000 / population
+admissions * 100000 / population
 

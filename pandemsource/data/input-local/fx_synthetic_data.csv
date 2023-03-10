@@ -213,16 +213,16 @@
 5;25-50;DE;Hospitalisations;1;25855651
 5;25-50;DE;Deaths;0;25855651
 5;25-50;DE;Vaccination;0;25855651
-5;25-50;DE;ICU admissions;0;25855651
+5;25-50;DE;ICU admissions;1;25855651
 5;25-50;DE;People in hospital;2;25855651
-5;25-50;DE;People in ICU;0;25855651
+5;25-50;DE;People in ICU;1;25855651
 5;25-50;NL;Cases;1;5479579
 5;25-50;NL;Hospitalisations;1;5479579
 5;25-50;NL;Deaths;0;5479579
 5;25-50;NL;Vaccination;0;5479579
-5;25-50;NL;ICU admissions;0;5479579
+5;25-50;NL;ICU admissions;1;5479579
 5;25-50;NL;People in hospital;2;5479579
-5;25-50;NL;People in ICU;0;5479579
+5;25-50;NL;People in ICU;1;5479579
 5;50+;DE;Cases;0;37394315
 5;50+;DE;Hospitalisations;0;37394315
 5;50+;DE;Deaths;0;37394315
@@ -238,18 +238,18 @@
 5;50+;NL;People in hospital;0;7144884
 5;50+;NL;People in ICU;0;7144884
 5;<25;DE;Cases;1;19905065
-5;<25;DE;Hospitalisations;0;19905065
+5;<25;DE;Hospitalisations;1;19905065
 5;<25;DE;Deaths;0;19905065
 5;<25;DE;Vaccination;0;19905065
 5;<25;DE;ICU admissions;0;19905065
-5;<25;DE;People in hospital;0;19905065
+5;<25;DE;People in hospital;1;19905065
 5;<25;DE;People in ICU;0;19905065
 5;<25;NL;Cases;1;4850952
-5;<25;NL;Hospitalisations;0;4850952
+5;<25;NL;Hospitalisations;1;4850952
 5;<25;NL;Deaths;0;4850952
 5;<25;NL;Vaccination;0;4850952
 5;<25;NL;ICU admissions;0;4850952
-5;<25;NL;People in hospital;0;4850952
+5;<25;NL;People in hospital;1;4850952
 5;<25;NL;People in ICU;0;4850952
 6;25-50;DE;Cases;0;25855651
 6;25-50;DE;Hospitalisations;0;25855651
@@ -257,14 +257,14 @@
 6;25-50;DE;Vaccination;0;25855651
 6;25-50;DE;ICU admissions;0;25855651
 6;25-50;DE;People in hospital;2;25855651
-6;25-50;DE;People in ICU;0;25855651
+6;25-50;DE;People in ICU;1;25855651
 6;25-50;NL;Cases;0;5479579
 6;25-50;NL;Hospitalisations;0;5479579
 6;25-50;NL;Deaths;0;5479579
 6;25-50;NL;Vaccination;0;5479579
 6;25-50;NL;ICU admissions;0;5479579
 6;25-50;NL;People in hospital;2;5479579
-6;25-50;NL;People in ICU;0;5479579
+6;25-50;NL;People in ICU;1;5479579
 6;50+;DE;Cases;0;37394315
 6;50+;DE;Hospitalisations;0;37394315
 6;50+;DE;Deaths;0;37394315
@@ -284,14 +284,14 @@
 6;<25;DE;Deaths;0;19905065
 6;<25;DE;Vaccination;0;19905065
 6;<25;DE;ICU admissions;0;19905065
-6;<25;DE;People in hospital;0;19905065
+6;<25;DE;People in hospital;1;19905065
 6;<25;DE;People in ICU;0;19905065
 6;<25;NL;Cases;0;4850952
 6;<25;NL;Hospitalisations;0;4850952
 6;<25;NL;Deaths;0;4850952
 6;<25;NL;Vaccination;0;4850952
 6;<25;NL;ICU admissions;0;4850952
-6;<25;NL;People in hospital;0;4850952
+6;<25;NL;People in hospital;1;4850952
 6;<25;NL;People in ICU;0;4850952
 7;25-50;DE;Cases;0;25855651
 7;25-50;DE;Hospitalisations;0;25855651
@@ -299,14 +299,14 @@
 7;25-50;DE;Vaccination;0;25855651
 7;25-50;DE;ICU admissions;0;25855651
 7;25-50;DE;People in hospital;2;25855651
-7;25-50;DE;People in ICU;0;25855651
+7;25-50;DE;People in ICU;1;25855651
 7;25-50;NL;Cases;0;5479579
 7;25-50;NL;Hospitalisations;0;5479579
 7;25-50;NL;Deaths;0;5479579
 7;25-50;NL;Vaccination;0;5479579
 7;25-50;NL;ICU admissions;0;5479579
 7;25-50;NL;People in hospital;2;5479579
-7;25-50;NL;People in ICU;0;5479579
+7;25-50;NL;People in ICU;1;5479579
 7;50+;DE;Cases;0;37394315
 7;50+;DE;Hospitalisations;0;37394315
 7;50+;DE;Deaths;0;37394315
@@ -326,14 +326,14 @@
 7;<25;DE;Deaths;0;19905065
 7;<25;DE;Vaccination;0;19905065
 7;<25;DE;ICU admissions;0;19905065
-7;<25;DE;People in hospital;0;19905065
+7;<25;DE;People in hospital;1;19905065
 7;<25;DE;People in ICU;0;19905065
 7;<25;NL;Cases;0;4850952
 7;<25;NL;Hospitalisations;0;4850952
 7;<25;NL;Deaths;0;4850952
 7;<25;NL;Vaccination;0;4850952
 7;<25;NL;ICU admissions;0;4850952
-7;<25;NL;People in hospital;0;4850952
+7;<25;NL;People in hospital;1;4850952
 7;<25;NL;People in ICU;0;4850952
 8;25-50;DE;Cases;0;25855651
 8;25-50;DE;Hospitalisations;0;25855651
@@ -341,14 +341,14 @@
 8;25-50;DE;Vaccination;0;25855651
 8;25-50;DE;ICU admissions;0;25855651
 8;25-50;DE;People in hospital;2;25855651
-8;25-50;DE;People in ICU;0;25855651
+8;25-50;DE;People in ICU;1;25855651
 8;25-50;NL;Cases;0;5479579
 8;25-50;NL;Hospitalisations;0;5479579
 8;25-50;NL;Deaths;0;5479579
 8;25-50;NL;Vaccination;0;5479579
 8;25-50;NL;ICU admissions;0;5479579
 8;25-50;NL;People in hospital;2;5479579
-8;25-50;NL;People in ICU;0;5479579
+8;25-50;NL;People in ICU;1;5479579
 8;50+;DE;Cases;0;37394315
 8;50+;DE;Hospitalisations;0;37394315
 8;50+;DE;Deaths;0;37394315
@@ -368,14 +368,14 @@
 8;<25;DE;Deaths;0;19905065
 8;<25;DE;Vaccination;0;19905065
 8;<25;DE;ICU admissions;0;19905065
-8;<25;DE;People in hospital;0;19905065
+8;<25;DE;People in hospital;1;19905065
 8;<25;DE;People in ICU;0;19905065
 8;<25;NL;Cases;0;4850952
 8;<25;NL;Hospitalisations;0;4850952
 8;<25;NL;Deaths;0;4850952
 8;<25;NL;Vaccination;0;4850952
 8;<25;NL;ICU admissions;0;4850952
-8;<25;NL;People in hospital;0;4850952
+8;<25;NL;People in hospital;1;4850952
 8;<25;NL;People in ICU;0;4850952
 9;25-50;DE;Cases;0;25855651
 9;25-50;DE;Hospitalisations;0;25855651
@@ -383,14 +383,14 @@
 9;25-50;DE;Vaccination;0;25855651
 9;25-50;DE;ICU admissions;0;25855651
 9;25-50;DE;People in hospital;2;25855651
-9;25-50;DE;People in ICU;0;25855651
+9;25-50;DE;People in ICU;1;25855651
 9;25-50;NL;Cases;0;5479579
 9;25-50;NL;Hospitalisations;0;5479579
 9;25-50;NL;Deaths;0;5479579
 9;25-50;NL;Vaccination;0;5479579
 9;25-50;NL;ICU admissions;0;5479579
 9;25-50;NL;People in hospital;2;5479579
-9;25-50;NL;People in ICU;0;5479579
+9;25-50;NL;People in ICU;1;5479579
 9;50+;DE;Cases;0;37394315
 9;50+;DE;Hospitalisations;0;37394315
 9;50+;DE;Deaths;0;37394315
@@ -410,27 +410,27 @@
 9;<25;DE;Deaths;0;19905065
 9;<25;DE;Vaccination;0;19905065
 9;<25;DE;ICU admissions;0;19905065
-9;<25;DE;People in hospital;0;19905065
+9;<25;DE;People in hospital;1;19905065
 9;<25;DE;People in ICU;0;19905065
 9;<25;NL;Cases;0;4850952
 9;<25;NL;Hospitalisations;0;4850952
 9;<25;NL;Deaths;0;4850952
 9;<25;NL;Vaccination;0;4850952
 9;<25;NL;ICU admissions;0;4850952
-9;<25;NL;People in hospital;0;4850952
+9;<25;NL;People in hospital;1;4850952
 9;<25;NL;People in ICU;0;4850952
 10;25-50;DE;Cases;0;25855651
 10;25-50;DE;Hospitalisations;0;25855651
 10;25-50;DE;Deaths;0;25855651
 10;25-50;DE;Vaccination;0;25855651
-10;25-50;DE;ICU admissions;1;25855651
+10;25-50;DE;ICU admissions;0;25855651
 10;25-50;DE;People in hospital;2;25855651
 10;25-50;DE;People in ICU;1;25855651
 10;25-50;NL;Cases;0;5479579
 10;25-50;NL;Hospitalisations;0;5479579
 10;25-50;NL;Deaths;0;5479579
 10;25-50;NL;Vaccination;0;5479579
-10;25-50;NL;ICU admissions;1;5479579
+10;25-50;NL;ICU admissions;0;5479579
 10;25-50;NL;People in hospital;2;5479579
 10;25-50;NL;People in ICU;1;5479579
 10;50+;DE;Cases;0;37394315
@@ -452,14 +452,14 @@
 10;<25;DE;Deaths;0;19905065
 10;<25;DE;Vaccination;0;19905065
 10;<25;DE;ICU admissions;0;19905065
-10;<25;DE;People in hospital;0;19905065
+10;<25;DE;People in hospital;1;19905065
 10;<25;DE;People in ICU;0;19905065
 10;<25;NL;Cases;1;4850952
 10;<25;NL;Hospitalisations;0;4850952
 10;<25;NL;Deaths;0;4850952
 10;<25;NL;Vaccination;0;4850952
 10;<25;NL;ICU admissions;0;4850952
-10;<25;NL;People in hospital;0;4850952
+10;<25;NL;People in hospital;1;4850952
 10;<25;NL;People in ICU;0;4850952
 11;25-50;DE;Cases;0;25855651
 11;25-50;DE;Hospitalisations;0;25855651
@@ -494,14 +494,14 @@
 11;<25;DE;Deaths;0;19905065
 11;<25;DE;Vaccination;0;19905065
 11;<25;DE;ICU admissions;0;19905065
-11;<25;DE;People in hospital;0;19905065
+11;<25;DE;People in hospital;1;19905065
 11;<25;DE;People in ICU;0;19905065
 11;<25;NL;Cases;10;4850952
 11;<25;NL;Hospitalisations;0;4850952
 11;<25;NL;Deaths;0;4850952
 11;<25;NL;Vaccination;0;4850952
 11;<25;NL;ICU admissions;0;4850952
-11;<25;NL;People in hospital;0;4850952
+11;<25;NL;People in hospital;1;4850952
 11;<25;NL;People in ICU;0;4850952
 12;25-50;DE;Cases;6;25855651
 12;25-50;DE;Hospitalisations;0;25855651
@@ -536,14 +536,14 @@
 12;<25;DE;Deaths;0;19905065
 12;<25;DE;Vaccination;0;19905065
 12;<25;DE;ICU admissions;0;19905065
-12;<25;DE;People in hospital;0;19905065
+12;<25;DE;People in hospital;1;19905065
 12;<25;DE;People in ICU;0;19905065
 12;<25;NL;Cases;5;4850952
 12;<25;NL;Hospitalisations;0;4850952
 12;<25;NL;Deaths;0;4850952
 12;<25;NL;Vaccination;0;4850952
 12;<25;NL;ICU admissions;0;4850952
-12;<25;NL;People in hospital;0;4850952
+12;<25;NL;People in hospital;1;4850952
 12;<25;NL;People in ICU;0;4850952
 13;25-50;DE;Cases;5;25855651
 13;25-50;DE;Hospitalisations;1;25855651
@@ -578,14 +578,14 @@
 13;<25;DE;Deaths;0;19905065
 13;<25;DE;Vaccination;0;19905065
 13;<25;DE;ICU admissions;0;19905065
-13;<25;DE;People in hospital;0;19905065
+13;<25;DE;People in hospital;1;19905065
 13;<25;DE;People in ICU;0;19905065
 13;<25;NL;Cases;18;4850952
 13;<25;NL;Hospitalisations;0;4850952
 13;<25;NL;Deaths;0;4850952
 13;<25;NL;Vaccination;0;4850952
 13;<25;NL;ICU admissions;0;4850952
-13;<25;NL;People in hospital;0;4850952
+13;<25;NL;People in hospital;1;4850952
 13;<25;NL;People in ICU;0;4850952
 14;25-50;DE;Cases;15;25855651
 14;25-50;DE;Hospitalisations;0;25855651
@@ -620,14 +620,14 @@
 14;<25;DE;Deaths;0;19905065
 14;<25;DE;Vaccination;0;19905065
 14;<25;DE;ICU admissions;0;19905065
-14;<25;DE;People in hospital;0;19905065
+14;<25;DE;People in hospital;1;19905065
 14;<25;DE;People in ICU;0;19905065
 14;<25;NL;Cases;2;4850952
 14;<25;NL;Hospitalisations;0;4850952
 14;<25;NL;Deaths;0;4850952
 14;<25;NL;Vaccination;0;4850952
 14;<25;NL;ICU admissions;1;4850952
-14;<25;NL;People in hospital;0;4850952
+14;<25;NL;People in hospital;1;4850952
 14;<25;NL;People in ICU;0;4850952
 15;25-50;DE;Cases;13;25855651
 15;25-50;DE;Hospitalisations;0;25855651
@@ -662,14 +662,14 @@
 15;<25;DE;Deaths;0;19905065
 15;<25;DE;Vaccination;0;19905065
 15;<25;DE;ICU admissions;0;19905065
-15;<25;DE;People in hospital;0;19905065
+15;<25;DE;People in hospital;1;19905065
 15;<25;DE;People in ICU;0;19905065
 15;<25;NL;Cases;4;4850952
 15;<25;NL;Hospitalisations;0;4850952
 15;<25;NL;Deaths;0;4850952
 15;<25;NL;Vaccination;0;4850952
 15;<25;NL;ICU admissions;0;4850952
-15;<25;NL;People in hospital;1;4850952
+15;<25;NL;People in hospital;2;4850952
 15;<25;NL;People in ICU;0;4850952
 16;25-50;DE;Cases;24;25855651
 16;25-50;DE;Hospitalisations;1;25855651
@@ -704,14 +704,14 @@
 16;<25;DE;Deaths;0;19905065
 16;<25;DE;Vaccination;0;19905065
 16;<25;DE;ICU admissions;0;19905065
-16;<25;DE;People in hospital;0;19905065
+16;<25;DE;People in hospital;1;19905065
 16;<25;DE;People in ICU;0;19905065
 16;<25;NL;Cases;4;4850952
 16;<25;NL;Hospitalisations;0;4850952
 16;<25;NL;Deaths;0;4850952
 16;<25;NL;Vaccination;0;4850952
 16;<25;NL;ICU admissions;0;4850952
-16;<25;NL;People in hospital;0;4850952
+16;<25;NL;People in hospital;1;4850952
 16;<25;NL;People in ICU;0;4850952
 17;25-50;DE;Cases;21;25855651
 17;25-50;DE;Hospitalisations;0;25855651
@@ -746,14 +746,14 @@
 17;<25;DE;Deaths;0;19905065
 17;<25;DE;Vaccination;0;19905065
 17;<25;DE;ICU admissions;0;19905065
-17;<25;DE;People in hospital;0;19905065
+17;<25;DE;People in hospital;1;19905065
 17;<25;DE;People in ICU;0;19905065
 17;<25;NL;Cases;8;4850952
 17;<25;NL;Hospitalisations;0;4850952
 17;<25;NL;Deaths;0;4850952
 17;<25;NL;Vaccination;0;4850952
 17;<25;NL;ICU admissions;0;4850952
-17;<25;NL;People in hospital;0;4850952
+17;<25;NL;People in hospital;1;4850952
 17;<25;NL;People in ICU;0;4850952
 18;25-50;DE;Cases;25;25855651
 18;25-50;DE;Hospitalisations;0;25855651
