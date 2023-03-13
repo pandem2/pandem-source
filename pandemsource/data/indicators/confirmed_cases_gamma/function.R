@@ -33,7 +33,7 @@ if (geo_code == "NL" || geo_code == "DE") {
   all = all_cases %>% mutate(variant = "All")%>% select(-cases)%>% rename(cases = confirmed_cases)%>% select(time,variant,cases)
   df = union_all(zero_cases,df)
   df = union_all(df,all)
-  df %>% filter(variant == "Gamma")
+  (df %>% filter(variant == "Gamma"))$cases
 } else {
   ratio = ifelse(reporting_period < start_date, NA , atan(-10 + as.numeric(difftime(strptime(reporting_period, "%Y-%m-%d"), start_date, unit ='days'))^0.52)/ pi + 0.5)
   gamma = round(confirmed_cases * ratio)
