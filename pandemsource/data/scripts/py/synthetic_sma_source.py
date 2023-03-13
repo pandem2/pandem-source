@@ -198,6 +198,7 @@ source = "sma-fx-2023"
 pathogen = "J09.X"
 # generating time series
 for geo in countries:
+  all_count = {}
   for step in steps:
     for combi in itertools.product(*[[(s,cat) for cat in  models[s]] for s in step]):
       key = {**{k:v for k,v in combi}, **{"geo_code":geo, "pathogen_code":pathogen, "source":source}}
@@ -226,6 +227,11 @@ for geo in countries:
           daycount = daycount + random.randint(int(countries[geo] * weight*0.95), round(countries[geo]*weight*1.05))
         # at this point daycount contain the number of articles of the current days including all signals
         lines.append({**key, **{"date":d.strftime("%Y-%m-%d"), "article_count":daycount }})
+        # calculating data for all topics
+        if len(combi) == 1:
+          all_count[d.strftime("%Y-%m-%d")] = (all_count.get(d.strftime("%Y-%m-%d")) or 0) + daycount
+  for day, count in all_count.items():
+    lines.append({**{"geo_code":geo, "pathogen_code":pathogen, "source":source}, **{"date":day, "article_count":count }})
 
 df = pd.DataFrame(lines)
 df.to_csv("sma_timeseries.csv", sep=',', encoding='utf-8')
