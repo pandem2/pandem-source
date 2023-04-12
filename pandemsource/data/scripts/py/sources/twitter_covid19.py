@@ -13,7 +13,8 @@ chunk_size = 5000
 def df_transform(df):
   df["article_count"] = 1
   df["reporting_time"] = df.apply(lambda row: datetime.strftime(datetime.strptime(row["date"], "%Y-%m-%d") + timedelta(seconds = int(row["chunk"])), "%Y-%m-%d %H:%M:%S"), axis = 1)
-  return df
+  # TODO remove this was added in order to allow getting tweets without processing
+  return df.head(0)
   
 def join_files(files_hash, last_hash, dls, orchestrator, logger, **kwargs):
   files = files_hash["files"]

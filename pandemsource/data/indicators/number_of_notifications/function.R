@@ -1,7 +1,1 @@
-sapply(
-
-  seq_along(confirmed_cases),
-
-  function(i) if (i == 1){0} else{round(confirmed_cases[[i]] * (3 / log(i)))}
-
-)
+round(confirmed_cases * (1 + 3/ (1+log(seq_along(confirmed_cases), 80)^50)))
