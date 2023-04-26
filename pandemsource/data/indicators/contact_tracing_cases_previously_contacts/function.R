@@ -46,7 +46,10 @@ day_loop <- function(period, confirmed_cases, df){ #sans recalcul des nouveaux c
   for (i in 1:nrow(df_res)){df_res$sum_contacts_reached[i]<-(df_res[i,13]+df_res[i,16])}#Somme des contacts contactés dans la journée
   for (i in 1:nrow(df_res)){df_res$sum_contacts_unreached[i]<-(df_res[i,14]+df_res[i,17])}#Somme des contacts non contactés dans la journée
  
-  return(df_res$confirmed_cases)
+### Cases previously identified as contacts --> NaN en resultat à revoir
+for (i in 1:nrow(df_res)){df_res$sum_cases_prev_contacts[i]<-(df_res[i,13]*(df_res[i,11]/df_res[i,3]))}# contact_tracing_contacts_identified *(number of cases reached within a day / confirmed_cases)
+return(df_res$sum_cases_prev_contacts)
+
 }
 
 df_res <- day_loop(reporting_period,limited_tracing,df )

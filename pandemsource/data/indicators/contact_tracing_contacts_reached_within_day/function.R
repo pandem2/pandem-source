@@ -46,7 +46,7 @@ day_loop <- function(period, confirmed_cases, df){ #sans recalcul des nouveaux c
   for (i in 1:nrow(df_res)){df_res$sum_contacts_reached[i]<-(df_res[i,13]+df_res[i,16])}#Somme des contacts contactés dans la journée
   for (i in 1:nrow(df_res)){df_res$sum_contacts_unreached[i]<-(df_res[i,14]+df_res[i,17])}#Somme des contacts non contactés dans la journée
  
-  return(df_res$confirmed_cases)
+  return(df_res$sum_contacts_reached)
 }
 
 df_res <- day_loop(reporting_period,limited_tracing,df )
