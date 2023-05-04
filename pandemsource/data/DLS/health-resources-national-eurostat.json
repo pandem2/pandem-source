@@ -43,7 +43,7 @@
     "columns": [
         {
             "name": "isco08",
-            "variable": "isco_08_code"
+            "variable": "isco_08_code_to_pop_type"
         },
         {
             "name": "geo\\time",
@@ -55,7 +55,13 @@
         },
         {
             "name": "number_of_hospital_staff",
-            "variable": "number_of_hospital_staff"
+            "variable": "population"
         }
-    ]
+    ],
+    "synthetize": {
+        "active": true,
+        "tags": [
+            "missing_real_data_2022"
+        ]
+    }
 }

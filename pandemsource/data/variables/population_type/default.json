@@ -307,6 +307,17 @@
             "attr": {
                 "population_type": "hcw_nurses"
             }
+        },
+        {
+            "attrs": {
+                "line_number": 27,
+                "source": "pandem2",
+                "population_group": "Health Care Workers - Nurses and Midwifery",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "hcw_nurses_and_midwifery"
+            }
         }
     ]
 }

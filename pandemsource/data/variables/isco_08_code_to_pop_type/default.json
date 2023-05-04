@@ -1,0 +1,46 @@
+{
+    "tuples": [
+        {
+          "attrs": {
+                "line_number": 81,
+                "source": "isco-08-ilo",
+                "file": "3687/in/3687_url_isco-08-ilo__ilostat-files_ISCO_newdocs-08-2021_ISCO-08_ISCO-08%20EN%20Structure%20and%20definitions.xlsx",
+                "created_on": "2022-12-29T13:22:14.244411",
+                "isco_08_code": "221",
+                "isco_08_label": "Medical Doctors",
+                "population_type":"hcw_doctors"
+            },
+            "attr": {
+                "isco_08_code_to_pop_type": "221"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 84,
+                "source": "isco-08-ilo",
+                "file": "3687/in/3687_url_isco-08-ilo__ilostat-files_ISCO_newdocs-08-2021_ISCO-08_ISCO-08%20EN%20Structure%20and%20definitions.xlsx",
+                "created_on": "2022-12-29T13:22:14.244411",
+                "isco_08_code": "222",
+                "isco_08_label": "Nursing and Midwifery Professionals",
+                "population_type":"hcw_nurses_and_midwifery"
+            },
+            "attr": {
+                "isco_08_code_to_pop_type": "222"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 85,
+                "source": "isco-08-ilo",
+                "file": "3687/in/3687_url_isco-08-ilo__ilostat-files_ISCO_newdocs-08-2021_ISCO-08_ISCO-08%20EN%20Structure%20and%20definitions.xlsx",
+                "created_on": "2022-12-29T13:22:14.244411",
+                "isco_08_code": "2221",
+                "isco_08_label": "Nursing Professionals",
+                "population_type":"hcw_nurses"
+            },
+            "attr": {
+                "isco_08_code_to_pop_type": "2221"
+            }
+        }
+    ]
+}

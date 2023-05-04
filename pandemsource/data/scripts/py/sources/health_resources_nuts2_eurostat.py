@@ -12,6 +12,7 @@ def df_transform(df: pd.DataFrame) -> pd.DataFrame:
     df = separate_multiple_isco_codes(df)
     df = df[df['isco08'].str.contains("222|221", regex=True)]
     df["line_number"] = range(1, len(df)+1)
+    breakpoint()
     return df
 
 
