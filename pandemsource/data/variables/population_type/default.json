@@ -318,6 +318,28 @@
             "attr": {
                 "population_type": "hcw_nurses_and_midwifery"
             }
+        },
+        {
+            "attrs": {
+                "line_number": 28,
+                "source": "pandem2",
+                "population_group": "Public Health Workers",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "phw"
+            }
+        },
+        {
+            "attrs": {
+                "line_number": 28,
+                "source": "pandem2",
+                "population_group": "Public Health Workers - Testers",
+                "file": ""
+            },
+            "attr": {
+                "population_type": "testers"
+            }
         }
     ]
 }
