@@ -85,7 +85,11 @@ class Storage(worker.Worker):
         
         if file_path.split('.')[-1] == "json":
             with open(file_path, 'r') as f:
-                data_dict = json.load(f)
+                try:
+                  data_dict = json.load(f)
+                except Exception as e:
+                  print(f"An error occurred while readig the file {file_path}")
+                  raise e
             return data_dict
         else :
             with open(file_path, 'rb') as f:

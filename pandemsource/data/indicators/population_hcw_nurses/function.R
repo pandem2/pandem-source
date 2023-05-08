@@ -1,1 +1,1 @@
-population_hcw * 0.1
+population_hcw * 0.5
