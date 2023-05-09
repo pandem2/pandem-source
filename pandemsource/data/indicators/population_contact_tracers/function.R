@@ -1,2 +1,2 @@
-population_phw * 0.3
+round(population_phw * 0.3)
 

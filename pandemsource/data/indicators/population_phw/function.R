@@ -1,1 +1,1 @@
-population * 0.0005
+round(population * 0.0001)
