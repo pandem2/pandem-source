@@ -179,7 +179,7 @@ class Evaluator(worker.Worker):
                     comb = list(comb) 
                     # testing the tuples than satisfy the provided parameters
                     #l.debug(f"ind {ind} -> obs_pars {obs_pars} base_pars {base_pars}")
-                    #if ind == "occupancy_ratio":
+                    #if ind == "population_contact_tracers":
                     #  breakpoint()
                       
                     if len(obs_pars) > 0 and (base_pars[0] in obs_keys or obs_pars[0] in obs_keys):
@@ -236,11 +236,11 @@ class Evaluator(worker.Worker):
                                 if attr_pars_ok:
                                   # checking that tuple contains the modifiers of the current observation unless is null
                                   attrs_obs_ok = True
-                                  for obs_mod_var, obs_mod_value in modifiers[obs_to_test].items():
-                                    if obs_mod_value is not None and obs_mod_var not in modifiers[ind]:
-                                      if not any(k == obs_mod_var and v == obs_mod_value for k, v in key):
-                                        attrs_obs_ok = False
-                                        break
+                                  #for obs_mod_var, obs_mod_value in modifiers[obs_to_test].items():
+                                  #  if obs_mod_value is not None and obs_mod_var not in modifiers[ind]:
+                                  #    if not any(k == obs_mod_var and v == obs_mod_value for k, v in key):
+                                  #      attrs_obs_ok = False
+                                  #      break
                                   if attrs_obs_ok:
                                     # checking if the current combination exists for the expected base variable
                                     # applying modifiers

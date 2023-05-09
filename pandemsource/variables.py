@@ -57,7 +57,11 @@ class Variables(worker.Worker):
                       for alias in aliases:
                           alias_dict = base_dict.copy()
                           alias_dict['formula'] = alias['formula'] if alias['formula'] is not None else None #base_dict['formula']
-                          alias_dict['modifiers'] = alias['modifiers']
+                          if alias['modifiers'] and base_dict['modifiers']:
+                            alias_dict['modifiers'] = {**{a["variable"]:a["value"] for a in base_dict["modifiers"]}, **{a["variable"]:a["value"] for a in alias['modifiers']}}
+                            alias_dict['modifiers'] = [{"variable":k, "value":v} for k, v in alias_dict["modifiers"].items()]
+                          else:
+                            alias_dict['modifiers'] = alias['modifiers']
                           alias_dict['no_report'] = alias['no_report']
                           alias_dict['synthetic_tag'] = alias['synthetic_tag']
                           alias_dict['synthetic_blocker'] = alias['synthetic_blocker']
