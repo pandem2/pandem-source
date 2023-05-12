@@ -17,12 +17,21 @@ day_loop <- function(period, confirmed_cases, nb_contact_tracers,full_ctp, parti
   contacts_unreached <- 0
  
   for (i in 1:length(period)){
-    ct_cap = nb_contact_tracers[i] * 150
-    if(full_ctp[i]>0){new_cases_to_reach=confirmed_cases[i]}
-    else if(partial_ctp[i]>0){new_cases_to_reach = round(mean(confirmed_cases[i],ct_cap)* round(runif(1, 0.95, 1.05), 2))}
-    else {new_cases_to_reach =0}
-   
-    cases_reached_day <- min(new_cases_to_reach,ct_cap) #calcul des    nouveaux cas reached in the day
+    ct_cap = nb_contact_tracers[i] * 20
+    if(full_ctp[i]>0){
+      new_cases_to_reach=confirmed_cases[i]
+    } else if(partial_ctp[i]>0){
+      new_cases_to_reach = round(mean(confirmed_cases[i],ct_cap)* runif(1, 0.95, 1.05))
+    } else {
+      new_cases_to_reach =0
+    }
+    if(is.na(new_cases_to_reach)) {
+      new_cases_to_reach <- 0
+    }
+    if(is.na(ct_cap)) {
+      ct_cap <- 0
+    }
+    cases_reached_day <- min(round(new_cases_to_reach * runif(1, 0.8, 1)), ct_cap) #calcul des nouveaux cas reached in the day
     cases_unreached_day <- new_cases_to_reach - cases_reached_day #    calcul des nouveaux cas UNreached in the day
     ct_cap <- ct_cap - cases_reached_day #calcul de la capacite restante
    
@@ -34,19 +43,21 @@ day_loop <- function(period, confirmed_cases, nb_contact_tracers,full_ctp, parti
     cases_reached <- cases_reached_day + cases_reached_with_delay#Somme des cas contactés dans la journée
     cases_unreached <- cases_unreached_day + cases_unreached_with_delay#Somme des cas non contactés dans la journée
    
-   
-    sum_contacts_identified<-cases_unreached*sample(5:6,1)#Somme des contacts identifies
+
+    sum_contacts_identified<-round(runif(1, cases_reached*3,cases_reached*4))#Somme des contacts identifies
     contacts_reached_day<-min(ct_cap,sum_contacts_identified) #calcul des nouveauxcontacts reached in the day
-    contacts_unreached_day<-(sum_contacts_identified-contacts_reached_day)# calcul des nouveauxcontacts UNreached in the day
+    contacts_unreached_day<-sum_contacts_identified-contacts_reached_day # calcul des nouveauxcontacts UNreached in the day
    
-    ct_cap<-(ct_cap-contacts_reached_day)#calcul de la capacite restante
+    ct_cap<-ct_cap-contacts_reached_day #calcul de la capacite restante
     contacts_reached_with_delay_if_capa<-min(ct_cap,contacts_unreached) #contacts reached with delay if capacity
     contacts_unreached_with_delay<-(contacts_unreached-contacts_reached_with_delay_if_capa)# contacts enretard non contactés
    
     ct_cap<-ct_cap - contacts_reached_with_delay_if_capa#recalcul de la capaciterestante
     contacts_reached<-contacts_reached_day+contacts_reached_with_delay_if_capa #Somme des contacts contactésdans la journée
     contacts_unreached<-contacts_unreached_day + contacts_unreached_with_delay #Somme des contacts noncontactés dans la journée
-    contact_tracing_cases_previously_contacts = round(sum_contacts_identified *(cases_reached/confirmed_cases[i]))
+    
+    contact_tracing_cases_previously_contacts = round(sum_contacts_identified *(cases_reached_day/max(confirmed_cases[max(1, i-7):i])))
+    
     ret[[i]] <- list(date = period[[i]],cases_to_reach = new_cases_to_reach,
                      cases_reached_day=cases_reached_day,cases_unreached_day=cases_unreached_day,
                      cases_reached=cases_reached, cases_unreached=cases_unreached,
