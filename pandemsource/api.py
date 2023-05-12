@@ -702,8 +702,8 @@ class TimeSeriesHandler(tornado.web.RequestHandler):
               values["source__reference_user"] = reference_users[values["source"]]
             if values["source"] in source_descriptions:
               values["source__source_description"] = source_descriptions[values["source"]]
-            if values["source"] in data_quality:
-              values["source__data_quality"] = data_quality[values["source"]]
+            if values["source"] in data_quality and 'data_quality' not in values:
+              values["data_quality"] = data_quality[values["source"]]
           # Adding data points if required
           if f_key:
             values["key"] = orig_values

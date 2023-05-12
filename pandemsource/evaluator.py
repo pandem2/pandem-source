@@ -278,7 +278,8 @@ class Evaluator(worker.Worker):
                               "step":step + 1,
                               "comb":[origcombs[c] for c in new_combs],
                               "dates":dates,
-                              "date_par":date_par
+                              "date_par":date_par,
+                              "synthetic":is_synthetic
                             }))
                             # we have found something new so we will try to performa a new step
                             stop = False
@@ -397,6 +398,7 @@ class Evaluator(worker.Worker):
                           subprocess.run (f'Rscript --vanilla {exec_file_path}', shell=True, cwd=staging_dir)
                           if os.path.exists(result_path):
                               modifiers = {t["variable"]:t["value"] for t in vars_dic[ind]["modifiers"] } if "modifiers" in vars_dic[ind] else {}
+                              synthetic_status = {"data_quality":"Synthetic"} if ind_map["synthetic"] else {}
                               with open(self.pandem_path(result_path)) as f:
                                   r = json.load(f)
                               assert(len(r) == len(cslice))
