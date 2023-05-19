@@ -103,6 +103,6 @@ def export_csv(dfs):
   export_folder = os.path.join(os.environ.get("PANDEM_HOME"), "export", "covid_19_training_ds")
   os.makedirs(export_folder, exist_ok = True)
   for n, df in dfs.items():
-    df.to_csv(os.path.join(export_folder, f"{n}.csv"), encoding='utf-8', index=False)
+    df.to_csv(os.path.join(export_folder, f"{n}.csv.gz"), encoding='utf-8', index=False, compression='gzip')
 
 export_covid19training_ds()
