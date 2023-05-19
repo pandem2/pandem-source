@@ -20,7 +20,7 @@ def export_covid19training_ds():
   
   print(f"{len(all_ts)} timeseries found on instance")
   available_sources = {t["source__source_name"] for t in all_ts}
-  target_sources  = {"COVID-19 Datahub", "ECDC COVID-19", "SeroTracker", "Twitter datasets"}
+  target_sources  = {"COVID-19 Datahub", "ECDC COVID-19", "SeroTracker", "Twitter datasets", "ECDC COVID-19 Simulated", "Eurostats NUTS", "Influenza net", "OECD", "OpenSky-Network-CovidDataset", "Our-World-In-Data"}
   missing_sources = target_sources.difference(available_sources)
   sources = available_sources.intersection(target_sources)
   back = "\n"
