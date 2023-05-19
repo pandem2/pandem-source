@@ -398,7 +398,8 @@ class VariableListHandler(tornado.web.RequestHandler):
         var_path = util.pandem_path("files", "variables")
         var_paths = await self.storage_proxy.list_files(var_path, include_files = False, include_dirs = True, recursive = False)
         var_dic = await self.variables_proxy.get_variables()
-        
+        ts = await self.variables_proxy.get_timeseries()
+        ts_chars = {k for key in ts.keys() for k, v in key if k not in ["indicator", "value"]}.union(["data_quality"])
         pub_vars = {v['path'] for v in var_paths }
 
         sources_path = util.pandem_path("files", "source-definitions")
@@ -406,6 +407,8 @@ class VariableListHandler(tornado.web.RequestHandler):
         constants = ConstantsNamespace()
         dlss = [(await self.storage_proxy.read_file(f['path'])) for f in dls_paths if f['path'].endswith(constants.JSON_EXT)]
         used_vars = {col["variable"] for dls in dlss for col in dls['columns'] if "variable" in col}
+        used_vars = used_vars.union(ts_chars)
+
         found_vars = {}
         for v in var_dic:
           if v in used_vars or v in pub_vars: 
