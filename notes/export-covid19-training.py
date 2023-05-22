@@ -12,12 +12,13 @@ def export_covid19training_ds():
   res = requests.get(f"http://localhost:8000/variable_list").json()
   var_map = {v["variable"]:v for v in res["variables"]}
   
-  renamings = {"indicence_1000":"estimated_incidence" }
+  renamings = {"indicence_1000":"estimated_incidence", "new_performed_tests":"performed_tests", "new_performed_tests_per_100k":"performed_tests_per_100k", "implemented_policy":"interventions", "implemented_measures";"interventions":"cum_article_count", "studied_population":"studied_population_size"}
   source_fields = ["source__reference_user", "source__source_description", "source__source_name", "source", "source__table"]
   indicator_fields = ["indicator", 'indicator__family', 'indicator__unit', 'indicator__description']
   excluded_endings = {"_alert"}
   excluded_fields = {"key"}
-  
+  excluded_indicators = {"cumulative_confirmed_cases", "new_active_cases", "new_recovered_cases", "number_of_cases", "cumulative_infected_deaths", "length_of_stay", "performed_tests", "new_additional_1_dose", "new_additional_2_doses", "new_additional_3_doses", "new_doses_injected", "new_one_dose", "new_two_doses"}
+
   print(f"{len(all_ts)} timeseries found on instance")
   available_sources = {t["source__source_name"] for t in all_ts}
   target_sources  = {"COVID-19 Datahub", "ECDC COVID-19", "SeroTracker", "Twitter datasets", "ECDC COVID-19 Simulated", "Eurostats NUTS", "Influenza net", "OECD", "OpenSky-Network-CovidDataset", "Our-World-In-Data"}

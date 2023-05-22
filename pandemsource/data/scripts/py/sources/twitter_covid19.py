@@ -7,6 +7,10 @@ import re
 from datetime import datetime
 from datetime import timedelta
 from pandemsource import util
+import requests
+import io
+import zipfile
+import time
 
 chunk_size = 5000
 
@@ -217,6 +221,68 @@ def load_tweet_date_chunk(date, chunk):
       res = {t["id"]:t for t in json.load(f) if "id" in t}
   return res
 
+def get_regmap():
+  url = "https://download.geonames.org/export/dump/countryInfo.txt"
+  r = requests.get(url)
+  countries_df = pd.read_csv(io.BytesIO(r.content), skiprows = 49, sep = "\t")
+  eu_codes = ["BE","GR","LT","PT","BG","ES","LU","RO","CZ","FR","HU","SI","DK","HR","MT","SK","DE","IT","NL","FI","EE","CY","AT","SE","IE","LV","PL"]
+  countries_eu = countries_df[countries_df["#ISO"].isin(eu_codes)]
+  eu_cmap = {c:n for c, n in zip(countries_eu["#ISO"], countries_eu["Country"])}
+  regmap = {}
+  for c in eu_codes:
+    url = 'https://download.geonames.org/export/dump/'+c+'.zip'
+    print(url)
+    r = requests.get(url)
+    locs = zipfile.ZipFile(io.BytesIO(r.content)).open(f'{c}.txt')
+    df = pd.read_csv(locs, sep='\t',names=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19])
+    loc_names = df[df[8].isin(['ADM1','ADM2', 'PPLA', 'PPLC'])][2].to_list()
+    country_names = df[df[15] == df[15].max()][4].to_list()[0].split(',')
+    regmap[c] = re.compile('|'.join([f"\\b{re.escape(name)}\\b" for name in [*loc_names, *country_names]]))
+  return regmap
+
+def get_country_code(text, regmap):
+  for c, reg in regmap.items():
+    if re.search(reg, text) is not None:
+      return c
+
+def get_tweets_by_country(files_hash, last_hash, dls, orchestrator, logger, **kwargs):
+  regmap = get_regmap()
+  base_dir = os.path.join(os.getcwd(), "tweets", "tweets_texts")
+  base_dest = os.path.join(os.getcwd(), "tweets", "country_tweets")
+  total_files = 0
+  logger.debug("calculating files to get country from")
+  to_process = [(date, chunk) for date in os.listdir(base_dir) for chunk in os.listdir(os.path.join(base_dir, date)) if not os.path.exists(os.path.join(base_dest, date, chunk))]
+  start = time.time()
+  new_files = [] 
+  i = 0
+  prog = 0
+  for date, chunk in to_process:
+    dest_dir = os.path.join(base_dest, date)
+    if not os.path.exists(dest_dir):
+      os.makedirs(dest_dir)
+      logger.debug(f"new date {date}")
+    dest_file = os.path.join(base_dest, date, chunk)
+
+    i = i + 1
+    secs = time.time() - start
+    if prog != round(100*i/len(to_process)):
+      prog = round(100*i/len(to_process))
+      logger.debug(f'{prog}%, time elapsed: {get_time(secs)}, remaining {get_time((secs*len(to_process))/i-secs)}')
+    tweets = []
+    source_file = os.path.join(base_dir,date, chunk)
+    with open(source_file, "r") as f:
+      j = json.load(f)
+    for t in j:
+      if "text" in t:
+        c = get_country_code(t['text'], regmap)
+        if c is not None:
+          t["country_code"] = c
+          tweets.append(t)
+    with open(dest_file, "w") as f:
+      json.dump(tweets, f)
+    new_files.append(dest_file)
+  return {"files":new_files, "hash":files_hash["hash"]}
+
 def save_tweet_date_chunk(data, date, chunk):
   dest_dir = os.path.join(os.getcwd(), "tweets", "tweets_texts", f"{date}")
   dest_file = os.path.join(dest_dir, f"{chunk}.json") 
@@ -234,5 +300,6 @@ def chunk_done(files_hash, dls, logger, **kwargs):
   stats_path = os.path.join(os.getcwd(), "tweets", "tweet_stats.json")
   util.save_json(stats, stats_path)
 
-    
-    
+def get_time(secs):
+  return f"{round(secs/3600):02d}:{round(secs/60)%60:02d}:{round(secs % 60):02d} secs"
+     

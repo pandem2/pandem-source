@@ -33,7 +33,8 @@
             "post_processing":[
               "join_files",
               "index_tweets",
-              "hydrate"
+              "hydrate",
+              "get_tweets_by_country"
             ],
             "after_submit":"chunk_done"
         },
@@ -50,9 +51,10 @@
       {"name":"created_at", "variable":"article_created_at", "path":"@created_at"},
       {"name":"text", "variable":"article_text", "path":"@text"},
       {"name":"lang", "variable":"article_language", "path":"@lang"},
-      {"name":"date", "path":"@date"},
+      {"name":"date", "variable":"reporting_date", "path":"@date"},
       {"name":"chunk", "path":"@chunk"},
-      {"name":"reporting_time", "variable":"reporting_time"},
+      {"name":"reporting_time"},
+      {"name":"country_code", "variable":"geo_code", "path":"@country_code"},
       {"name":"article_count", "variable":"article_count"}
     ]
 }
