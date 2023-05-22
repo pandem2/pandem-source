@@ -21,7 +21,7 @@ class DataPreprocessing:
         pass
     
     def clean_tweet(self, tweet):
-        if type(tweet) == np.float:
+        if type(tweet) == float:
             return ""
         temp = tweet.lower()
         temp = re.sub("[\'\"]", "", temp) # to avoid removing contractions in english

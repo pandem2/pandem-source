@@ -45,7 +45,7 @@ class NLPAnnotator(worker.Worker):
     def annotate(self, list_of_tuples, path, job, last_in_job):
       if self.run:
         # getting tuples from cache
-        list_of_tuples = list_of_tuples.value() 
+        list_of_tuples = list_of_tuples.value() if list_of_tuples is not None else {"tuples":[]}
         if self._models is None:
             self._models = self.get_models()
             self._model_aliases = {}
@@ -305,7 +305,7 @@ class NLPAnnotator(worker.Worker):
                 at["attrs"][geo_var] = geo_aliases[geo_var][matched_alias][0:2]
                 geo_annotated.append(at)
               t["attrs"][geo_var] = "All"
-            count = count + 1
+              count = count + 1
             if count % 10000 == 0:
               l.debug(f"{count} articles geo annotated")
         l.debug(f"{count} articles after geo annotation")

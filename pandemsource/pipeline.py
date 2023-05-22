@@ -45,6 +45,7 @@ class Pipeline(worker.Worker):
         self.job_precalstep = {}
         self.job_df = defaultdict(dict)
         self.job_tuples = defaultdict(dict)
+        self.tuples_count = {}
         self.job_stdtuples = defaultdict(dict)
         self.job_aggrtuples = defaultdict(dict)
         self.job_precalinds = {}
@@ -56,7 +57,7 @@ class Pipeline(worker.Worker):
         
 
         self.job_dicos = [
-          self.decompressed_files, self.job_df, self.job_tuples, self.job_stdtuples, self.job_aggrtuples, 
+          self.decompressed_files, self.job_df, self.job_tuples, self.tuples_count, self.job_stdtuples, self.job_aggrtuples, 
           self.job_precalinds, self.job_indicators, self.pending_count, self.pending_total, self.job_issues, self.job_precalstamp, self.job_precalstep
         ]
 
@@ -346,6 +347,11 @@ class Pipeline(worker.Worker):
           return
         self.pending_count[job["id"]] = self.pending_count[job["id"]] - 1
         self.job_tuples[job["id"]][path] = tuples
+        if job["id"] not in self.tuples_count:
+          self.tuples_count[job["id"]] = n_tuples
+        else: 
+          self.tuples_count[job["id"]] = self.tuples_count[job["id"]] + n_tuples
+
         self.job_issues[job["id"]].extend(issues)
        
         if (self.pending_count[job["id"]] + len(self.job_tuples[job["id"]])) == 0:
@@ -357,9 +363,11 @@ class Pipeline(worker.Worker):
             self.write_issues(self.job_issues[job["id"]]) 
             errors_number = sum(issue['issue_severity']=='error' for issue in self.job_issues[job["id"]])
             warning_number = sum(issue['issue_severity']=='warning' for issue in self.job_issues[job["id"]])
-            if errors_number == 0 and (n_tuples > 0 or warning_number == 0):
+            if errors_number == 0 and (self.tuples_count[job["id"]] > 0 or warning_number == 0):
+                self.tuples_count[job["id"]] = 0
                 self.update_job_step(job, 'read_df_ended', 0.3 + progress)
             else:
+                breakpoint()
                 self.fail_job(job)
         else:
             self.update_job_step(job, job["step"], 0.3 + progress)
@@ -379,6 +387,7 @@ class Pipeline(worker.Worker):
         self._storage_proxy.delete_db("issue", lambda i: int(i["job_id"]) == int(job['id']) and i['issue_type'] == "ref-not-found").get()
         
         self.job_issues[job["id"]].extend(issues)
+        self.tuples_count[job["id"]] = self.tuples_count[job["id"]] + n_tuples
         if self.pending_count[job["id"]] + len(self.job_stdtuples[job["id"]]) == 0:
           progress = 0.0
         else:
@@ -392,7 +401,7 @@ class Pipeline(worker.Worker):
                 # If all tuples returnes are None means that some referential were missing and that this source needs to be delayed
                 l.debug(f"Source {job['dls_json']['scope']['source']} has been reversed to read format end since some referential failed completely, probably some depending source is missing")
                 self.update_job_step(job, 'read_df_ended',  0.4)
-            elif errors_number == 0 and (n_tuples > 0 or warning_number == 0):
+            elif errors_number == 0 and (self.tuples_count[job["id"]] > 0 or warning_number == 0):
                 self.update_job_step(job, 'standardize_ended',  0.4 + progress)
             else:
                 self.fail_job(job)

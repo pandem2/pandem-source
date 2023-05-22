@@ -11,14 +11,19 @@ import requests
 import io
 import zipfile
 import time
+import multiprocessing
+import pickle
 
 chunk_size = 5000
 
 def df_transform(df):
   df["article_count"] = 1
-  df["reporting_time"] = df.apply(lambda row: datetime.strftime(datetime.strptime(row["date"], "%Y-%m-%d") + timedelta(seconds = int(row["chunk"])), "%Y-%m-%d %H:%M:%S"), axis = 1)
+  if len(df) > 0:
+    df["reporting_time"] = df.apply(lambda row: datetime.strftime(datetime.strptime(row["date"], "%Y-%m-%d") + timedelta(seconds = int(row["chunk"])), "%Y-%m-%d %H:%M:%S"), axis = 1)
+  else:
+    df["reporting_time"] = None
   # TODO remove this was added in order to allow getting tweets without processing
-  return df.head(0)
+  return df
   
 def join_files(files_hash, last_hash, dls, orchestrator, logger, **kwargs):
   files = files_hash["files"]
@@ -221,7 +226,18 @@ def load_tweet_date_chunk(date, chunk):
       res = {t["id"]:t for t in json.load(f) if "id" in t}
   return res
 
+_RM = None
 def get_regmap():
+  global _RM
+  rmfile = "regmap.pickle"
+  if _RM is not None:
+    return _RM
+  else:
+    if os.path.exists(rmfile):
+      with open(rmfile, "rb") as f:
+        _RM = pickle.load(f)
+        return _RM
+
   url = "https://download.geonames.org/export/dump/countryInfo.txt"
   r = requests.get(url)
   countries_df = pd.read_csv(io.BytesIO(r.content), skiprows = 49, sep = "\t")
@@ -238,50 +254,64 @@ def get_regmap():
     loc_names = df[df[8].isin(['ADM1','ADM2', 'PPLA', 'PPLC'])][2].to_list()
     country_names = df[df[15] == df[15].max()][4].to_list()[0].split(',')
     regmap[c] = re.compile('|'.join([f"\\b{re.escape(name)}\\b" for name in [*loc_names, *country_names]]))
-  return regmap
+  with open(rmfile, "wb") as f:
+    pickle.dump(regmap, f)
+  _RM = regmap
+  return _RM
 
 def get_country_code(text, regmap):
   for c, reg in regmap.items():
     if re.search(reg, text) is not None:
       return c
 
+def get_country_date_chunk(args):
+  i, (date, chunk, start, count) = args
+  base_dir = os.path.join(os.getcwd(), "tweets", "tweets_texts")
+  base_dest = os.path.join(os.getcwd(), "tweets", "country_tweets")
+  regmap = get_regmap()
+  dest_dir = os.path.join(base_dest, date)
+  if not os.path.exists(dest_dir):
+    os.makedirs(dest_dir)
+    print(f"new date {date}")
+  dest_file = os.path.join(base_dest, date, chunk)
+
+  secs = time.time() - start
+  if round(100*i/count) != round(100*(i+1)/count):
+    prog = round(100*i/count)
+    print(f'{prog}%, time elapsed: {get_time(secs)}, remaining {get_time((secs*count)/i-secs)}')
+  
+  tweets = []
+  source_file = os.path.join(base_dir,date, chunk)
+  with open(source_file, "r") as f:
+    j = json.load(f)
+  for t in j:
+    if "text" in t:
+      c = get_country_code(t['text'], regmap)
+      if c is not None:
+        t["country_code"] = c
+        tweets.append(t)
+  with open(dest_file, "w") as f:
+    json.dump(tweets, f)
+  return dest_file
+
 def get_tweets_by_country(files_hash, last_hash, dls, orchestrator, logger, **kwargs):
+  files = files_hash["files"]
+  current_hash = files_hash["hash"]
+  
   regmap = get_regmap()
   base_dir = os.path.join(os.getcwd(), "tweets", "tweets_texts")
   base_dest = os.path.join(os.getcwd(), "tweets", "country_tweets")
-  total_files = 0
   logger.debug("calculating files to get country from")
-  to_process = [(date, chunk) for date in os.listdir(base_dir) for chunk in os.listdir(os.path.join(base_dir, date)) if not os.path.exists(os.path.join(base_dest, date, chunk))]
   start = time.time()
-  new_files = [] 
-  i = 0
-  prog = 0
-  for date, chunk in to_process:
-    dest_dir = os.path.join(base_dest, date)
-    if not os.path.exists(dest_dir):
-      os.makedirs(dest_dir)
-      logger.debug(f"new date {date}")
-    dest_file = os.path.join(base_dest, date, chunk)
+  to_process = [(date, chunk) for date in os.listdir(base_dir) for chunk in os.listdir(os.path.join(base_dir, date)) if not os.path.exists(os.path.join(base_dest, date, chunk))]
+  count = len(to_process)
+  to_process = [*enumerate([(date, chunk, start, count) for date, chunk in to_process], 1)]
+  
+  pool_obj = multiprocessing.Pool(8)
+  new_files = pool_obj.map(get_country_date_chunk, to_process)
 
-    i = i + 1
-    secs = time.time() - start
-    if prog != round(100*i/len(to_process)):
-      prog = round(100*i/len(to_process))
-      logger.debug(f'{prog}%, time elapsed: {get_time(secs)}, remaining {get_time((secs*len(to_process))/i-secs)}')
-    tweets = []
-    source_file = os.path.join(base_dir,date, chunk)
-    with open(source_file, "r") as f:
-      j = json.load(f)
-    for t in j:
-      if "text" in t:
-        c = get_country_code(t['text'], regmap)
-        if c is not None:
-          t["country_code"] = c
-          tweets.append(t)
-    with open(dest_file, "w") as f:
-      json.dump(tweets, f)
-    new_files.append(dest_file)
-  return {"files":new_files, "hash":files_hash["hash"]}
+  prev_files = {f.replace("tweets_texts", "country_tweets") for f in files}
+  return {"files":[*prev_files.union(new_files)], "hash":current_hash}
 
 def save_tweet_date_chunk(data, date, chunk):
   dest_dir = os.path.join(os.getcwd(), "tweets", "tweets_texts", f"{date}")
