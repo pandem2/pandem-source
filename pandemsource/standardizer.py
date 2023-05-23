@@ -53,7 +53,7 @@ class Standardizer(worker.Worker):
 
         std_tuples={'scope':{}, 'tuples':[]}
         std_var={}
-        self.refresh_data(job):
+        self.refresh_data(job)
        
         variables = self.get_variables()
         list_issues=[]
