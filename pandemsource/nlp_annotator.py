@@ -306,7 +306,7 @@ class NLPAnnotator(worker.Worker):
                 geo_annotated.append(at)
               t["attrs"][geo_var] = "All"
               count = count + 1
-            if count % 10000 == 0:
+            if count % 10000 == 0 and count > 0:
               l.debug(f"{count} articles geo annotated")
         l.debug(f"{count} articles after geo annotation")
         
