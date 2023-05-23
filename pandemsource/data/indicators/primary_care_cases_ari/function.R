@@ -1,3 +1,1 @@
-function(period, hospitalised_infected_patients){
-    round(hospitalised_infected_patients*0.15 +runif(length(period),0.9,1.1)*(max(hospitalised_infected_patients)/20))
-}
+round(hospitalised_infected_patients*0.15 +runif(length(reporting_period),0.9,1.1)*(max(hospitalised_infected_patients)/20))

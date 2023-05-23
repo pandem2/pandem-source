@@ -1,3 +1,1 @@
-function(period, hospitalised_infected_patients){
-  round(hospitalised_infected_patients*0.4)
-}
+round(hospitalised_infected_patients*0.4)

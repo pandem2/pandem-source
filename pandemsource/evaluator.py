@@ -179,12 +179,20 @@ class Evaluator(worker.Worker):
                     comb = list(comb) 
                     # testing the tuples than satisfy the provided parameters
                     #l.debug(f"ind {ind} -> obs_pars {obs_pars} base_pars {base_pars}")
-                    #if ind == "population_contact_tracers":
+                    #if ind == "primary_care_positivity":
                     #  breakpoint()
-                      
-                    if len(obs_pars) > 0 and (base_pars[0] in obs_keys or obs_pars[0] in obs_keys):
+                    base_keys = {}
+                    for v, comb_dates in obs_keys.items():
+                      bv = var_dic[v]['variable']
+                      if bv not in base_keys:
+                        base_keys[bv] = comb_dates
+                      else:
+                        base_keys[bv]["comb"] = base_keys[bv]["comb"].union(comb_dates["comb"]) 
+                        base_keys[bv]["dates"] = base_keys[bv]["dates"].union(comb_dates["dates"]) 
+
+                    if len(obs_pars) > 0 and (base_pars[0] in base_keys or obs_pars[0] in obs_keys):
                       # We need to identify all tuples present on all obs_pars that respect the attr pars  
-                      dates = obs_keys[main_obs]["dates"] if main_obs in obs_keys else obs_keys[main_base]["dates"]
+                      dates = obs_keys[main_obs]["dates"] if main_obs in obs_keys else base_keys[main_base]["dates"]
                       date_filter = {base_date: {str(v) for date_comb in dates for k, v in date_comb if k == base_date}}
                       #date_filter.update(mofifiers[date_par])
                       # we can proceed the date_par has been found
