@@ -43,7 +43,8 @@
           "new_line_ended":false,
           "encoding":"UTF-8",
           "row":"*",
-          "date_format":"%Y-%m-%d %H:%M:%S"
+          "date_format_old":"%Y-%m-%d %H:%M:%S",
+          "date_format":"%Y-%m-%d"
         }
     },
     "columns":[

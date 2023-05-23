@@ -24,19 +24,19 @@ class Standardizer(worker.Worker):
 
     #def standardize(self, tuples_to_validate, job):
 
-    def refresh_data(job):
+    def refresh_data(self, job):
       if job["id"] > self._lastjob:
         self._lastjob = job["id"]
         self._variables = None
         self._referentials = dict()
         self._lastjob = job["id"]
       
-    def get_referential(var_name):
+    def get_referential(self, var_name):
       if var_name not in self._referentials:
         self._referentials[var_name] = self._variables_proxy.get_referential(var_name).get()
       return self._referentials[var_name]
     
-    def get_variables():
+    def get_variables(self):
       if self._variables is None:
         self._variables=self._variables_proxy.get_variables().get()
       return self._variables
