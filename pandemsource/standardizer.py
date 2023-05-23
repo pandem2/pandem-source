@@ -18,8 +18,29 @@ class Standardizer(worker.Worker):
         self._storage_proxy=self._orchestrator_proxy.get_actor('storage').get().proxy()
         self._variables_proxy=self._orchestrator_proxy.get_actor('variables').get().proxy()
         self._pipeline_proxy=self._orchestrator_proxy.get_actor('pipeline').get().proxy()
+        self._variables = None
+        self._referentials = dict()
+        self._lastjob = -1
 
     #def standardize(self, tuples_to_validate, job):
+
+    def refresh_data(job):
+      if job["id"] > self._lastjob:
+        self._lastjob = job["id"]
+        self._variables = None
+        self._referentials = dict()
+        self._lastjob = job["id"]
+      
+    def get_referential(var_name):
+      if var_name not in self._referentials:
+        self._referentials[var_name] = self._variables_proxy.get_referential(var_name).get()
+      return self._referentials[var_name]
+    
+    def get_variables():
+      if self._variables is None:
+        self._variables=self._variables_proxy.get_variables().get()
+      return self._variables
+
     def standardize(self, tuples, path, job, dls):  
         """
             IN:         tuples_to_validate and object job
@@ -32,7 +53,9 @@ class Standardizer(worker.Worker):
 
         std_tuples={'scope':{}, 'tuples':[]}
         std_var={}
-        variables=self._variables_proxy.get_variables().get()
+        self.refresh_data(job):
+       
+        variables = self.get_variables()
         list_issues=[]
         list_ref=[]
         global_tuple={}
@@ -76,7 +99,7 @@ class Standardizer(worker.Worker):
                 isNone = all([v is None for v in values]) 
                 #retrieves the referentiel
                 if not isNone and var_name not in refs_values and var_name in variables and variables[var_name]['type'] in type_validate:
-                    referential=self._variables_proxy.get_referential(var_name).get()
+                    referential= self.get_referentials(var_name)
                     if referential is not None:
                         refs_values[var_name]=set([x['attr'][var_name] for x in referential])
                         ref_matched[var_name] = False
@@ -86,7 +109,7 @@ class Standardizer(worker.Worker):
                         self._pipeline_proxy.standardize_end(tuples = None, n_tuples = 0, issues = [self.nothing_found_issue(tuples['scope']['file_name'], job, var_name)], path = path, job = job)
                         return
                 if not isNone and var_name not in refs_alias and var_name in variables and variables[var_name]['type'] in type_translate: 
-                    alias=self._variables_proxy.get_referential(var_name).get() 
+                    referential= self.get_referentials(var_name)
                     if alias is not None:
                         refs_alias[var_name] = dict((x['attr'][var_name],x['attrs'][code]) for x in alias if code in x['attrs'])
                         ref_matched[var_name] = False

@@ -51,9 +51,9 @@
       {"name":"created_at", "variable":"article_created_at", "path":"@created_at"},
       {"name":"text", "variable":"article_text", "path":"@text"},
       {"name":"lang", "variable":"article_language", "path":"@lang"},
-      {"name":"date", "path":"@date"},
+      {"name":"date", "path":"@date", "variable":"reporting_date"},
       {"name":"chunk", "path":"@chunk"},
-      {"name":"reporting_time", "variable":"reporting_time"},
+      {"name":"reporting_time"},
       {"name":"country_code", "variable":"geo_code", "path":"@country_code"},
       {"name":"article_count", "variable":"article_count"}
     ]
