@@ -10,7 +10,7 @@ job_id = jobs[jobs.source == "twitter-covid19"].index.max()
 print(f"taking job {job_id}")
 
 current_files = jobs.source_files[job_id]
-f = files[0] 
+f = current_files[0] 
 base_path = "/".join(f.split("/")[:-1])
 allfiles = os.path.join(base_path, "allfiles.json")
 
