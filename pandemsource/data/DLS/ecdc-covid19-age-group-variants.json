@@ -36,6 +36,6 @@
         {"name":"year_week", "variable":"reporting_week"},
         {"name":"age_group", "variable":"age_group"},
         {"name":"variant", "variable":"variant"},
-        {"name":"new_cases", "variable":"confirmed_cases"}
+        {"name":"new_cases", "variable":"number_detections_variant"}
     ]
 }
