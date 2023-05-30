@@ -9,7 +9,7 @@ library(ggplot2)
 
 get_df_age_group <- function() {
     json_payload <- '{
-        "select": ["number_detections_variant", "age_group", "geo_code", "reporting_week"],
+        "select": ["confirmed_cases", "age_group", "geo_code", "reporting_week"],
         "filter": {
             "source": "ecdc-covid19-age-group"
         }
@@ -60,7 +60,7 @@ normalize_dataframe <- function(df) {
     }
     if ("age_group" %in% colnames(df)) {
         df$age_group <- mapply(normalize_age_group, df$age_group)
-        names(df)[names(df) == "number_detections_variant"] <- "new_cases"
+        names(df)[names(df) == "confirmed_cases"] <- "new_cases"
     }
     return(df)
 }

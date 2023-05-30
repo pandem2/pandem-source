@@ -9,17 +9,6 @@ library(jsonlite)
 
 
 
-get_df_age_group <- function() {
-    json_payload <- '{
-        "select": ["number_detections_variant", "age_group", "geo_code", "reporting_week"],
-        "filter": {
-            "source": "ecdc-covid19-age-group"
-        }
-    }'
-
-    return(request_dataset(json_payload))
-}
-
 get_df_variants <- function() {
     json_payload <- '{
         "select": ["number_detections_variant", "variant", "geo_code", "reporting_week"],
