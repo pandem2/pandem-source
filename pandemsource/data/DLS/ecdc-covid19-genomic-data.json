@@ -21,7 +21,9 @@
     "acquisition":{
         "channel":{
             "name":"git-local",
+            "match":"csv",
             "changed_by": {"script_type":"R", "script_name":"ucl-simulator-ecdc-covid19-genomic-data"}
+
         },
         "format": {
             "name":"csv",

@@ -822,6 +822,71 @@ class DatasetHandler(tornado.web.RequestHandler):
             df = pd.DataFrame.from_dict(rows, orient='index', dtype=None)
             df = df.replace({np.nan: None})
             self.write({"dataset": df.to_dict('records')})
+    def __build_needed_variables(self, query, var_dic):
+        """Build a list of needed_variables and adds required filters"""
+        needed_variables = []
+        for el in query['select']:
+            if var_dic[el]['type'] not in ['observation', 'indicator', 'resource', 'date']:
+                needed_variables.append(var_dic[el]['variable'])
+            for modifier in var_dic[el]['modifiers']:
+                query['filter'][modifier['variable']] = modifier['value']
+
+        needed_variables.extend(query['filter'].keys())
+        return list(set(needed_variables)), query
+    
+    def __filter_ts(self, query, needed_variables, ts):
+        """Keep the timeseries which have both needed_variables and proper filters"""
+        filtered_ts = {}
+
+        for k, v in ts.items():
+            is_in_filter, is_in_needed = True, True
+            for nv in needed_variables:
+                if nv not in list(map(lambda v: v[0], k)):
+                    is_in_needed = False
+                    break
+            if is_in_needed:
+                for k2, v2 in query['filter'].items():
+                    if k2 not in list(map(lambda x: x[0], k)):
+                        is_in_filter = False
+                        break
+                    if v2 not in list(map(lambda x: x[1], k)):
+                        is_in_filter = False
+                        break
+            if is_in_filter and is_in_needed:
+                comb = [(i, j) for (i, j) in k if j is not None and i !=
+                        'indicator' and i != 'source']
+                comb.sort(key=lambda v: v[0])
+
+                source = [(i, j)
+                          for (i, j) in k if j is not None and i == 'source'][0][1]
+                indicator = [(i, j)
+                            for (i, j) in k if j is not None and i == 'indicator'][0][1]
+                if (source, indicator) not in filtered_ts:
+                    filtered_ts[(source, indicator)] = set()
+                filtered_ts[(source, indicator)].add(tuple(comb))
+        return filtered_ts
+    
+    def __init_row(self, ts_key, columns, date_element, source):
+        """Initialize dictionary's columns and add value if not indicator"""
+        row = {}
+        for col in columns:
+            tuples_keys = list(map(lambda x: x[0], ts_key))
+            tuples_values = list(map(lambda x: x[1], ts_key))
+            if col in tuples_keys:
+                row[col] = tuples_values[tuples_keys.index(col)]
+            else:
+                row[col] = None
+        row[date_element[0]] = date_element[1]
+        row['source'] = source
+        return row
+    
+    def __update_indicator(self, ts_value, rows, row_key, date_element, indicator):
+        """Updates a dictionary with all indicators values"""
+        if ts_value['attrs']:
+            for i, j in ts_value['attrs'].items():
+                if i == date_element[0]:
+                    rows[row_key][indicator] = ts_value['value']
+                    return rows[row_key]
 
 
 class PointsHandler(tornado.web.RequestHandler):
@@ -927,71 +992,6 @@ class PointsHandler(tornado.web.RequestHandler):
 
 
 
-    def __build_needed_variables(self, query, var_dic):
-        """Build a list of needed_variables and adds required filters"""
-        needed_variables = []
-        for el in query['select']:
-            if var_dic[el]['type'] not in ['observation', 'indicator', 'resource', 'date']:
-                needed_variables.append(var_dic[el]['variable'])
-            for modifier in var_dic[el]['modifiers']:
-                query['filter'][modifier['variable']] = modifier['value']
-
-        needed_variables.extend(query['filter'].keys())
-        return list(set(needed_variables)), query
-    
-    def __filter_ts(self, query, needed_variables, ts):
-        """Keep the timeseries which have both needed_variables and proper filters"""
-        filtered_ts = {}
-
-        for k, v in ts.items():
-            is_in_filter, is_in_needed = True, True
-            for nv in needed_variables:
-                if nv not in list(map(lambda v: v[0], k)):
-                    is_in_needed = False
-                    break
-            if is_in_needed:
-                for k2, v2 in query['filter'].items():
-                    if k2 not in list(map(lambda x: x[0], k)):
-                        is_in_filter = False
-                        break
-                    if v2 not in list(map(lambda x: x[1], k)):
-                        is_in_filter = False
-                        break
-            if is_in_filter and is_in_needed:
-                comb = [(i, j) for (i, j) in k if j is not None and i !=
-                        'indicator' and i != 'source']
-                comb.sort(key=lambda v: v[0])
-
-                source = [(i, j)
-                          for (i, j) in k if j is not None and i == 'source'][0][1]
-                indicator = [(i, j)
-                            for (i, j) in k if j is not None and i == 'indicator'][0][1]
-                if (source, indicator) not in filtered_ts:
-                    filtered_ts[(source, indicator)] = set()
-                filtered_ts[(source, indicator)].add(tuple(comb))
-        return filtered_ts
-    
-    def __init_row(self, ts_key, columns, date_element, source):
-        """Initialize dictionary's columns and add value if not indicator"""
-        row = {}
-        for col in columns:
-            tuples_keys = list(map(lambda x: x[0], ts_key))
-            tuples_values = list(map(lambda x: x[1], ts_key))
-            if col in tuples_keys:
-                row[col] = tuples_values[tuples_keys.index(col)]
-            else:
-                row[col] = None
-        row[date_element[0]] = date_element[1]
-        row['source'] = source
-        return row
-    
-    def __update_indicator(self, ts_value, rows, row_key, date_element, indicator):
-        """Updates a dictionary with all indicators values"""
-        if ts_value['attrs']:
-            for i, j in ts_value['attrs'].items():
-                if i == date_element[0]:
-                    rows[row_key][indicator] = ts_value['value']
-                    return rows[row_key]
 
 
 

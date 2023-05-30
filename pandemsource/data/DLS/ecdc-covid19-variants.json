@@ -36,6 +36,9 @@
     {"name":"country_code", "variable":"geo_code"},
     {"name":"year_week", "variable":"reporting_week"},
     {"name":"variant", "variable":"variant",  "action":"insert"},
-    {"name":"number_detections_variant", "variable":"confirmed_cases"}
+    {"name":"number_detections_variant", "variable":"number_detections_variant"},
+    {"name":"confirmed_cases", "variable":"confirmed_cases"},
+    {"name":"number_sequenced", "variable":"sequenced_samples"},
+    {"name":"not_sequenced", "variable":"not_sequenced_cases"}
   ]
 }

@@ -367,7 +367,6 @@ class Pipeline(worker.Worker):
                 self.tuples_count[job["id"]] = 0
                 self.update_job_step(job, 'read_df_ended', 0.3 + progress)
             else:
-                breakpoint()
                 self.fail_job(job)
         else:
             self.update_job_step(job, job["step"], 0.3 + progress)

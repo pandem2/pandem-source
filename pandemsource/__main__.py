@@ -437,6 +437,7 @@ def do_setup(args, *other):
     admin.reset_source("ecdc-covid19-weekly", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-daily", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
     admin.reset_source("ecdc-covid19-weekly-hospital-occupancy", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
+    admin.reset_source("ecdc-covid19-variants-of-interest", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)
   if args.serotracker:
     admin.reset_source("geonames-countries", delete_data = False)    
     admin.reset_source("serotracker", delete_data = args.delete_data, reset_acquisition = args.reset_acquisition)    

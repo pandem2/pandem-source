@@ -22,7 +22,7 @@
   "acquisition":{
     "channel":{
       "name":"url",
-      "url": "https://www.ecdc.europa.eu/sites/default/files/documents/response_graphs_data_2022-06-23.csv"
+      "url": "https://www.ecdc.europa.eu/sites/default/files/documents/response_graphs_data_2022-08-25.csv"
     },
     "format": {
       "name":"csv",

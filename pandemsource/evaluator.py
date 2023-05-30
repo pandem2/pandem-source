@@ -179,7 +179,7 @@ class Evaluator(worker.Worker):
                     comb = list(comb) 
                     # testing the tuples than satisfy the provided parameters
                     #l.debug(f"ind {ind} -> obs_pars {obs_pars} base_pars {base_pars}")
-                    #if ind == "primary_care_positivity":
+                    #if ind == "available_staff_hosp":
                     #  breakpoint()
                     base_keys = {}
                     for v, comb_dates in obs_keys.items():
@@ -236,7 +236,7 @@ class Evaluator(worker.Worker):
                                 key = comb[j]
                                 # testing independent keys which is attributes not modified by the variable
                                 for attr_par in attr_pars:
-                                  ignore_attr = attr_par in modifiers[obs_to_test]
+                                  ignore_attr = attr_par in modifiers[obs_to_test] or attr_par in mod
                                   if not ignore_attr and not any(k == attr_par for k, v in key):
                                     attr_pars_ok = False
                                     break
@@ -361,6 +361,7 @@ class Evaluator(worker.Worker):
                     var_date, base_date = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] == "date"))
                     main_par, main_base = next(iter((p, vars_dic[p]['variable']) for p in params[ind] if vars_dic[p]["type"] in ["observation", "indicator", "resource"] ))
                     attrs = {p:vars_dic[p]["variable"] for p in params[ind] if p not in set(obs.keys())}
+                    modifs = {v["variable"]:v["value"] for v in vars_dic[ind]["modifiers"]}
                     # iterating though each combination and launching the scripts to calculate the results
                     ii = 0
                     if len(combis) > 0: 
@@ -387,7 +388,7 @@ class Evaluator(worker.Worker):
                             all_none = True
                             for date in dates:
                               # one element per combination
-                              param_values = [self._get_param_value(p, comb, date, data, obs, attrs, main_par, base_date) for comb in cslice]
+                              param_values = [self._get_param_value(p, comb, date, data, obs, attrs, main_par, base_date, modifs) for comb in cslice]
                               jsonf.write(sep)
                               sep = ","
                               for v in param_values:
@@ -447,7 +448,7 @@ class Evaluator(worker.Worker):
             if not ignore_pipeline:
               self._pipeline_proxy.fail_job(job, issue = issue).get()
 
-    def _get_param_value(self, param, comb, date, data, obs, attrs, main_par, base_date):
+    def _get_param_value(self, param, comb, date, data, obs, attrs, main_par, base_date, modifs):
         if comb in data:
           row = data[comb]
           # if the parameter is an observation we will look into the associated row attribute getting the date from attrs 
@@ -461,8 +462,8 @@ class Evaluator(worker.Worker):
               if v["attrs"][base_date] == date:
                 if attrs[param] in v["attrs"]:
                   return v["attrs"][attrs[param]]
-                else:
-                  comb_map = {k:v for k, v in comb if k == attrs[param]}
+                else :
+                  comb_map = {**modifs, **{k:v for k, v in comb if k == attrs[param]}}
                   return comb_map[attrs[param]]
         return None
 
