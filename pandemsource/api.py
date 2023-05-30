@@ -779,7 +779,7 @@ class DatasetHandler(tornado.web.RequestHandler):
         if query is not None:
             ts = await variables_proxy.get_timeseries()
             needed_variables, query = self.__build_needed_variables(query, var_dic)
-            filtered_ts = self.__filter_ts(query, needed_variables, ts)
+            filtered_ts = self.__filter_ts(query, needed_variables, ts, var_dic)
 
             # Getting columns of the dataframe
             data = {}
@@ -808,16 +808,13 @@ class DatasetHandler(tornado.web.RequestHandler):
                         for ts_value in ts_values:
                             attrs_date_key = list(ts_value['attrs'].keys())[0]
                             if var_dic[attrs_date_key]['type'] == 'date':
-                                date_element = (
-                                    attrs_date_key, ts_value['attrs'][attrs_date_key])
+                                date_element = (attrs_date_key, ts_value['attrs'][attrs_date_key])
                                 row_key = list(ts_key)
                                 row_key.append(date_element)
                                 row_key = tuple(row_key)
                                 if row_key not in rows:
-                                    rows[row_key] = self.__init_row(
-                                        ts_key, columns, date_element, source)
-                            rows[row_key] = self.__update_indicator(
-                                ts_value, rows, row_key, date_element, indicator)
+                                    rows[row_key] = self.__init_row(ts_key, columns, date_element, source)
+                            rows[row_key] = self.__update_indicator(ts_value, rows, row_key, date_element, indicator)
 
             df = pd.DataFrame.from_dict(rows, orient='index', dtype=None)
             df = df.replace({np.nan: None})
@@ -834,10 +831,10 @@ class DatasetHandler(tornado.web.RequestHandler):
         needed_variables.extend(query['filter'].keys())
         return list(set(needed_variables)), query
     
-    def __filter_ts(self, query, needed_variables, ts):
+    def __filter_ts(self, query, needed_variables, ts, var_dic):
         """Keep the timeseries which have both needed_variables and proper filters"""
         filtered_ts = {}
-
+        inds = {v for v in query['select'] if var_dic[v]["type"] in ["indicator", "observation", "resource"]}
         for k, v in ts.items():
             is_in_filter, is_in_needed = True, True
             for nv in needed_variables:
@@ -853,17 +850,15 @@ class DatasetHandler(tornado.web.RequestHandler):
                         is_in_filter = False
                         break
             if is_in_filter and is_in_needed:
-                comb = [(i, j) for (i, j) in k if j is not None and i !=
-                        'indicator' and i != 'source']
+                comb = [(i, j) for (i, j) in k if j is not None and i !='indicator' and i != 'source']
                 comb.sort(key=lambda v: v[0])
 
-                source = [(i, j)
-                          for (i, j) in k if j is not None and i == 'source'][0][1]
-                indicator = [(i, j)
-                            for (i, j) in k if j is not None and i == 'indicator'][0][1]
-                if (source, indicator) not in filtered_ts:
+                source = [(i, j) for (i, j) in k if j is not None and i == 'source'][0][1]
+                indicator = [(i, j) for (i, j) in k if j is not None and i == 'indicator'][0][1]
+                if indicator in inds:
+                  if (source, indicator) not in filtered_ts:
                     filtered_ts[(source, indicator)] = set()
-                filtered_ts[(source, indicator)].add(tuple(comb))
+                  filtered_ts[(source, indicator)].add(tuple(comb))
         return filtered_ts
     
     def __init_row(self, ts_key, columns, date_element, source):
