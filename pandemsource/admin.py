@@ -54,15 +54,14 @@ def read_variables_definitions():
     "Unit":"unit", 
     "Datasets":"datasets"
     })
-
   for col in df.columns:
-    if col not in ["description", "modifiers", "formula", "no_report", "synthetic_tag", "synthetic_blocker"] and not df[col].isnull().values.all():
+    if col not in ["description", "modifiers", "formula", "no_report", "synthetic_tag", "synthetic_blocker", "main"] and not df[col].isnull().values.all():
       df[col] = df[col].str.lower().str.replace(", ", ",", regex=False).str.replace(".", "", regex=False).str.replace(" ", "_",regex=False)
     if col in ["linked_attributes", "partition", "synthetic_tag", "synthetic_blocker"]:
       df[col] = df[col].apply(lambda x : [v.strip() for v in str(x).split(",")] if pd.notna(x) else None)
     if col == "modifiers":
       df[col] = df[col].apply(lambda x : parseJsonShowError(x) if pd.notna(x) else [])
-    if col == "no_report":
+    if col in ["no_report", "main"]:
       df[col] = df[col].apply(lambda x : str(x).lower() == 'true' if pd.notna(x) else False)
   result = df.to_json(orient = "records")
   parsed = json.loads(result)
