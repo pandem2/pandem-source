@@ -34,17 +34,18 @@
             "decimal_sign": ".",
             "thousands_separator": "",
             "date_format": "%Y-%m-%d %H:%M:%S%z",
-            "encoding": "UTF-8"
+            "encoding": "UTF-8",
+            "compression":"gzip"
         }
     },
     "columns": [
         {
             "name": "destination",
-            "variable": "geo_airport_code"
+            "variable": "geo_code"
         },
         {
             "name": "origin",
-            "variable": "geo_airport_origin_code"
+            "variable": "country_of_origin_code"
         },
         {
             "name": "day",
@@ -52,8 +53,7 @@
         },
         {
             "name": "flights",
-            "variable": "incoming_flights",
-            "action": "insert"
+            "variable": "incoming_flights"
         }
     ]
 }

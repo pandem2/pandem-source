@@ -177,7 +177,7 @@ query_page <- function(timeseries) {
         shiny::fluidRow(shiny::column(12, shiny::h4("Time Series"))),
         shiny::fluidRow(shiny::column(12, shiny::h5(shiny::htmlOutput("timeseries_count")))),
         shiny::fluidRow(
-          shiny::column(6,shiny::radioButtons("timeseries_scale",label="Y-scale", choices = list(`Standard`="std", `Normalized`="normalized", `Log`="log"), selected = "std", inline = TRUE)),
+          shiny::column(6,shiny::radioButtons("timeseries_scale",label="Y-scale", choices = list(`Standard`="std", `Normalized`="normalized", `Log`="log", `7 rolling average`='rolling'), selected = "std", inline = TRUE)),
           shiny::column(6,shiny::radioButtons("timeseries_period",label="Time", choices = list(`1 Year`="12", `6 months`="6", `3 months`="3", `1 month`="1", `All`="all"), selected = "12", inline = TRUE))
         ),
         shiny::fluidRow(
@@ -867,10 +867,13 @@ plot_timeseries <- function(df, title, scale = "std", period = "12") {
     )
 
   })
+  ma <- function(x, n = 7){stats::filter(x, rep(1 / n, n), sides = 1)}
   df$y <- if(scale == "std") {
     df$value
   } else if(scale == "log") {
     log(df$value)
+  } else if(scale == "rolling") {
+    ma(df$value)
   } else if(nrow(df)>0) {
     maxs = list()
     for(i in 1:nrow(df)) {
@@ -901,7 +904,7 @@ plot_timeseries <- function(df, title, scale = "std", period = "12") {
      color="Legend"
     ) +
     ggplot2::xlab("Date") + 
-    ggplot2::ylab(if(scale == "std") "Indicator" else if(scale == "log") "Log" else "[0-1] Max Normalized") +
+    ggplot2::ylab(if(scale == "std" || scale == "rolling") "Indicator" else if(scale == "log") "Log" else "[0-1] Max Normalized") +
     #ggplot2::scale_y_continuous(breaks = y_breaks, limits = c(0, max(y_breaks)), expand=c(0 ,0))+
     ggplot2::theme_classic(base_family = get_font_family()) +
     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 12, face = "bold",lineheight = 0.9),

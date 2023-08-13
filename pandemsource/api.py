@@ -379,6 +379,12 @@ class VariableListHandler(tornado.web.RequestHandler):
         description: List variables published on this PANDEM-2 instace
         operationId: getVariableList
         parameters:
+          - name: showall
+            in: query
+            description: show all variables
+            required: false
+            schema:
+              type: boolean
         responses:
             '200':
               description: List of variables and mofifiers
@@ -394,6 +400,7 @@ class VariableListHandler(tornado.web.RequestHandler):
                     type: string
         """
 
+        showall = self.get_argument('showall', default = False)
 
         var_path = util.pandem_path("files", "variables")
         var_paths = await self.storage_proxy.list_files(var_path, include_files = False, include_dirs = True, recursive = False)
@@ -411,7 +418,7 @@ class VariableListHandler(tornado.web.RequestHandler):
 
         found_vars = {}
         for v in var_dic:
-          if v in used_vars or v in pub_vars: 
+          if v in used_vars or v in pub_vars or showall: 
              found_vars[v] = var_dic[v].copy()
              found_vars[v].pop("aliases")
              found_vars[v]["base_variable"] = found_vars[v]["variable"] if  found_vars[v]["variable"] != v else None

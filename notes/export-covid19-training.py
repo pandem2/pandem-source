@@ -12,7 +12,15 @@ def export_covid19training_ds():
   res = requests.get(f"http://localhost:8000/variable_list").json()
   var_map = {v["variable"]:v for v in res["variables"]}
   
-  renamings = {"indicence_1000":"estimated_incidence", "new_performed_tests":"performed_tests", "new_performed_tests_per_100k":"performed_tests_per_100k", "implemented_policy":"interventions", "implemented_measures":"interventions", "cum_article_count":"cum_article_count", "studied_population":"studied_population_size"}
+  renamings = {
+    "indicence_1000":"estimated_incidence", 
+    "new_performed_tests":"performed_tests", 
+    "new_performed_tests_per_100k":"performed_tests_per_100k", 
+    "implemented_policy":"interventions", 
+    "implemented_measures":"interventions", 
+    "cum_article_count":"cum_article_count", 
+    "studied_population":"studied_population_size"
+  }
   source_fields = ["source__reference_user", "source__source_description", "source__source_name", "source", "source__table", "source__data_quality"]
   indicator_fields = ["indicator", 'indicator__family', 'indicator__unit', 'indicator__description']
   excluded_endings = {"_alert"}
@@ -21,7 +29,7 @@ def export_covid19training_ds():
 
   print(f"{len(all_ts)} timeseries found on instance")
   available_sources = {t["source__source_name"] for t in all_ts}
-  target_sources  = {"COVID-19 Datahub", "ECDC COVID-19", "SeroTracker", "Twitter datasets", "ECDC COVID-19 Simulated", "Eurostats NUTS", "Influenza net", "OECD", "OpenSky-Network-CovidDataset", "Our-World-In-Data"}
+  target_sources  = {"COVID-19 Datahub", "ECDC COVID-19", "SeroTracker", "Twitter datasets", "ECDC COVID-19 Simulated", "Eurostats NUTS", "Influenza net", "OECD", "OpenSky-Network-CovidDataset", "Our-World-In-Data", "OpenSky-Network-CovidDataset"}
   missing_sources = target_sources.difference(available_sources)
   sources = available_sources.intersection(target_sources)
   back = "\n"
@@ -73,6 +81,8 @@ def export_covid19training_ds():
     for ii, row in ind_df.iterrows():
       ind = row["indicator"]
       print(f"exporting {ind}                                                                                                                   ")
+      #if ind not in ["incidence", "confirmed_cases"]:#'ind_map[ind]['family'] != "07_contact_tracing":
+      #  continue
       rows = []
       for g, s in sorted(geo_codes_source[ind]):
         offset = 0
