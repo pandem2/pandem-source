@@ -47,6 +47,9 @@ class Variables(worker.Worker):
                               "no_report":v['no_report'],
                               "synthetic_tag":v['synthetic_tag'],
                               "synthetic_blocker":v['synthetic_blocker'],
+                              "main":v['main'],
+                              "main_variable":v['main_variable'],
+                              "variation":v['variation'],
                               "type": v['type']
                               }
                               for v in var_list if v['base_variable']==var['variable']]
@@ -65,6 +68,9 @@ class Variables(worker.Worker):
                           alias_dict['no_report'] = alias['no_report']
                           alias_dict['synthetic_tag'] = alias['synthetic_tag']
                           alias_dict['synthetic_blocker'] = alias['synthetic_blocker']
+                          alias_dict['main'] = alias['main']
+                          alias_dict['main_variable'] = alias['main_variable']
+                          alias_dict['variation'] = alias['variation']
                           alias_dict['description'] = alias['description'] if alias['description'] is not None else alias_dict['description']
                           alias_dict['type'] = alias['type'] if alias['type'] is not None else alias_dict['type']
                           dic_variables[alias['alias']] = alias_dict
