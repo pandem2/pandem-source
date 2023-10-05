@@ -78,7 +78,7 @@ request_dataset <- function(json_payload) {
 normalize_dataframe <- function(df) {
     if ("reporting_period" %in% colnames(df)) {
         names(df)[names(df) == "reporting_period"] <- "time"
-        fun1 <- function(time) strftime(time, format = "%Y-%V")
+        fun1 <- function(time) strftime(time, format = "%G-%V")
         df$year_week <- mapply(fun1, df$time)
     }
     if ("geo_code" %in% colnames(df)) {
